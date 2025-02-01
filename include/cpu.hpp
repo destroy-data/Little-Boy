@@ -27,9 +27,6 @@ class CPU {
         RRC,
         RL,
         RR,
-        SLA,
-        SR,
-        SWAP,
         DAA,
         CPL,
         SCF,
@@ -42,6 +39,10 @@ class CPU {
         RST,
         DI,
         EI,
+        SLA,
+        SRA,
+        SWAP,
+        SRL,
         BIT,
         RES,
         SET
@@ -109,6 +110,7 @@ class CPU {
     Operation_t decodeBlock0();
     Operation_t decodeBlock2();
     Operation_t decodeBlock3();
+    Operation_t decodeCB();
 
 public:
 };

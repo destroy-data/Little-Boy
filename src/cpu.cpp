@@ -1,4 +1,5 @@
 #include "cpu.hpp"
+#include <utility>
 
 namespace {} // namespace
 
@@ -80,6 +81,9 @@ CPU::Operation_t CPU::decode() {
     case 0xCD:
         return { OperationType_t::CALL, OperandType_t::IMM16 };
     //the rest
+    case 0xCB:
+        PC++;
+        return decodeCB();
     case 0xE2:
         return { OperationType_t::LDH, OperandType_t::R8, Operand_t::c, OperandType_t::R8,
                  Operand_t::a };
@@ -148,13 +152,48 @@ CPU::Operation_t CPU::decodeBlock0() {
     case 0x9:
         return { OperationType_t::LD, OperandType_t::R16, Operand_t::hl, OperandType_t::R16,
                  bytes45 };
-        break;
     case 0xA:
         return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM,
                  bytes45 };
-        break;
     case 0xB:
         return { OperationType_t::DEC, OperandType_t::R16, bytes45 };
     }
     return Operation_t { OperationType_t::INVALID };
+}
+
+CPU::Operation_t CPU::decodeCB() {
+    auto r8 = static_cast<Operand_t>( ROM[PC] & 0x7 );
+    auto b3index = static_cast<Operand_t>( 0x7 & ( ROM[PC] >> 3 ) );
+    switch( 0x3 & ( ROM[PC] >> 6 ) ) {
+    case 0x0:
+        switch( 0x7 & ROM[PC] ) {
+        case 0x0:
+            return { OperationType_t::RLC, OperandType_t::R8, r8 };
+        case 0x1:
+            return { OperationType_t::RRC, OperandType_t::R8, r8 };
+        case 0x2:
+            return { OperationType_t::RL, OperandType_t::R8, r8 };
+        case 0x3:
+            return { OperationType_t::RR, OperandType_t::R8, r8 };
+        case 0x4:
+            return { OperationType_t::SLA, OperandType_t::R8, r8 };
+        case 0x5:
+            return { OperationType_t::SRA, OperandType_t::R8, r8 };
+        case 0x6:
+            return { OperationType_t::SWAP, OperandType_t::R8, r8 };
+        case 0x7:
+            return { OperationType_t::SRL, OperandType_t::R8, r8 };
+        default:
+            std::unreachable();
+        }
+
+    case 0x1:
+        return { OperationType_t::BIT, OperandType_t::B3_INDEX, b3index, OperandType_t::R8, r8 };
+    case 0x2:
+        return { OperationType_t::RES, OperandType_t::B3_INDEX, b3index, OperandType_t::R8, r8 };
+    case 0x3:
+        return { OperationType_t::SET, OperandType_t::B3_INDEX, b3index, OperandType_t::R8, r8 };
+    default:
+        std::unreachable();
+    }
 }
