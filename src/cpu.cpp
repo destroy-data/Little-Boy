@@ -128,37 +128,83 @@ CPU::Operation_t CPU::decode() {
 
 CPU::Operation_t CPU::decodeBlock0() {
     //count from 0
-    auto bytes345 = static_cast<Operand_t>( 0x7 & ( ROM[PC] >> 3 ) );
-    auto bytes45 = static_cast<Operand_t>( 0x3 & ( ROM[PC] >> 4 ) );
+    auto bits345 = static_cast<Operand_t>( 0x7 & ( ROM[PC] >> 3 ) );
+    auto bits45 = static_cast<Operand_t>( 0x3 & ( ROM[PC] >> 4 ) );
     switch( 0x7 & ROM[PC] ) {
     case 0x0:
         return { OperationType_t::JR, OperandType_t::COND,
                  static_cast<Operand_t>( 0x3 & ( ROM[PC] >> 3 ) ), OperandType_t::IMM8 };
     case 0x4:
-        return { OperationType_t::INC, OperandType_t::R8, bytes345 };
+        return { OperationType_t::INC, OperandType_t::R8, bits345 };
     case 0x5:
-        return { OperationType_t::DEC, OperandType_t::R8, bytes345 };
+        return { OperationType_t::DEC, OperandType_t::R8, bits345 };
     case 0x6:
-        return { OperationType_t::LD, OperandType_t::R8, bytes345, OperandType_t::IMM8 };
+        return { OperationType_t::LD, OperandType_t::R8, bits345, OperandType_t::IMM8 };
     }
     switch( 0xF & ROM[PC] ) {
     case 0x1:
-        return { OperationType_t::LD, OperandType_t::R16, bytes45, OperandType_t::IMM16 };
+        return { OperationType_t::LD, OperandType_t::R16, bits45, OperandType_t::IMM16 };
     case 0x2:
-        return { OperationType_t::LD, OperandType_t::R16MEM, bytes45, OperandType_t::R8,
+        return { OperationType_t::LD, OperandType_t::R16MEM, bits45, OperandType_t::R8,
                  Operand_t::a };
     case 0x3:
-        return { OperationType_t::INC, OperandType_t::R16, bytes45 };
+        return { OperationType_t::INC, OperandType_t::R16, bits45 };
     case 0x9:
         return { OperationType_t::LD, OperandType_t::R16, Operand_t::hl, OperandType_t::R16,
-                 bytes45 };
+                 bits45 };
     case 0xA:
         return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM,
-                 bytes45 };
+                 bits45 };
     case 0xB:
-        return { OperationType_t::DEC, OperandType_t::R16, bytes45 };
+        return { OperationType_t::DEC, OperandType_t::R16, bits45 };
     }
     return Operation_t { OperationType_t::INVALID };
+}
+
+CPU::Operation_t CPU::decodeBlock2() {
+    auto r8 = static_cast<Operand_t>( 0x7 & ROM[PC] );
+    auto opType = OperationType_t::INVALID;
+    switch( 0x7 & ( ROM[PC] >> 3 ) ) {
+    case 0x0:
+        opType = OperationType_t::ADD;
+    case 0x1:
+        opType = OperationType_t::ADC;
+    case 0x2:
+        opType = OperationType_t::SUB;
+    case 0x3:
+        opType = OperationType_t::SBC;
+    case 0x4:
+        opType = OperationType_t::AND;
+    case 0x5:
+        opType = OperationType_t::XOR;
+    case 0x6:
+        opType = OperationType_t::OR;
+    case 0x7:
+        opType = OperationType_t::CP;
+    }
+    return { opType, OperandType_t::R8, Operand_t::a, OperandType_t::R8, r8 };
+}
+
+
+CPU::Operation_t CPU::decodeBlock3() {
+    auto condition = static_cast<Operand_t>( 0x3 & ( ROM[PC] >> 3 ) );
+    auto r16stk = static_cast<Operand_t>( 0x3 & ( ROM[PC] >> 4 ) );
+    switch( 0x7 & ROM[PC] ) {
+    case 0x0:
+        return { OperationType_t::RET, OperandType_t::COND, condition };
+    case 0x2:
+        return { OperationType_t::JP, OperandType_t::COND, condition, OperandType_t::IMM16 };
+    case 0x4:
+        return { OperationType_t::CALL, OperandType_t::COND, condition, OperandType_t::IMM16 };
+    case 0x7:
+        return { OperationType_t::RST, OperandType_t::TGT3,
+                 static_cast<Operand_t>( 0x7 & ( ROM[PC] >> 3 ) ) };
+    case 0x1:
+        return { OperationType_t::POP, OperandType_t::R16STK, r16stk };
+    case 0x5:
+        return { OperationType_t::PUSH, OperandType_t::R16STK, r16stk };
+    }
+    return { OperationType_t::INVALID };
 }
 
 CPU::Operation_t CPU::decodeCB() {

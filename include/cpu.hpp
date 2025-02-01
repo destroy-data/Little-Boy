@@ -37,6 +37,8 @@ class CPU {
         RETI,
         CALL,
         RST,
+        POP,
+        PUSH,
         DI,
         EI,
         SLA,
