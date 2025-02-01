@@ -2,7 +2,6 @@
 #undef abs
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <variant>
 using Enum_t = uint8_t;
 
@@ -11,19 +10,41 @@ class CPU {
         INVALID,
         NOOP,
         STOP,
+        HALT,
         LD,
+        LDH,
         INC,
         DEC,
         ADD,
-        RLCA,
-        RRCA,
-        RLA,
-        RRA,
+        ADC,
+        SUB,
+        SBC,
+        AND,
+        XOR,
+        OR,
+        CP,
+        RLC,
+        RRC,
+        RL,
+        RR,
+        SLA,
+        SR,
+        SWAP,
         DAA,
         CPL,
         SCF,
         CCF,
-        JR
+        JR,
+        JP,
+        RET,
+        RETI,
+        CALL,
+        RST,
+        DI,
+        EI,
+        BIT,
+        RES,
+        SET
     };
     enum class OperandType_t : Enum_t {
         NONE,
@@ -35,39 +56,45 @@ class CPU {
         B3_INDEX,
         TGT3,
         IMM8,
-        IMM16
+        IMM16,
+        pIMM8,
+        pIMM16
     };
     enum class Operand_t : Enum_t {
-        // register enums also correspond to their place in registers array
-        b,
+        // values correspond to their encoding in opcodes
+        // r8
+        b = 0,
         c,
         d,
         e,
         h,
         l,
+        pHL, //byte pointed to by HL
         a,
-        af = a,
-        bc = b,
-        de = d,
-        hl = h,
-        sp = 8,
-        //the rest is not registers
-        pHL, // byte pointed to by HL
-        hlPlus,
+        // r16
+        bc = 0,
+        de,
+        hl,
+        sp,
+        // r16stk
+        af = 3,
+        // r16mem
+        hlPlus = 2,
         hlMinus,
-        condNz,
+        // cond
+        condNz = 0,
         condZ,
         condNc,
-        condC
+        condC,
     };
 
     //In case of IMM8 and IMM16, don't save the next byte(s)
     //They will be fetched in execution phase
     struct Operation_t {
         OperationType_t operationType;
-        OperandType_t operandType1 = OperandType_t::NONE;
+        OperandType_t operandType1;
         std::variant<std::monostate, Operand_t, uint8_t> operand1;
-        OperandType_t operandType2 = OperandType_t::NONE;
+        OperandType_t operandType2;
         std::variant<std::monostate, Operand_t, uint8_t> operand2;
     };
 
@@ -79,10 +106,9 @@ class CPU {
     void write16( Operand_t register_, uint16_t value );
     Operation_t decode();
     //helpers
-    Operation_t decodeBlock00();
-    Operation_t decodeBlock01();
-    Operation_t decodeBlock10();
-    Operation_t decodeBlock11();
+    Operation_t decodeBlock0();
+    Operation_t decodeBlock2();
+    Operation_t decodeBlock3();
 
 public:
 };

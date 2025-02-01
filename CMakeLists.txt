@@ -11,12 +11,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 pico_sdk_init()
 
-#Add implicit include dirs explicitely so they are in compile_commands.json
-# include_directories(SYSTEM ${CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES} ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/src/*.cpp")
 add_executable(gameboy ${SOURCES})
 
+# Add -Werror for all configurations except Debug
+target_compile_options(gameboy PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-Werror>")
 target_include_directories(gameboy PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(gameboy pico_stdlib)
-# add_compile_options(--target=arm-none-eabi)
 pico_add_extra_outputs(gameboy)
