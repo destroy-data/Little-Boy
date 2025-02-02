@@ -7,7 +7,7 @@ CPU::Operation_t CPU::decode() {
     switch( ROM[PC] ) {
     //block 0
     case 0x0:
-        return { OperationType_t::NOOP };
+        return { OperationType_t::NOP };
     case 0x10:
         return { OperationType_t::STOP };
     case 0x08:
@@ -17,13 +17,13 @@ CPU::Operation_t CPU::decode() {
                  OperandType_t::R16,
                  Operand_t::sp };
     case 0x07:
-        return { OperationType_t::RLC, OperandType_t::R8, Operand_t::a };
+        return { OperationType_t::RLCA };
     case 0x0F:
-        return { OperationType_t::RRC, OperandType_t::R8, Operand_t::a };
+        return { OperationType_t::RRCA };
     case 0x17:
-        return { OperationType_t::RL, OperandType_t::R8, Operand_t::a };
+        return { OperationType_t::RLA };
     case 0x1F:
-        return { OperationType_t::RR, OperandType_t::R8, Operand_t::a };
+        return { OperationType_t::RRA };
     case 0x27:
         return { OperationType_t::DAA };
     case 0x2F:
@@ -55,7 +55,7 @@ CPU::Operation_t CPU::decode() {
         return { OperationType_t::OR, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xFE:
         return { OperationType_t::CP, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
-    case 0xD8:
+    case 0xE8:
         return { OperationType_t::ADD, OperandType_t::R16, Operand_t::sp, OperandType_t::IMM8 };
     //control flow
     case 0xC9:
@@ -76,19 +76,19 @@ CPU::Operation_t CPU::decode() {
         return { OperationType_t::LDH, OperandType_t::R8, Operand_t::c, OperandType_t::R8,
                  Operand_t::a };
     case 0xE0:
-        return { OperationType_t::LDH, OperandType_t::pIMM8, {}, OperandType_t::R8, Operand_t::a };
+        return { OperationType_t::LDH, OperandType_t::IMM8, {}, OperandType_t::R8, Operand_t::a };
     case 0xEA:
         return { OperationType_t::LD, OperandType_t::pIMM16, {}, OperandType_t::R8, Operand_t::a };
     case 0xF2:
         return { OperationType_t::LDH, OperandType_t::R8, Operand_t::a, OperandType_t::R8,
                  Operand_t::c };
     case 0xF0:
-        return { OperationType_t::LDH, OperandType_t::R8, Operand_t::a, OperandType_t::pIMM8 };
+        return { OperationType_t::LDH, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xFA:
         return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::pIMM16 };
     case 0xF8:
-        //TODO
-        break;
+        return { OperationType_t::LD, OperandType_t::R16, Operand_t::hl,
+                 OperandType_t::SP_PLUS_IMM8 };
     case 0xF9:
         return { OperationType_t::LD, OperandType_t::R16, Operand_t::sp, OperandType_t::R16,
                  Operand_t::hl };
@@ -138,7 +138,7 @@ CPU::Operation_t CPU::decodeBlock0() {
     case 0x3:
         return { OperationType_t::INC, OperandType_t::R16, bits45 };
     case 0x9:
-        return { OperationType_t::LD, OperandType_t::R16, Operand_t::hl, OperandType_t::R16,
+        return { OperationType_t::ADD, OperandType_t::R16, Operand_t::hl, OperandType_t::R16,
                  bits45 };
     case 0xA:
         return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM,

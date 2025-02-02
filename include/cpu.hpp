@@ -1,14 +1,13 @@
 #pragma once
-#undef abs
 #include <cstddef>
 #include <cstdint>
 #include <variant>
-using Enum_t = uint8_t;
 
 class CPU {
+    using Enum_t = uint8_t;
     enum class OperationType_t : Enum_t {
         INVALID,
-        NOOP,
+        NOP,
         STOP,
         HALT,
         LD,
@@ -23,10 +22,10 @@ class CPU {
         XOR,
         OR,
         CP,
-        RLC,
-        RRC,
-        RL,
-        RR,
+        RLCA,
+        RRCA,
+        RLA,
+        RRA,
         DAA,
         CPL,
         SCF,
@@ -41,6 +40,10 @@ class CPU {
         PUSH,
         DI,
         EI,
+        RLC,
+        RRC,
+        RL,
+        RR,
         SLA,
         SRA,
         SWAP,
@@ -60,8 +63,8 @@ class CPU {
         TGT3,
         IMM8,
         IMM16,
-        pIMM8,
-        pIMM16
+        pIMM16,
+        SP_PLUS_IMM8
     };
     enum class Operand_t : Enum_t {
         // values correspond to their encoding in opcodes
@@ -88,26 +91,31 @@ class CPU {
         condNz = 0,
         condZ,
         condNc,
-        condC,
+        condC
     };
 
+    using OperandVal_t = std::variant<std::monostate, Operand_t, uint8_t>;
     //In case of IMM8 and IMM16, don't save the next byte(s)
     //They will be fetched in execution phase
     struct Operation_t {
         OperationType_t operationType;
         OperandType_t operandType1;
-        std::variant<std::monostate, Operand_t, uint8_t> operand1;
+        OperandVal_t operand1;
         OperandType_t operandType2;
-        std::variant<std::monostate, Operand_t, uint8_t> operand2;
+        OperandVal_t operand2;
     };
 
-    uint8_t registers[10];
-    uint16_t PC;
-    uint8_t ROM[1024]; //placeholder
+    uint8_t registers[8]; //b,c,d,e,h,l,a,f
+    uint16_t SP, PC;
+    uint8_t RAM[65536]; //placeholder
+    uint8_t ROM[1024];  //placeholder
 
     uint16_t read16( Operand_t register_ );
     void write16( Operand_t register_, uint16_t value );
+    template<OperandType_t type>
+    auto readFrom( OperandVal_t operand );
     Operation_t decode();
+    void execute( Operation_t op );
     //helpers
     Operation_t decodeBlock0();
     Operation_t decodeBlock2();
