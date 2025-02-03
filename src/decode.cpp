@@ -3,7 +3,6 @@
 
 CPU::Operation_t CPU::decode() {
     // first check instructions without different operand variants
-    // RLC, RRC, RL and RR technically have different variants, but those are 0xCB prefixed
     switch( ROM[PC] ) {
     //block 0
     case 0x0:

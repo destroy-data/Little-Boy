@@ -94,15 +94,15 @@ class CPU {
         condC
     };
 
-    using OperandVal_t = std::variant<std::monostate, Operand_t, uint8_t>;
+    using OperandVar_t = std::variant<std::monostate, Operand_t, uint8_t>;
     //In case of IMM8 and IMM16, don't save the next byte(s)
     //They will be fetched in execution phase
     struct Operation_t {
         OperationType_t operationType;
         OperandType_t operandType1;
-        OperandVal_t operand1;
+        OperandVar_t operand1;
         OperandType_t operandType2;
-        OperandVal_t operand2;
+        OperandVar_t operand2;
     };
 
     uint8_t registers[8]; //b,c,d,e,h,l,a,f
@@ -113,7 +113,9 @@ class CPU {
     uint16_t read16( Operand_t register_ );
     void write16( Operand_t register_, uint16_t value );
     template<OperandType_t type>
-    auto readFrom( OperandVal_t operand );
+    std::unsigned_integral auto read( OperandVar_t operand );
+    template<OperandType_t type>
+    void write( OperandVar_t operand, std::unsigned_integral auto value );
     Operation_t decode();
     void execute( Operation_t op );
     //helpers
