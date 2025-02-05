@@ -3,6 +3,9 @@
 #include <cstdint>
 #include <variant>
 
+template<typename T>
+concept uint8or16_t = std::same_as<T, uint8_t> || std::same_as<T, uint16_t>;
+
 class CPU {
     using Enum_t = uint8_t;
     enum class OperationType_t : Enum_t {
@@ -113,9 +116,9 @@ class CPU {
     uint16_t read16( Operand_t register_ );
     void write16( Operand_t register_, uint16_t value );
     template<OperandType_t type>
-    std::unsigned_integral auto read( OperandVar_t operand );
+    uint8or16_t auto read( OperandVar_t operand );
     template<OperandType_t type>
-    void write( OperandVar_t operand, std::unsigned_integral auto value );
+    void write( OperandVar_t operand, uint8or16_t auto value );
     Operation_t decode();
     void execute( Operation_t op );
     //helpers
