@@ -127,5 +127,17 @@ class CPU {
     Operation_t decodeBlock3();
     Operation_t decodeCB();
 
+    // clang-format off
+    bool getZFlag() { return registers[7] &( 1 << 7 ); } // Zero flag
+    bool getNFlag() { return registers[7] &( 1 << 6 ); } // BDC substraction flag
+    bool getHFlag() { return registers[7] &( 1 << 5 ); } // BDC half carry flag
+    bool getCFlag() { return registers[7] &( 1 << 4 ); } // Carry flag
+
+    void setZFlag( bool val ) { registers[7] = val ? registers[7] | ( 1 << 7 ) : registers[7] & ~( 1 << 7 ); }
+    void setNFlag( bool val ) { registers[7] = val ? registers[7] | ( 1 << 6 ) : registers[7] & ~( 1 << 6 ); }
+    void setHFlag( bool val ) { registers[7] = val ? registers[7] | ( 1 << 5 ) : registers[7] & ~( 1 << 5 ); }
+    void setCFlag( bool val ) { registers[7] = val ? registers[7] | ( 1 << 4 ) : registers[7] & ~( 1 << 4 ); }
+    // clang-format on
+
 public:
 };
