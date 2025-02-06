@@ -113,14 +113,14 @@ class CPU {
     uint8_t RAM[65536]; //placeholder
     uint8_t ROM[1024];  //placeholder
 
-    uint16_t read16( Operand_t register_ );
-    void write16( Operand_t register_, uint16_t value );
     template<OperandType_t type>
-    uint8or16_t auto read( OperandVar_t operand );
+    uint8or16_t auto read( const OperandVar_t operand );
     template<OperandType_t type>
     void write( OperandVar_t operand, uint8or16_t auto value );
+    void execute( const Operation_t& op );
+    void ld( const Operation_t& op );
+
     Operation_t decode();
-    void execute( Operation_t op );
     //helpers
     Operation_t decodeBlock0();
     Operation_t decodeBlock2();
