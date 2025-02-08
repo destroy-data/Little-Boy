@@ -58,6 +58,7 @@ class CPU {
     enum class OperandType_t : Enum_t {
         NONE,
         R8,
+        pR8,
         R16,
         R16STK,
         R16MEM,
@@ -115,10 +116,16 @@ class CPU {
 
     template<OperandType_t type>
     uint8or16_t auto read( const OperandVar_t operand );
-    template<OperandType_t type>
-    void write( OperandVar_t operand, uint8or16_t auto value );
+    template<OperandType_t type, uint8or16_t T>
+    void write( OperandVar_t operand, T value );
+    template<OperandType_t type, uint8or16_t T>
+    void addTo( OperandVar_t operand, T value );
+    template<OperandType_t type, uint8or16_t T>
+    void subFrom( OperandVar_t operand, T value );
+
     void execute( const Operation_t& op );
     void ld( const Operation_t& op );
+    void ldh( const Operation_t& op );
 
     Operation_t decode();
     //helpers
@@ -133,10 +140,10 @@ class CPU {
     bool getHFlag() { return registers[7] &( 1 << 5 ); } // BDC half carry flag
     bool getCFlag() { return registers[7] &( 1 << 4 ); } // Carry flag
 
-    void setZFlag( bool val ) { registers[7] = val ? registers[7] | ( 1 << 7 ) : registers[7] & ~( 1 << 7 ); }
-    void setNFlag( bool val ) { registers[7] = val ? registers[7] | ( 1 << 6 ) : registers[7] & ~( 1 << 6 ); }
-    void setHFlag( bool val ) { registers[7] = val ? registers[7] | ( 1 << 5 ) : registers[7] & ~( 1 << 5 ); }
-    void setCFlag( bool val ) { registers[7] = val ? registers[7] | ( 1 << 4 ) : registers[7] & ~( 1 << 4 ); }
+    void setZFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 7 ) : registers[7] & ~( 1 << 7 )); }
+    void setNFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 6 ) : registers[7] & ~( 1 << 6 )); }
+    void setHFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 5 ) : registers[7] & ~( 1 << 5 )); }
+    void setCFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 4 ) : registers[7] & ~( 1 << 4 )); }
     // clang-format on
 
 public:
