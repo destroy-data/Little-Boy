@@ -228,11 +228,11 @@ CPU::Operation_t CPU::decodeCB() {
         }
 
     case 0x1:
-        return { OperationType_t::BIT, OperandType_t::B3_INDEX, b3index, OperandType_t::R8, r8 };
+        return { OperationType_t::BIT, OperandType_t::BIT_INDEX, b3index, OperandType_t::R8, r8 };
     case 0x2:
-        return { OperationType_t::RES, OperandType_t::B3_INDEX, b3index, OperandType_t::R8, r8 };
+        return { OperationType_t::RES, OperandType_t::BIT_INDEX, b3index, OperandType_t::R8, r8 };
     case 0x3:
-        return { OperationType_t::SET, OperandType_t::B3_INDEX, b3index, OperandType_t::R8, r8 };
+        return { OperationType_t::SET, OperandType_t::BIT_INDEX, b3index, OperandType_t::R8, r8 };
     default:
         std::unreachable();
     }

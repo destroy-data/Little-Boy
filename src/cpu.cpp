@@ -162,15 +162,13 @@ void CPU::addTo( OperandVar_t operand, T value ) {
     auto currentValue = read<type>( operand );
     constexpr auto halfCarryBitIndex = std::same_as<decltype( currentValue ), uint8_t> ? 3 : 11;
     bool savedHalfCarryBit = ( currentValue & ( 1 << halfCarryBitIndex ) );
-    setCFlag( std::numeric_limits<T>::max() - currentValue < value );
+    bool cFlag = ( std::numeric_limits<T>::max() - currentValue < value );
 
     currentValue += value;
     write<type>( operand, currentValue );
     bool halfCarryFlag =
             savedHalfCarryBit && !( currentValue & ( 1 << halfCarryBitIndex ) ); //was 1, is 0
-    setHFlag( halfCarryFlag );
-    setNFlag( false );
-    setZFlag( !currentValue );
+    setZNHCFlags( !currentValue, false, halfCarryFlag, cFlag );
 };
 
 template<CPU::OperandType_t type, uint8or16_t T>
@@ -178,17 +176,46 @@ void CPU::subFrom( OperandVar_t operand, T value, bool discard ) {
     auto currentValue = read<type>( operand );
     constexpr auto halfCarryBitIndex = 4;
     bool savedHalfCarryBit = ( currentValue & ( 1 << halfCarryBitIndex ) );
-    setCFlag( value > currentValue );
+    bool cFlag = ( value > currentValue );
 
     currentValue -= value;
     if( !discard )
         write<type>( operand, currentValue );
     bool halfCarryFlag =
             savedHalfCarryBit && !( currentValue & ( 1 << halfCarryBitIndex ) ); //was 1, is 0
-    setHFlag( halfCarryFlag );
-    setNFlag( true );
-    setZFlag( !currentValue );
+    setZNHCFlags( !currentValue, true, halfCarryFlag, cFlag );
 };
+
+template<CPU::OperationType_t optype>
+void CPU::bitwise( Operation_t op ) {
+    static_assert( ( optype == OperationType_t::AND ) || ( optype == OperationType_t::OR ) ||
+                           ( optype == OperationType_t::XOR ),
+                   "" );
+
+    auto a = read<OperandType_t::R8>( { Operand_t::a } );
+    uint8_t readVal;
+    if( op.operandType2 == OperandType_t::R8 )
+        readVal = read<OperandType_t::R8>( op.operand2 );
+    else if( op.operandType2 == OperandType_t::IMM8 ) {
+        readVal = read<OperandType_t::IMM8>( op.operand2 );
+    } else {
+        //ERRTODO
+        return;
+    }
+    uint8_t result;
+    if constexpr( optype == OperationType_t::AND )
+        result = a & readVal;
+    else if constexpr( optype == OperationType_t::OR )
+        result = a | readVal;
+    else if constexpr( optype == OperationType_t::XOR )
+        result = a ^ readVal;
+    else
+        static_assert( false, "" );
+    write<OperandType_t::R8>( { Operand_t::a }, result );
+
+    constexpr bool hFlag = ( optype == OperationType_t::AND );
+    setZNHCFlags( !result, false, hFlag, false );
+}
 
 void CPU::ld( const Operation_t& op ) {
     uint16_t readVal; //also for 8-bit values, later truncate them if needed
@@ -376,12 +403,38 @@ void CPU::execute( const Operation_t& op ) {
 
         subFrom<opdt::R8>( op.operand1, readVal );
     } break;
+    case OT::AND:
+        bitwise<OT::AND>( op );
+        break;
     case OT::CPL:
         write<opdt::R8>( { Operand_t::a },
                          static_cast<uint8_t>( ~( read<opdt::R8>( { Operand_t::a } ) ) ) );
         setNFlag( true );
         setHFlag( true );
         break;
+    case OT::OR:
+        bitwise<OT::OR>( op );
+        break;
+    case OT::XOR:
+        bitwise<OT::XOR>( op );
+        break;
+    case OT::BIT: {
+        auto bitIndex = std::get<uint8_t>( op.operand1 );
+        auto value = read<opdt::R8>( op.operand2 );
+        setZNHCFlags( value & ( 1 << bitIndex ), false, true, getCFlag() );
+    } break;
+    case OT::RES: {
+        auto bitIndex = std::get<uint8_t>( op.operand1 );
+        auto value = read<opdt::R8>( op.operand2 );
+        value &= ~( 1 << bitIndex );
+        write<opdt::R8>( op.operand2, value );
+    } break;
+    case OT::SET: {
+        auto bitIndex = std::get<uint8_t>( op.operand1 );
+        auto value = read<opdt::R8>( op.operand2 );
+        value |= ( 1 << bitIndex );
+        write<opdt::R8>( op.operand2, value );
+    } break;
     case OT::INVALID:
         //TODO
         break;

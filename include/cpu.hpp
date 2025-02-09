@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <variant>
@@ -63,7 +64,7 @@ class CPU {
         R16STK,
         R16MEM,
         COND,
-        B3_INDEX,
+        BIT_INDEX,
         TGT3,
         IMM8,
         IMM16,
@@ -122,6 +123,8 @@ class CPU {
     void addTo( OperandVar_t operand, T value );
     template<OperandType_t type, uint8or16_t T>
     void subFrom( OperandVar_t operand, T value, bool discard = false );
+    template<OperationType_t optype>
+    void bitwise( Operation_t op );
 
     void execute( const Operation_t& op );
     void ld( const Operation_t& op );
@@ -139,12 +142,19 @@ class CPU {
     bool getNFlag() { return registers[7] &( 1 << 6 ); } // BDC substraction flag
     bool getHFlag() { return registers[7] &( 1 << 5 ); } // BDC half carry flag
     bool getCFlag() { return registers[7] &( 1 << 4 ); } // Carry flag
+    std::array<bool, 4> getZNHCFlags() { return { getZFlag(), getNFlag(), getHFlag(), getCFlag() }; }
 
     void setZFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 7 ) : registers[7] & ~( 1 << 7 )); }
     void setNFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 6 ) : registers[7] & ~( 1 << 6 )); }
     void setHFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 5 ) : registers[7] & ~( 1 << 5 )); }
     void setCFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 4 ) : registers[7] & ~( 1 << 4 )); }
     // clang-format on
+    void setZNHCFlags( bool Z, bool N, bool H, bool C ) {
+        setZFlag( Z );
+        setNFlag( N );
+        setHFlag( H );
+        setCFlag( C );
+    }
 
 public:
 };
