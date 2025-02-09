@@ -121,7 +121,7 @@ class CPU {
     template<OperandType_t type, uint8or16_t T>
     void addTo( OperandVar_t operand, T value );
     template<OperandType_t type, uint8or16_t T>
-    void subFrom( OperandVar_t operand, T value );
+    void subFrom( OperandVar_t operand, T value, bool discard = false );
 
     void execute( const Operation_t& op );
     void ld( const Operation_t& op );

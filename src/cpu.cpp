@@ -1,5 +1,6 @@
 #include "cpu.hpp"
 #include <cstdint>
+#include <limits>
 #include <utility>
 
 namespace {} // namespace
@@ -159,15 +160,34 @@ uint8or16_t auto CPU::read( const OperandVar_t operand ) {
 template<CPU::OperandType_t type, uint8or16_t T>
 void CPU::addTo( OperandVar_t operand, T value ) {
     auto currentValue = read<type>( operand );
+    constexpr auto halfCarryBitIndex = std::same_as<decltype( currentValue ), uint8_t> ? 3 : 11;
+    bool savedHalfCarryBit = ( currentValue & ( 1 << halfCarryBitIndex ) );
+    setCFlag( std::numeric_limits<T>::max() - currentValue < value );
+
     currentValue += value;
-    write<type>( operand, value );
+    write<type>( operand, currentValue );
+    bool halfCarryFlag =
+            savedHalfCarryBit && !( currentValue & ( 1 << halfCarryBitIndex ) ); //was 1, is 0
+    setHFlag( halfCarryFlag );
+    setNFlag( false );
+    setZFlag( !currentValue );
 };
 
 template<CPU::OperandType_t type, uint8or16_t T>
-void CPU::subFrom( OperandVar_t operand, T value ) {
+void CPU::subFrom( OperandVar_t operand, T value, bool discard ) {
     auto currentValue = read<type>( operand );
+    constexpr auto halfCarryBitIndex = 4;
+    bool savedHalfCarryBit = ( currentValue & ( 1 << halfCarryBitIndex ) );
+    setCFlag( value > currentValue );
+
     currentValue -= value;
-    write<type>( operand, value );
+    if( !discard )
+        write<type>( operand, currentValue );
+    bool halfCarryFlag =
+            savedHalfCarryBit && !( currentValue & ( 1 << halfCarryBitIndex ) ); //was 1, is 0
+    setHFlag( halfCarryFlag );
+    setNFlag( true );
+    setZFlag( !currentValue );
 };
 
 void CPU::ld( const Operation_t& op ) {
@@ -317,12 +337,14 @@ void CPU::execute( const Operation_t& op ) {
         }
     } break;
     case OT::CP: {
-        auto val1 = read<opdt::R8>( opd::a );
         uint8_t val2;
         if( op.operandType2 == opdt::R8 )
             val2 = read<opdt::R8>( op.operand2 );
         else if( op.operandType2 == opdt::IMM8 )
             val2 = read<opdt::IMM8>( op.operand2 );
+        else
+            return;
+        subFrom<opdt::R8>( { opd::a }, val2, true );
     } break;
     case OT::DEC:
         if( op.operandType1 == opdt::R8 ) {
@@ -352,11 +374,13 @@ void CPU::execute( const Operation_t& op ) {
             //ERRTODO
         }
 
-        CPU::addTo<opdt::R8>( op.operand1, readVal );
+        subFrom<opdt::R8>( op.operand1, readVal );
     } break;
     case OT::CPL:
         write<opdt::R8>( { Operand_t::a },
                          static_cast<uint8_t>( ~( read<opdt::R8>( { Operand_t::a } ) ) ) );
+        setNFlag( true );
+        setHFlag( true );
         break;
     case OT::INVALID:
         //TODO
