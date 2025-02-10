@@ -155,39 +155,38 @@ uint8or16_t auto CPU::read( const OperandVar_t operand ) {
 
     else
         static_assert( false, "Wrong operand type" );
+
+    std::unreachable();
 }
 
 template<CPU::OperandType_t type, uint8or16_t T>
 void CPU::addTo( OperandVar_t operand, T value ) {
     auto currentValue = read<type>( operand );
-    constexpr auto halfCarryBitIndex = std::same_as<decltype( currentValue ), uint8_t> ? 3 : 11;
-    bool savedHalfCarryBit = ( currentValue & ( 1 << halfCarryBitIndex ) );
     bool cFlag = ( std::numeric_limits<T>::max() - currentValue < value );
+    bool halfCarryFlag = std::same_as<decltype( currentValue ), uint8_t>
+                                 ? ( ( currentValue & 0xF ) + ( value & 0xF ) ) > 0xF
+                                 : ( ( currentValue & 0xFFF ) + ( value & 0xFFF ) ) > 0xFFF;
 
     currentValue += value;
     write<type>( operand, currentValue );
-    bool halfCarryFlag =
-            savedHalfCarryBit && !( currentValue & ( 1 << halfCarryBitIndex ) ); //was 1, is 0
     setZNHCFlags( !currentValue, false, halfCarryFlag, cFlag );
 };
 
-template<CPU::OperandType_t type, uint8or16_t T>
-void CPU::subFrom( OperandVar_t operand, T value, bool discard ) {
+template<CPU::OperandType_t type>
+void CPU::subFrom( OperandVar_t operand, uint8_t value, bool discard ) {
     auto currentValue = read<type>( operand );
-    constexpr auto halfCarryBitIndex = 4;
-    bool savedHalfCarryBit = ( currentValue & ( 1 << halfCarryBitIndex ) );
     bool cFlag = ( value > currentValue );
+    //due to integer promotion substraction operands are promoted to ints
+    bool halfCarryFlag = ( ( currentValue & 0xF ) - ( value & 0xF ) ) < 0;
 
     currentValue -= value;
     if( !discard )
         write<type>( operand, currentValue );
-    bool halfCarryFlag =
-            savedHalfCarryBit && !( currentValue & ( 1 << halfCarryBitIndex ) ); //was 1, is 0
     setZNHCFlags( !currentValue, true, halfCarryFlag, cFlag );
 };
 
 template<CPU::OperationType_t optype>
-void CPU::bitwise( Operation_t op ) {
+void CPU::bitwise( const Operation_t& op ) {
     static_assert( ( optype == OperationType_t::AND ) || ( optype == OperationType_t::OR ) ||
                            ( optype == OperationType_t::XOR ),
                    "" );
@@ -215,6 +214,52 @@ void CPU::bitwise( Operation_t op ) {
 
     constexpr bool hFlag = ( optype == OperationType_t::AND );
     setZNHCFlags( !result, false, hFlag, false );
+}
+
+template<CPU::OperationType_t optype>
+void CPU::bitShift( Operation_t op ) {
+    using OT = OperationType_t;
+
+    if( std::holds_alternative<std::monostate>( op.operand1 ) ) {
+        op.operand1 = { Operand_t::a };
+    }
+    auto value = read<OperandType_t::R8>( op.operand1 );
+
+    bool zFlag, cFlag;
+    int bits = ( getCFlag() << 9 ) | ( value << 1 ) | getCFlag();
+    if constexpr( optype == OT::RL || optype == OT::RLA ) {
+        cFlag = value & ( 1 << 7 );
+        value = static_cast<uint8_t>( bits );
+    } else if constexpr( optype == OT::RR || optype == OT::RRA ) {
+        cFlag = value & 0x1;
+        value = static_cast<uint8_t>( bits >> 2 );
+    } else if constexpr( optype == OT::RLC || optype == OT::RLCA ) {
+        cFlag = value & ( 1 << 7 );
+        value = std::rotl( value, 1 );
+    } else if constexpr( optype == OT::RRC || optype == OT::RRCA ) {
+        cFlag = value & 0x1;
+        value = std::rotr( value, 1 );
+    } else if constexpr( optype == OT::SLA ) {
+        cFlag = value & ( 1 << 7 );
+        value <<= 1;
+    } else if constexpr( optype == OT::SRA ) {
+        cFlag = 0x1;
+        value >>= 1;
+        value |= ( value << 1 ) & ( 1 << 7 );
+    } else if constexpr( optype == OT::SRL ) {
+        cFlag = 0x1;
+        value >>= 1;
+    } else
+        static_assert( false, "" );
+
+    if constexpr( optype == OT::RLA || optype == OT::RRA || optype == OT::RLCA ||
+                  optype == OT::RRCA )
+        zFlag = false;
+    else
+        zFlag = !value;
+
+    write<OperandType_t::R8>( op.operand1, value );
+    setZNHCFlags( zFlag, false, false, cFlag );
 }
 
 void CPU::ld( const Operation_t& op ) {
@@ -359,8 +404,9 @@ void CPU::execute( const Operation_t& op ) {
         else if( op.operandType1 == opdt::R16 ) {
             if( _add )
                 addTo<opdt::R16>( op.operand1, readVal );
-            else
-                subFrom<opdt::R16>( op.operand1, readVal );
+            else {
+                //ERRTODO
+            }
         }
     } break;
     case OT::CP: {
@@ -394,9 +440,9 @@ void CPU::execute( const Operation_t& op ) {
     case OT::SBC: {
         uint8_t readVal = getCFlag();
         if( op.operandType2 == opdt::R8 )
-            readVal -= read<opdt::R8>( op.operand2 );
+            readVal += read<opdt::R8>( op.operand2 );
         else if( op.operandType2 == opdt::IMM8 ) {
-            readVal -= read<opdt::IMM8>( op.operand2 );
+            readVal += read<opdt::IMM8>( op.operand2 );
         } else {
             //ERRTODO
         }
@@ -426,7 +472,7 @@ void CPU::execute( const Operation_t& op ) {
     case OT::RES: {
         auto bitIndex = std::get<uint8_t>( op.operand1 );
         auto value = read<opdt::R8>( op.operand2 );
-        value &= ~( 1 << bitIndex );
+        value &= static_cast<uint8_t>( ~( 1 << bitIndex ) );
         write<opdt::R8>( op.operand2, value );
     } break;
     case OT::SET: {
@@ -434,6 +480,43 @@ void CPU::execute( const Operation_t& op ) {
         auto value = read<opdt::R8>( op.operand2 );
         value |= ( 1 << bitIndex );
         write<opdt::R8>( op.operand2, value );
+    } break;
+    case OT::RL:
+        bitShift<OT::RL>( op );
+        break;
+    case OT::RLA:
+        bitShift<OT::RLA>( op );
+        break;
+    case OT::RLC:
+        bitShift<OT::RLC>( op );
+        break;
+    case OT::RLCA:
+        bitShift<OT::RLCA>( op );
+        break;
+    case OT::RR:
+        bitShift<OT::RR>( op );
+        break;
+    case OT::RRA:
+        bitShift<OT::RRA>( op );
+        break;
+    case OT::RRC:
+        bitShift<OT::RRC>( op );
+        break;
+    case OT::RRCA:
+        bitShift<OT::RRCA>( op );
+        break;
+    case OT::SLA:
+        bitShift<OT::SLA>( op );
+        break;
+    case OT::SRA:
+        bitShift<OT::SRA>( op );
+        break;
+    case OT::SRL:
+        bitShift<OT::SRA>( op );
+        break;
+    case OT::SWAP: {
+        auto value = read<opdt::R8>( op.operand1 );
+        write<opdt::R8>( op.operand1, static_cast<uint8_t>( ( value >> 4 ) | ( value << 4 ) ) );
     } break;
     case OT::INVALID:
         //TODO
