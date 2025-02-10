@@ -108,7 +108,8 @@ uint8or16_t auto CPU::read( const OperandVar_t operand ) {
     }
 
     else if constexpr( type == OperandType_t::R16STK ) {
-        return registers[underlVal * 2] | ( registers[underlVal * 2 + 1] << 8 );
+        return static_cast<uint16_t>( registers[underlVal * 2] |
+                                      ( registers[underlVal * 2 + 1] << 8 ) );
     }
 
     else if constexpr( type == OperandType_t::R16MEM ) {
@@ -357,12 +358,14 @@ void CPU::execute( const Operation_t& op ) {
         using OT = OperationType_t;
         using opdt = OperandType_t;
         using opd = Operand_t;
+    //Load instructions
     case OT::LD:
         ld( op );
         break;
     case OT::LDH:
         ldh( op );
         break;
+    //Arithmetic instructions
     case OT::ADC: {
         uint8_t readVal = getCFlag();
         if( op.operandType2 == opdt::R8 )
@@ -449,6 +452,7 @@ void CPU::execute( const Operation_t& op ) {
 
         subFrom<opdt::R8>( op.operand1, readVal );
     } break;
+    //Bitwise logic instructions
     case OT::AND:
         bitwise<OT::AND>( op );
         break;
@@ -464,6 +468,7 @@ void CPU::execute( const Operation_t& op ) {
     case OT::XOR:
         bitwise<OT::XOR>( op );
         break;
+    //Bit flag instructions
     case OT::BIT: {
         auto bitIndex = std::get<uint8_t>( op.operand1 );
         auto value = read<opdt::R8>( op.operand2 );
@@ -481,6 +486,7 @@ void CPU::execute( const Operation_t& op ) {
         value |= ( 1 << bitIndex );
         write<opdt::R8>( op.operand2, value );
     } break;
+    //Bit shift instructions
     case OT::RL:
         bitShift<OT::RL>( op );
         break;
@@ -516,9 +522,63 @@ void CPU::execute( const Operation_t& op ) {
         break;
     case OT::SWAP: {
         auto value = read<opdt::R8>( op.operand1 );
-        write<opdt::R8>( op.operand1, static_cast<uint8_t>( ( value >> 4 ) | ( value << 4 ) ) );
+        value = static_cast<uint8_t>( ( value >> 4 ) | ( value << 4 ) );
+        write<opdt::R8>( op.operand1, value );
+        setZNHCFlags( !value, false, false, false );
     } break;
-    case OT::INVALID:
+    //Jumps and subroutine instructions
+    case OT::CALL:
+        //TODO
+        break;
+    case OT::JP:
+        //TODO
+        break;
+    case OT::JR:
+        //TODO
+        break;
+    case OT::RET:
+        //TODO
+        break;
+    case OT::RETI:
+        //TODO
+        break;
+    case OT::RST:
+        //TODO
+        break;
+    //Carry flag instructions
+    case OT::CCF:
+        setNFlag( false );
+        setHFlag( false );
+        setCFlag( !getCFlag() );
+        break;
+    case OT::SCF:
+        setNFlag( false );
+        setHFlag( false );
+        setCFlag( true );
+        break;
+    //Stack manipulation instructions
+    case OT::POP: {
+        uint16_t value = RAM[SP++];
+        value |= static_cast<uint16_t>( RAM[SP++] << 8 );
+        write<opdt::R16STK>( op.operand1, value );
+    } break;
+    case OT::PUSH: {
+        auto value = read<opdt::R16STK>( op.operand1 );
+        RAM[--SP] = static_cast<uint8_t>( ( value & 0xFF00 ) >> 8 );
+        RAM[--SP] = static_cast<uint8_t>( value & 0xFF );
+    } break;
+    //Interrupt-related instructions
+    case OT::DI:
+        //TODO
+        break;
+    case OT::EI:
+        //TODO
+        break;
+    case OT::HALT:
+        //TODO
+        break;
+    //Miscellaneous instructions
+    case OT::DAA:
         //TODO
         break;
     case OT::NOP:
@@ -527,11 +587,10 @@ void CPU::execute( const Operation_t& op ) {
     case OT::STOP:
         //TODO
         break;
-    case OT::HALT:
+    //Invalid and unknown instructions
+    case OT::INVALID:
+    default:
         //TODO
         break;
     }
-
-    write<OperandType_t::R8>( { Operand_t::a }, uint8_t {} );
-    read<OperandType_t::R8>( {} );
 }
