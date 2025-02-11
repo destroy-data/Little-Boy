@@ -93,9 +93,9 @@ class CPU {
         hlPlus = 2,
         hlMinus,
         // cond
-        condNz = 0,
+        condNZ = 0,
         condZ,
-        condNc,
+        condNC,
         condC
     };
 
@@ -114,6 +114,7 @@ class CPU {
     uint16_t SP, PC;
     uint8_t RAM[65536]; //placeholder
     uint8_t ROM[1024];  //placeholder
+    bool interruptMasterEnabled = false;
 
     template<OperandType_t type>
     uint8or16_t auto read( const OperandVar_t operand );

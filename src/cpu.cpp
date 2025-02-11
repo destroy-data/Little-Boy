@@ -530,9 +530,25 @@ void CPU::execute( const Operation_t& op ) {
     case OT::CALL:
         //TODO
         break;
-    case OT::JP:
-        //TODO
-        break;
+    case OT::JP: {
+        if( op.operandType1 == opdt::IMM16 )
+            PC = read<opdt::IMM16>( op.operand1 );
+        else if( op.operandType1 == opdt::R16 )
+            PC = read<opdt::R16>( op.operand1 );
+        else if( op.operandType1 == opdt::COND && op.operandType2 == opdt::IMM16 ) {
+            auto condition = std::get<Operand_t>( op.operand1 );
+            if( condition == opd::condZ && getZFlag() )
+                PC = read<opdt::IMM16>( op.operand1 );
+            else if( condition == opd::condNZ && !getZFlag() )
+                PC = read<opdt::IMM16>( op.operand1 );
+            else if( condition == opd::condC && getCFlag() )
+                PC = read<opdt::IMM16>( op.operand1 );
+            else if( condition == opd::condNC && !getCFlag() )
+                PC = read<opdt::IMM16>( op.operand1 );
+        } else {
+            //ERRTODO
+        }
+    } break;
     case OT::JR:
         //TODO
         break;
@@ -569,10 +585,10 @@ void CPU::execute( const Operation_t& op ) {
     } break;
     //Interrupt-related instructions
     case OT::DI:
-        //TODO
+        interruptMasterEnabled = false;
         break;
     case OT::EI:
-        //TODO
+        interruptMasterEnabled = true;
         break;
     case OT::HALT:
         //TODO
