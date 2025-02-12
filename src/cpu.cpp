@@ -263,6 +263,17 @@ void CPU::bitShift( Operation_t op ) {
     setZNHCFlags( zFlag, false, false, cFlag );
 }
 
+void CPU::pushToStack( uint16_t value ) {
+    RAM[--SP] = static_cast<uint8_t>( ( value & 0xFF00 ) >> 8 );
+    RAM[--SP] = static_cast<uint8_t>( value & 0xFF );
+}
+
+uint16_t CPU::popFromStack() {
+    uint16_t value = RAM[SP++];
+    value |= static_cast<uint16_t>( RAM[SP++] << 8 );
+    return value;
+}
+
 void CPU::ld( const Operation_t& op ) {
     uint16_t readVal; //also for 8-bit values, later truncate them if needed
     switch( op.operandType2 ) {
@@ -527,9 +538,10 @@ void CPU::execute( const Operation_t& op ) {
         setZNHCFlags( !value, false, false, false );
     } break;
     //Jumps and subroutine instructions
-    case OT::CALL:
-        //TODO
-        break;
+    case OT::CALL: {
+        pushToStack( PC + 3 );
+        PC = read<opdt::IMM16>( op.operand1 );
+    } break;
     case OT::JP: {
         if( op.operandType1 == opdt::IMM16 )
             PC = read<opdt::IMM16>( op.operand1 );
@@ -537,26 +549,61 @@ void CPU::execute( const Operation_t& op ) {
             PC = read<opdt::R16>( op.operand1 );
         else if( op.operandType1 == opdt::COND && op.operandType2 == opdt::IMM16 ) {
             auto condition = std::get<Operand_t>( op.operand1 );
+            auto address = read<opdt::IMM16>( op.operand2 );
             if( condition == opd::condZ && getZFlag() )
-                PC = read<opdt::IMM16>( op.operand1 );
+                PC = address;
             else if( condition == opd::condNZ && !getZFlag() )
-                PC = read<opdt::IMM16>( op.operand1 );
+                PC = address;
             else if( condition == opd::condC && getCFlag() )
-                PC = read<opdt::IMM16>( op.operand1 );
+                PC = address;
             else if( condition == opd::condNC && !getCFlag() )
-                PC = read<opdt::IMM16>( op.operand1 );
+                PC = address;
         } else {
             //ERRTODO
         }
     } break;
-    case OT::JR:
-        //TODO
-        break;
+    case OT::JR: {
+        // When reading IMM8, PC is incremented by 1 and points to just read byte,
+        // so when making jump relative to the byte immediately after this instruction
+        // we need to add another 1 to PC before applying offset
+        if( op.operandType1 == opdt::IMM8 )
+            PC = static_cast<uint16_t>( PC + 1 +
+                                        static_cast<int8_t>( read<opdt::IMM8>( op.operand1 ) ) );
+        else if( op.operandType1 == opdt::COND && op.operandType2 == opdt::IMM8 ) {
+            auto condition = std::get<Operand_t>( op.operand1 );
+            auto offset = static_cast<int8_t>( read<opdt::IMM8>( op.operand2 ) );
+            if( condition == opd::condZ && getZFlag() )
+                PC = static_cast<uint16_t>( PC + 1 + offset );
+            else if( condition == opd::condNZ && !getZFlag() )
+                PC = static_cast<uint16_t>( PC + 1 + offset );
+            else if( condition == opd::condC && getCFlag() )
+                PC = static_cast<uint16_t>( PC + 1 + offset );
+            else if( condition == opd::condNC && !getCFlag() )
+                PC = static_cast<uint16_t>( PC + 1 + offset );
+        } else {
+            //ERRTODO
+        }
+    } break;
     case OT::RET:
-        //TODO
+        if( op.operandType1 == opdt::NONE )
+            PC = popFromStack();
+        else if( op.operandType1 == opdt::COND ) {
+            auto condition = std::get<Operand_t>( op.operand1 );
+            if( condition == opd::condZ && getZFlag() )
+                PC = popFromStack();
+            else if( condition == opd::condNZ && !getZFlag() )
+                PC = popFromStack();
+            else if( condition == opd::condC && getCFlag() )
+                PC = popFromStack();
+            else if( condition == opd::condNC && !getCFlag() )
+                PC = popFromStack();
+        } else {
+            //ERRTODO
+        }
         break;
     case OT::RETI:
-        //TODO
+        interruptMasterEnabled = true;
+        PC = popFromStack();
         break;
     case OT::RST:
         //TODO
@@ -573,16 +620,12 @@ void CPU::execute( const Operation_t& op ) {
         setCFlag( true );
         break;
     //Stack manipulation instructions
-    case OT::POP: {
-        uint16_t value = RAM[SP++];
-        value |= static_cast<uint16_t>( RAM[SP++] << 8 );
-        write<opdt::R16STK>( op.operand1, value );
-    } break;
-    case OT::PUSH: {
-        auto value = read<opdt::R16STK>( op.operand1 );
-        RAM[--SP] = static_cast<uint8_t>( ( value & 0xFF00 ) >> 8 );
-        RAM[--SP] = static_cast<uint8_t>( value & 0xFF );
-    } break;
+    case OT::POP:
+        write<opdt::R16STK>( op.operand1, popFromStack() );
+        break;
+    case OT::PUSH:
+        pushToStack( read<opdt::R16STK>( op.operand1 ) );
+        break;
     //Interrupt-related instructions
     case OT::DI:
         interruptMasterEnabled = false;
@@ -594,11 +637,27 @@ void CPU::execute( const Operation_t& op ) {
         //TODO
         break;
     //Miscellaneous instructions
-    case OT::DAA:
-        //TODO
-        break;
+    case OT::DAA: {
+        uint8_t adjustment = 0;
+        bool cFlag = false;
+        if( getNFlag() ) {
+            if( getHFlag() )
+                adjustment += 6;
+            if( getCFlag() )
+                adjustment += 0x60;
+            subFrom<opdt::R8>( { opd::a }, adjustment );
+        } else {
+            if( getHFlag() || ( read<opdt::R8>( { opd::a } ) & 0xF ) > 9 )
+                adjustment += 6;
+            if( getCFlag() || read<opdt::R8>( { opd::a } ) > 0x99 ) {
+                adjustment += 0x60;
+                cFlag = true;
+            }
+            addTo<opdt::R8>( { opd::a }, adjustment );
+        }
+        setZNHCFlags( !read<opdt::R8>( { opd::a } ), getNFlag(), false, cFlag );
+    } break;
     case OT::NOP:
-        //TODO
         break;
     case OT::STOP:
         //TODO
@@ -606,7 +665,7 @@ void CPU::execute( const Operation_t& op ) {
     //Invalid and unknown instructions
     case OT::INVALID:
     default:
-        //TODO
+        //ERRTODO
         break;
     }
 }

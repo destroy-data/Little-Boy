@@ -132,6 +132,8 @@ class CPU {
     void execute( const Operation_t& op );
     void ld( const Operation_t& op );
     void ldh( const Operation_t& op );
+    void pushToStack( uint16_t value );
+    uint16_t popFromStack();
 
     Operation_t decode();
     //helpers
