@@ -1,7 +1,8 @@
 #pragma once
+#include <cstdint>
 
 class Memory {
-    enum class rangeStart {
+    enum rangeStart {
         //Numbers describe bank numbers
         ROM_00,
         ROM_01_TO_NN = 0x4000, // optional switchable bank via mapper
@@ -16,7 +17,7 @@ class Memory {
         HIGH_RAM = 0xFF80,
         INTERRUPT_ENABLE_REGISTER = 0xFFFF
     };
-    enum class ioRange {
+    enum ioRange {
         JOYPAD_INPUT = 0xFF00,
         SERIAL_TRANSFER_START = 0xFF01,
         SERIAL_TRANSFER_END = 0xFF02,
@@ -39,11 +40,15 @@ class Memory {
         PALETES_END = 0xFF6B,
         WRAM_BANK_SELECT = 0xFF70
     };
-    //16KB ROM bank0
-    //16KB ROM bank1
+    uint8_t ROM00[16384];
+    //16KB ROM bank01
     uint8_t videoRam[8192];
     //in CGB mode there is second vram bank
     //8KB External ram
-    uint8_t workRam[4096];
-    uint8_t workRam[8192];
+    uint8_t workRam00[4096];
+    uint8_t workRam0N[8192];
+
+public:
+    uint8_t& operator[]( const std::size_t index );
+    const uint8_t& operator()( const std::size_t index ) const;
 };

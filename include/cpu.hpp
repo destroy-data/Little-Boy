@@ -1,6 +1,6 @@
 #pragma once
+#include "memory.hpp"
 #include <array>
-#include <cstddef>
 #include <cstdint>
 #include <variant>
 
@@ -112,8 +112,7 @@ class CPU {
 
     uint8_t registers[8]; //b,c,d,e,h,l,a,f
     uint16_t SP, PC;
-    uint8_t RAM[65536]; //placeholder
-    uint8_t ROM[1024];  //placeholder
+    Memory& mem;
     bool interruptMasterEnabled = false;
 
     template<OperandType_t type>
@@ -162,4 +161,5 @@ class CPU {
     }
 
 public:
+    CPU( Memory& mem_ ) : mem( mem_ ) {};
 };
