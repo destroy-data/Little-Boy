@@ -1,0 +1,7 @@
+### Little boy – Gameboy and Gameboy Color emulator
+
+This is gameboy emulator hobby project. It's going to consist of core, which is platform-agnostic, and platform-specific "front-ends". That is, all emulation is done in core, platform-specific code only cares about I/O like display and speaker.
+I want emulator to work at least on desktop, rpi pico, STM32f401 ( aka 64KB RAM version of Blackpill ) and in WebAssembly. Also in case of microcontrollers, it should be possible to play with cartridges, not only ROM images.
+
+Due to microcontrollers hardware limitations, code is written with low RAM usage in mind.
+This is **work in progress**.
