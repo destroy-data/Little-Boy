@@ -5,12 +5,13 @@ class Memory {
     enum rangeStart {
         //Numbers describe bank numbers
         ROM_00,
-        ROM_01_TO_NN = 0x4000, // optional switchable bank via mapper
-        VIDEO_RAM = 0x8000,    // in CGB mode switchable bank 0/1
-        EXTERNAL_RAM = 0xA000, // optional switchable bank
+        ROM_0N = 0x4000,       //optional switchable bank via mapper
+        VIDEO_RAM = 0x8000,    //in CGB mode switchable bank 0/1
+        EXTERNAL_RAM = 0xA000, //optional switchable bank
         WORK_RAM_00 = 0xC000,
-        WORK_RAM_01_TO_NN = 0xD000, // in CGB mode swichable bank 1-7
-        ECHO_RAM = 0xE000,
+        WORK_RAM_0N = 0xD000, //in CGB mode swichable bank 1-7
+        ECHO_RAM_00 = 0xE000, //echo of WORK_RAM_00
+        ECHO_RAM_0N = 0xF000, //echo of WORK_RAM_0N
         OBJECT_ATTRIBUTE_MEMORY = 0xFE00,
         NOT_USABLE = 0xFEA0,
         IO_REGISTERS = 0xFF00,
@@ -40,13 +41,13 @@ class Memory {
         PALETES_END = 0xFF6B,
         WRAM_BANK_SELECT = 0xFF70
     };
-    uint8_t ROM00[16384];
+    uint8_t rom00[16384];
     //16KB ROM bank01
     uint8_t videoRam[8192];
     //in CGB mode there is second vram bank
     //8KB External ram
     uint8_t workRam00[4096];
-    uint8_t workRam0N[8192];
+    uint8_t workRam0N[4096];
 
 public:
     uint8_t& operator[]( const std::size_t index );

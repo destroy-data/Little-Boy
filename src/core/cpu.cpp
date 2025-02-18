@@ -1,4 +1,4 @@
-#include "cpu.hpp"
+#include "core/cpu.hpp"
 #include <cstdint>
 #include <limits>
 #include <utility>
@@ -631,6 +631,7 @@ void CPU::execute( const Operation_t& op ) {
         interruptMasterEnabled = false;
         break;
     case OT::EI:
+        //This should be delayed by one instruction
         interruptMasterEnabled = true;
         break;
     case OT::HALT:

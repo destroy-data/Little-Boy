@@ -1,4 +1,4 @@
-#include "cpu.hpp"
+#include "core/cpu.hpp"
 #include <utility>
 
 CPU::Operation_t CPU::decode() {
