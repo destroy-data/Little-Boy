@@ -129,6 +129,7 @@ class CPU {
     void bitShift( Operation_t op );
 
     void execute( const Operation_t& op );
+    void handleInterrupts();
     void ld( const Operation_t& op );
     void ldh( const Operation_t& op );
     void pushToStack( uint16_t value );
@@ -162,4 +163,7 @@ class CPU {
 
 public:
     CPU( Memory& mem_ ) : mem( mem_ ) {};
+
+    // Functions not implemented in core
+    void handleJoypad();
 };

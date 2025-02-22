@@ -670,3 +670,28 @@ void CPU::execute( const Operation_t& op ) {
         break;
     }
 }
+
+void CPU::handleInterrupts() {
+    auto interruptEnable = mem( 0xFFFF );
+    auto interruptFlag = mem( 0xFF0F );
+    if( interruptEnable & 1 && interruptFlag & 1 ) { //VBlank
+        pushToStack( PC );
+        PC = 0x40;
+    }
+    if( interruptEnable & ( 1 << 1 ) && interruptFlag & ( 1 << 1 ) ) { //LCD
+        pushToStack( PC );
+        PC = 0x48;
+    }
+    if( interruptEnable & ( 1 << 2 ) && interruptFlag & ( 1 << 2 ) ) { //Timer
+        pushToStack( PC );
+        PC = 0x50;
+    }
+    if( interruptEnable & ( 1 << 3 ) && interruptFlag & ( 1 << 3 ) ) { //Serial
+        pushToStack( PC );
+        PC = 0x58;
+    }
+    if( interruptEnable & ( 1 << 4 ) && interruptFlag & ( 1 << 4 ) ) { //Joypad
+        pushToStack( PC );
+        PC = 0x60;
+    }
+};
