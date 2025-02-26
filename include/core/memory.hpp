@@ -1,20 +1,19 @@
 #pragma once
 #include <cstdint>
 
-class Memory {
+struct Memory {
     uint8_t rom00[16384];
     //16KB ROM bank01
-    uint8_t videoRam[8192];
     //in CGB mode there is second vram bank
+    uint8_t videoRam[8192];
     //8KB External ram
     uint8_t workRam00[4096];
     uint8_t workRam0N[4096];
-    uint8_t oam[1];           //TODO
+    uint8_t oam[160];
     uint8_t ioRegisters[112]; // FF70-FF00, consider not allocating the gaps
     uint8_t interruptEnableRegister;
     uint8_t highRam[127];
 
-public:
     enum rangeStart {
         //Numbers describe bank numbers
         ROM_00,
