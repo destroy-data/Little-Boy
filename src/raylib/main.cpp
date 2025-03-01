@@ -1,5 +1,6 @@
 #include "core/cpu.hpp"
 #include "core/memory.hpp"
+#include "core/ppu.hpp"
 #include "raylib.h"
 #include <cstdint>
 #include <cstdio>

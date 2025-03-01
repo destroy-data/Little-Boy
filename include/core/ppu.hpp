@@ -4,6 +4,7 @@
 #include <span>
 
 class PPU {
+    static constexpr int displayWidth = 160, displayHeight = 144, tileSize = 16;
     enum registers {
         LCD_CONTROL = 0xFF40,
         LCD_STATUS = 0xFF41,
@@ -24,7 +25,13 @@ class PPU {
         OBJ_PALETTE_SPEC = 0xFF6A,
         OBJ_PALETTE_DATA = 0xFF6B
     };
-    using Tile = std::span<uint8_t, 16>;
+    // DMG color values
+    const uint8_t colorMap[4][3] = {
+            { 255, 255, 255 }, // White
+            { 192, 192, 192 }, // Light gray
+            { 96, 96, 96 },    // Dark gray
+            { 0, 0, 0 }        // Black
+    };
     using TileAtlas = std::span<uint8_t, 2048>; // 128 tiles * 16 bytes
     using Tilemap = std::span<uint8_t, 1024>;
     Memory& mem;
@@ -42,4 +49,6 @@ public:
         , tilemap { Tilemap( mem.videoRam + 0x1800, Tilemap::extent ),
                     Tilemap( mem.videoRam + 0x1C00, Tilemap::extent ) } {
     }
+
+    std::array<uint8_t, displayWidth * 3> draw();
 };
