@@ -1,6 +1,6 @@
 #include "core/memory.hpp"
 
-uint8_t& Memory::operator[]( const std::size_t index ) {
+uint8_t& Memory::operator[]( const uint16_t index ) {
     if( index < ROM_00 + sizeof( rom00 ) )
         return rom00[index];
     //ROM_01_TO_0N
@@ -25,7 +25,7 @@ uint8_t& Memory::operator[]( const std::size_t index ) {
         return interruptEnableRegister;
 }
 
-const uint8_t& Memory::operator()( const std::size_t index ) const {
+const uint8_t& Memory::operator()( const uint16_t index ) const {
     if( index < ROM_00 + sizeof( rom00 ) )
         return rom00[index];
     //ROM_01_TO_0N

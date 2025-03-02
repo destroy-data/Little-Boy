@@ -1,4 +1,5 @@
 #pragma once
+#include "core/ICartridge.hpp"
 #include <cstdint>
 
 struct Memory {
@@ -54,6 +55,6 @@ struct Memory {
         WRAM_BANK_SELECT = 0xFF70
     };
 
-    uint8_t& operator[]( const std::size_t index );
-    const uint8_t& operator()( const std::size_t index ) const;
+    uint8_t& operator[]( const uint16_t index );
+    const uint8_t& operator()( const uint16_t index ) const;
 };
