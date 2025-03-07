@@ -1,4 +1,5 @@
 #pragma once
+#include "core/logging.hpp"
 #include "memory.hpp"
 #include <array>
 #include <cstdint>
@@ -162,7 +163,9 @@ class CPU {
     }
 
 public:
-    CPU( Memory& mem_ ) : mem( mem_ ) {};
+    CPU( Memory& mem_ ) : mem( mem_ ) {
+        logDebug( ErrorCode::NoError, "test" );
+    };
 
     // Functions not implemented in core
     void handleJoypad();

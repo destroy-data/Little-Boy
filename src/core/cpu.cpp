@@ -1,9 +1,9 @@
 #include "core/cpu.hpp"
+#include "core/logging.hpp"
 #include <cstdint>
+#include <format>
 #include <limits>
 #include <utility>
-
-namespace {} // namespace
 
 template<CPU::OperandType_t type, uint8or16_t T>
 void CPU::write( OperandVar_t operand, T writeValue ) {
@@ -67,7 +67,8 @@ void CPU::write( OperandVar_t operand, T writeValue ) {
             return;
         }
         default:
-            //ERRTODO
+            logError( ErrorCode::InvalidOperand,
+                      std::format( "Operand_t: {0}", static_cast<Enum_t>( opdVal ) ) );
             break;
         }
     }
@@ -133,7 +134,8 @@ uint8or16_t auto CPU::read( const OperandVar_t operand ) {
             return retVal;
         }
         default:
-            //ERRTODO
+            logError( ErrorCode::InvalidOperand,
+                      std::format( "Operand_t: {0}", static_cast<Enum_t>( opdVal ) ) );
             break;
         }
     }
@@ -199,7 +201,8 @@ void CPU::bitwise( const Operation_t& op ) {
     else if( op.operandType2 == OperandType_t::IMM8 ) {
         readVal = read<OperandType_t::IMM8>( op.operand2 );
     } else {
-        //ERRTODO
+        logError( ErrorCode::InvalidOperand,
+                  std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
         return;
     }
     uint8_t result;
@@ -301,7 +304,8 @@ void CPU::ld( const Operation_t& op ) {
         readVal += read<IMM8>( op.operand2 );
         break;
     default:
-        //ERRTODO
+        logError( ErrorCode::InvalidOperand,
+                  std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
         return;
     }
 
@@ -321,8 +325,9 @@ void CPU::ld( const Operation_t& op ) {
         write<pIMM16>( op.operand1, readVal8 );
         break;
     default:
-        //ERRTODO
-        break;
+        logError( ErrorCode::InvalidOperand,
+                  std::format( "op.operandType1: {0}", static_cast<Enum_t>( op.operandType1 ) ) );
+        return;
     }
 }
 
@@ -342,7 +347,8 @@ void CPU::ldh( const Operation_t& op ) {
             return;
         break;
     default:
-        //ERRTODO
+        logError( ErrorCode::InvalidOperand,
+                  std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
         return;
     }
 
@@ -359,8 +365,9 @@ void CPU::ldh( const Operation_t& op ) {
         write<OperandType_t::pIMM16>( op.operand1, readVal8 );
         break;
     default:
-        //ERRTODO
-        break;
+        logError( ErrorCode::InvalidOperand,
+                  std::format( "op.operandType1: {0}", static_cast<Enum_t>( op.operandType1 ) ) );
+        return;
     }
 }
 
@@ -384,7 +391,10 @@ void CPU::execute( const Operation_t& op ) {
         else if( op.operandType2 == opdt::IMM8 ) {
             readVal += read<opdt::IMM8>( op.operand2 );
         } else {
-            //ERRTODO
+            logError(
+                    ErrorCode::InvalidOperand,
+                    std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
+            return;
         }
 
         CPU::addTo<opdt::R8>( op.operand1, readVal );
@@ -404,18 +414,20 @@ void CPU::execute( const Operation_t& op ) {
             readVal = read<opdt::IMM8>( op.operand2 );
             break;
         default:
-            //ERRTODO
+            logError(
+                    ErrorCode::InvalidOperand,
+                    std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
             return;
         }
 
         bool _add { op.operationType == OT::ADD };
-        if( op.operandType1 == opdt::R8 )
+        if( op.operandType1 == opdt::R8 ) {
             // There is no write from R16 to R8
             if( _add )
                 addTo<opdt::R8>( op.operand1, static_cast<uint8_t>( readVal ) );
             else
                 subFrom<opdt::R8>( op.operand1, static_cast<uint8_t>( readVal ) );
-        else if( op.operandType1 == opdt::R16 ) {
+        } else if( op.operandType1 == opdt::R16 ) {
             if( _add )
                 addTo<opdt::R16>( op.operand1, readVal );
             else {
@@ -458,7 +470,10 @@ void CPU::execute( const Operation_t& op ) {
         else if( op.operandType2 == opdt::IMM8 ) {
             readVal += read<opdt::IMM8>( op.operand2 );
         } else {
-            //ERRTODO
+            logError(
+                    ErrorCode::InvalidOperand,
+                    std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
+            return;
         }
 
         subFrom<opdt::R8>( op.operand1, readVal );
@@ -559,7 +574,10 @@ void CPU::execute( const Operation_t& op ) {
             else if( condition == opd::condNC && !getCFlag() )
                 PC = address;
         } else {
-            //ERRTODO
+            logError(
+                    ErrorCode::InvalidOperand,
+                    std::format( "op.operandType1: {0}", static_cast<Enum_t>( op.operandType1 ) ) );
+            return;
         }
     } break;
     case OT::JR: {
@@ -581,7 +599,10 @@ void CPU::execute( const Operation_t& op ) {
             else if( condition == opd::condNC && !getCFlag() )
                 PC = static_cast<uint16_t>( PC + 1 + offset );
         } else {
-            //ERRTODO
+            logError(
+                    ErrorCode::InvalidOperand,
+                    std::format( "op.operandType1: {0}", static_cast<Enum_t>( op.operandType1 ) ) );
+            return;
         }
     } break;
     case OT::RET:
@@ -598,7 +619,10 @@ void CPU::execute( const Operation_t& op ) {
             else if( condition == opd::condNC && !getCFlag() )
                 PC = popFromStack();
         } else {
-            //ERRTODO
+            logError(
+                    ErrorCode::InvalidOperand,
+                    std::format( "op.operandType1: {0}", static_cast<Enum_t>( op.operandType1 ) ) );
+            return;
         }
         break;
     case OT::RETI:

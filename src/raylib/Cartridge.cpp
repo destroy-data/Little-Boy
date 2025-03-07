@@ -1,4 +1,5 @@
 #include "raylib/Cartridge.hpp"
+#include "core/logging.hpp"
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -233,18 +234,20 @@ Cartridge::Cartridge() {
         }
         //parse header
         if( rom.size() < 0x14F ) {
-            //ERRTODO
+            logFatal( ErrorCode::InvalidCartridge,
+                      "File too small, it's size is " + std::to_string( 0x14F ) + " bytes." );
         }
         cbgFlag = rom[0x143];
         cartridgeType = rom[0x147];
         romSize = rom[0x148];
         ramSize = rom[0x149];
-        uint8_t checksum = 0;
+        uint8_t headerChecksum = 0;
         for( uint16_t address = 0x0134; address <= 0x014C; address++ ) {
-            checksum = checksum - rom[address] - 1;
+            headerChecksum = headerChecksum - rom[address] - 1;
         }
-        if( checksum != rom[0x14D] ) {
-            //ERRTODO
+        if( headerChecksum != rom[0x14D] ) {
+            logFatal( ErrorCode::RomHeaderChecksumMismatch,
+                      std::format( "computed: {}, in rom: {}", headerChecksum, rom[0x14D] ) );
         }
     }
 }
