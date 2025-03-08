@@ -16,8 +16,8 @@ void CPU::write( OperandVar_t operand, T writeValue ) {
 
         if( opdVal == Operand_t::pHL ) {
             const auto index = static_cast<Enum_t>( Operand_t::hl ) * 2;
-            mem[registers[index] | ( registers[index + 1] << 8 )] =
-                    static_cast<uint8_t>( writeValue );
+            mem.write( registers[index] | ( registers[index + 1] << 8 ),
+                       static_cast<uint8_t>( writeValue ) );
         } else if( opdVal == Operand_t::a ) {
             const int aIndex = 6;
             registers[aIndex] = writeValue;
@@ -50,19 +50,20 @@ void CPU::write( OperandVar_t operand, T writeValue ) {
         switch( opdVal ) {
         case Operand_t::bc:
         case Operand_t::de:
-            mem[registers[underlVal * 2] | ( registers[underlVal * 2 + 1] << 8 )] = writeValue;
+            mem.write( registers[underlVal * 2] | ( registers[underlVal * 2 + 1] << 8 ),
+                       writeValue );
             return;
         case Operand_t::hlPlus: {
             uint16_t currentHl =
                     registers[hlIndex] | static_cast<uint16_t>( registers[hlIndex + 1] << 8 );
-            mem[currentHl++] = writeValue;
+            mem.write( currentHl++, writeValue );
             write<OperandType_t::R16>( Operand_t::hl, currentHl );
             return;
         }
         case Operand_t::hlMinus: {
             uint16_t currentHl =
                     registers[hlIndex] | static_cast<uint16_t>( registers[hlIndex + 1] << 8 );
-            mem[currentHl--] = writeValue;
+            mem.write( currentHl--, writeValue );
             write<OperandType_t::R16>( Operand_t::hl, currentHl );
             return;
         }
@@ -75,9 +76,10 @@ void CPU::write( OperandVar_t operand, T writeValue ) {
 
     else if constexpr( type == OperandType_t::pIMM16 ) {
         static_assert( writeSize == 1, "pIMM16 write: wrong value size" );
-        const uint16_t index = mem[PC] | static_cast<uint16_t>( ( mem[PC + 1] << 8 ) );
+        const uint16_t index =
+                mem.read( PC ) | static_cast<uint16_t>( ( mem.read( PC + 1 ) << 8 ) );
         PC += 2;
-        mem[index] = static_cast<uint8_t>( writeValue );
+        mem.write( index, static_cast<uint8_t>( writeValue ) );
     }
 
     else
@@ -92,7 +94,7 @@ uint8or16_t auto CPU::read( const OperandVar_t operand ) {
     if constexpr( type == OperandType_t::R8 ) {
         if( opdVal == Operand_t::pHL ) {
             const auto index = static_cast<Enum_t>( Operand_t::hl ) * 2;
-            return mem[registers[index] | ( registers[index + 1] << 8 )];
+            return mem.read( registers[index] | ( registers[index + 1] << 8 ) );
         } else if( opdVal == Operand_t::a ) {
             const int aIndex = 6;
             return registers[aIndex];
@@ -118,18 +120,18 @@ uint8or16_t auto CPU::read( const OperandVar_t operand ) {
         switch( opdVal ) {
         case Operand_t::bc:
         case Operand_t::de:
-            return mem[registers[underlVal * 2] | ( registers[underlVal * 2 + 1] << 8 )];
+            return mem.read( registers[underlVal * 2] | ( registers[underlVal * 2 + 1] << 8 ) );
         case Operand_t::hlPlus: {
             uint16_t currentHl =
                     registers[hlIndex] | static_cast<uint16_t>( registers[hlIndex + 1] << 8 );
-            const auto retVal = mem[currentHl++];
+            const auto retVal = mem.read( currentHl++ );
             write<OperandType_t::R16>( Operand_t::hl, currentHl );
             return retVal;
         }
         case Operand_t::hlMinus: {
             uint16_t currentHl =
                     registers[hlIndex] | static_cast<uint16_t>( registers[hlIndex + 1] << 8 );
-            const auto retVal = mem[currentHl--];
+            const auto retVal = mem.read( currentHl-- );
             write<OperandType_t::R16>( Operand_t::hl, currentHl );
             return retVal;
         }
@@ -141,19 +143,19 @@ uint8or16_t auto CPU::read( const OperandVar_t operand ) {
     }
 
     else if constexpr( type == OperandType_t::IMM8 ) {
-        return mem[PC++];
+        return mem.read( PC++ );
     }
 
     else if constexpr( type == OperandType_t::IMM16 ) {
-        const auto retVal = static_cast<uint16_t>( mem[PC] | ( mem[PC + 1] << 8 ) );
+        const auto retVal = static_cast<uint16_t>( mem.read( PC ) | ( mem.read( PC + 1 ) << 8 ) );
         PC += 2;
         return retVal;
     }
 
     else if constexpr( type == OperandType_t::pIMM16 ) {
-        const auto index = static_cast<uint16_t>( mem[PC] | ( mem[PC + 1] << 8 ) );
+        const auto index = static_cast<uint16_t>( mem.read( PC ) | ( mem.read( PC + 1 ) << 8 ) );
         PC += 2;
-        return mem[index];
+        return mem.read( index );
     }
 
     else
@@ -267,13 +269,13 @@ void CPU::bitShift( Operation_t op ) {
 }
 
 void CPU::pushToStack( uint16_t value ) {
-    mem[--SP] = static_cast<uint8_t>( ( value & 0xFF00 ) >> 8 );
-    mem[--SP] = static_cast<uint8_t>( value & 0xFF );
+    mem.write( --SP, static_cast<uint8_t>( ( value & 0xFF00 ) >> 8 ) );
+    mem.write( --SP, static_cast<uint8_t>( value & 0xFF ) );
 }
 
 uint16_t CPU::popFromStack() {
-    uint16_t value = mem[SP++];
-    value |= static_cast<uint16_t>( mem[SP++] << 8 );
+    uint16_t value = mem.read( SP++ );
+    value |= static_cast<uint16_t>( mem.read( SP++ ) << 8 );
     return value;
 }
 
@@ -696,8 +698,8 @@ void CPU::execute( const Operation_t& op ) {
 }
 
 void CPU::handleInterrupts() {
-    auto interruptEnable = mem( 0xFFFF );
-    auto interruptFlag = mem( 0xFF0F );
+    auto interruptEnable = mem.read( 0xFFFF );
+    auto interruptFlag = mem.read( 0xFF0F );
     if( interruptEnable & 1 && interruptFlag & 1 ) { //VBlank
         pushToStack( PC );
         PC = 0x40;

@@ -1,9 +1,9 @@
 #include "core/memory.hpp"
+#include <cstdint>
 
-uint8_t& Memory::operator[]( const uint16_t index ) {
-    if( index < ROM_00 + sizeof( rom00 ) )
-        return rom00[index];
-    //ROM_01_TO_0N
+uint8_t Memory::read( const uint16_t index ) const {
+    if( index < VIDEO_RAM || ( index >= EXTERNAL_RAM && index <= WORK_RAM_00 ) )
+        return cartridge.read( index );
     else if( index < VIDEO_RAM + sizeof( videoRam ) )
         return videoRam[index - VIDEO_RAM];
     else if( index < WORK_RAM_00 + sizeof( workRam00 ) )
@@ -25,27 +25,26 @@ uint8_t& Memory::operator[]( const uint16_t index ) {
         return interruptEnableRegister;
 }
 
-const uint8_t& Memory::operator()( const uint16_t index ) const {
-    if( index < ROM_00 + sizeof( rom00 ) )
-        return rom00[index];
-    //ROM_01_TO_0N
+void Memory::write( const uint16_t index, uint8_t value ) {
+    if( index < VIDEO_RAM || ( index >= EXTERNAL_RAM && index <= WORK_RAM_00 ) )
+        cartridge.write( index, value );
     else if( index < VIDEO_RAM + sizeof( videoRam ) )
-        return videoRam[index - VIDEO_RAM];
+        videoRam[index - VIDEO_RAM] = value;
     else if( index < WORK_RAM_00 + sizeof( workRam00 ) )
-        return workRam00[index - WORK_RAM_00];
+        workRam00[index - WORK_RAM_00] = value;
     else if( index < WORK_RAM_0N + sizeof( workRam0N ) )
-        return workRam0N[index - WORK_RAM_0N];
+        workRam0N[index - WORK_RAM_0N] = value;
     else if( index < ECHO_RAM_00 + sizeof( workRam00 ) )
-        return workRam00[index - ECHO_RAM_00];
+        workRam00[index - ECHO_RAM_00] = value;
     else if( index < OBJECT_ATTRIBUTE_MEMORY ) //echo RAM 0N is smaller than work RAM 0N
-        return workRam0N[index - ECHO_RAM_0N];
+        workRam0N[index - ECHO_RAM_0N] = value;
     else if( index < OBJECT_ATTRIBUTE_MEMORY + sizeof( oam ) )
-        return oam[index - OBJECT_ATTRIBUTE_MEMORY];
+        oam[index - OBJECT_ATTRIBUTE_MEMORY] = value;
     // TODO else if (index < NOT_USABLE + X)
     else if( index < IO_REGISTERS + sizeof( ioRegisters ) )
-        return ioRegisters[index - IO_REGISTERS];
+        ioRegisters[index - IO_REGISTERS] = value;
     else if( index < HIGH_RAM + sizeof( highRam ) )
-        return highRam[index - HIGH_RAM];
+        highRam[index - HIGH_RAM] = value;
     else if( index == 0xFFFF )
-        return interruptEnableRegister;
+        interruptEnableRegister = value;
 }

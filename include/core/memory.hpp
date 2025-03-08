@@ -3,11 +3,9 @@
 #include <cstdint>
 
 struct Memory {
-    uint8_t rom00[16384];
-    //16KB ROM bank01
-    //in CGB mode there is second vram bank
+    //To change cartridge, you have to turn off Gameboy
+    ICartridge& cartridge; // ROM + optional external RAM
     uint8_t videoRam[8192];
-    //8KB External ram
     uint8_t workRam00[4096];
     uint8_t workRam0N[4096];
     uint8_t oam[160];
@@ -55,6 +53,8 @@ struct Memory {
         WRAM_BANK_SELECT = 0xFF70
     };
 
-    uint8_t& operator[]( const uint16_t index );
-    const uint8_t& operator()( const uint16_t index ) const;
+    uint8_t read( const uint16_t index ) const;
+    void write( const uint16_t index, uint8_t value );
+    Memory( ICartridge& cartridge_ ) : cartridge( cartridge_ ) {
+    }
 };

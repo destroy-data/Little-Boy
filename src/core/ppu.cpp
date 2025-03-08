@@ -2,8 +2,8 @@
 #include <cstdint>
 
 std::array<uint8_t, PPU::displayWidth * 3> PPU::draw() {
-    const uint8_t lcdc = mem( LCD_CONTROL );
-    const uint8_t ly = mem( LCD_Y );
+    const uint8_t lcdc = mem.read( LCD_CONTROL );
+    const uint8_t ly = mem.read( LCD_Y );
     std::array<uint8_t, displayWidth * 3> lineBuffer;
 
     // Early return if LCD is disabled
@@ -42,8 +42,8 @@ std::array<uint8_t, PPU::displayWidth * 3> PPU::draw() {
 
     //For now draw whole line at once
     //TODO: don't
-    uint8_t scrollX = mem( BG_SCROLL_X ), scrollY = mem( BG_SCROLL_Y ), winX = mem( WIN_X ),
-            winY = mem( WIN_Y );
+    uint8_t scrollX = mem.read( BG_SCROLL_X ), scrollY = mem.read( BG_SCROLL_Y ),
+            winX = mem.read( WIN_X ), winY = mem.read( WIN_Y );
     bool base8000Addr = lcdc & ( 1 << 4 ); // For background and window tiles
     bool useFirstBgMap = ~lcdc & ( 1 << 3 );
     bool useSecondWinMap = lcdc & ( 1 << 6 );
@@ -51,20 +51,20 @@ std::array<uint8_t, PPU::displayWidth * 3> PPU::draw() {
     bool winEnabled = ( lcdc & ( 1 << 5 ) ) && ( winY <= ly ) && ( winX < 168 );
     bool objEnabled = lcdc & ( 1 << 1 );
 
-    uint8_t palette = mem( BG_PALETTE );
+    uint8_t palette = mem.read( BG_PALETTE );
     // extract color values (0-3) from each 2-bit position
     uint8_t bgColors[4] = { static_cast<uint8_t>( ( palette >> 0 ) & 0x3 ),
                             static_cast<uint8_t>( ( palette >> 2 ) & 0x3 ),
                             static_cast<uint8_t>( ( palette >> 4 ) & 0x3 ),
                             static_cast<uint8_t>( ( palette >> 6 ) & 0x3 ) };
 
-    palette = mem( OBJECT_PALETTE_0 );
+    palette = mem.read( OBJECT_PALETTE_0 );
     uint8_t obp0Colors[4] = { 0, // Color 0 is always transparent for objects
                               static_cast<uint8_t>( ( palette >> 2 ) & 0x3 ),
                               static_cast<uint8_t>( ( palette >> 4 ) & 0x3 ),
                               static_cast<uint8_t>( ( palette >> 6 ) & 0x3 ) };
 
-    palette = mem( OBJECT_PALETTE_1 );
+    palette = mem.read( OBJECT_PALETTE_1 );
     uint8_t obp1Colors[4] = { 0, // Color 0 is always transparent for objects
                               static_cast<uint8_t>( ( palette >> 2 ) & 0x3 ),
                               static_cast<uint8_t>( ( palette >> 4 ) & 0x3 ),
@@ -75,10 +75,10 @@ std::array<uint8_t, PPU::displayWidth * 3> PPU::draw() {
         bool mayObjOverpaint = false;
 
         if( windowPixel ) {
-            uint8_t pixX = x - winX + 7;
-            uint8_t pixY = ly - winY;
+            auto pixX = static_cast<uint8_t>( x - winX + 7 );
+            auto pixY = static_cast<uint8_t>( ly - winY );
             uint8_t winTileId = tilemap[useSecondWinMap][pixY / 8 * 32 + pixX / 8];
-            auto tile = std::span( ( useFi mem.videoRam + tileSize * winTileId, 16 );
+            auto tile = std::span( ( mem.videoRam ) + tileSize * winTileId, 16 );
         } else {
             //TODO
         }
@@ -93,7 +93,8 @@ std::array<uint8_t, PPU::displayWidth * 3> PPU::draw() {
                     uint8_t tileId = object[i][2];
                     if( !objSize8x8 )
                         tileId &= 0xFE;
-                    const auto tile = std::span( ( base8000Addr ? 0x8000 : ) + tileSize * tileId,
+                    const auto tile = std::span( ( base8000Addr ? mem.videoRam : mem.videoRam ) +
+                                                         tileSize * tileId,
                                                  objSize8x8 ? 16 : 32 );
                     uint8_t attributes = object[i][3];
                     bool xFlip = attributes & ( 1 << 5 );
@@ -107,7 +108,7 @@ std::array<uint8_t, PPU::displayWidth * 3> PPU::draw() {
                         inSpriteX = 7 - inSpriteX;
                     uint8_t inSpriteY = ly - objRealY;
                     if( yFlip )
-                        inSpriteY = ( objSize8x8 ? 7 : 15 ) - inSpriteY;
+                        inSpriteY = static_cast<uint8_t>( ( objSize8x8 ? 7 : 15 ) - inSpriteY );
 
                     auto colorId = static_cast<uint8_t>(
                             ( tile[inSpriteY * 2] & ( 1 << inSpriteX ) ) |

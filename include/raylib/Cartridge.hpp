@@ -5,7 +5,7 @@
 #include <span>
 #include <vector>
 
-class Cartridge final : ICartridge {
+class Cartridge final : public ICartridge {
     class RTC {
         struct RTCRegisters {
             uint8_t seconds; // 0-59
@@ -79,6 +79,7 @@ class Cartridge final : ICartridge {
 
 public:
     Cartridge();
+    ~Cartridge() final = default;
     uint8_t read( const uint16_t address ) final;
     void write( const uint16_t address, uint8_t value ) final;
 };

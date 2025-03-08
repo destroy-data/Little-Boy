@@ -16,7 +16,7 @@ void Cartridge::RTC::updateRTC() {
     rtcRegs.hours = static_cast<uint8_t>( ( elapsedSeconds / 3600 ) % 24 );
     uint16_t days =
             static_cast<uint16_t>( ( elapsedSeconds / 86400 ) % 512 ); // 9-bit day counter (0-511)
-    rtcRegs.dayLow = days & 0xFF;
+    rtcRegs.dayLow = static_cast<uint8_t>( days & 0xFF );
 
     // Bit 0 of dayHigh is the upper bit of the day counter
     // Preserve the halt flag (bit 6)
@@ -151,6 +151,8 @@ void Cartridge::write( const uint16_t address, uint8_t value ) {
             }
         }
         return;
+    default:
+        logError( ErrorCode::NotImplemented, "" );
     }
 }
 
@@ -161,11 +163,11 @@ void Cartridge::switchBankingMode( uint8_t value ) {
 void Cartridge::switchRomBank( uint8_t bank ) {
     //TODO after adding switching banking mode, make sure it interoperates with this
     // Make sure we don't exceed available ROM banks
-    uint32_t numBanks = rom.size() / 16384;
+    int numBanks = static_cast<int>( rom.size() ) / 16384;
     if( numBanks <= 1 )
         return;
 
-    bank %= numBanks;
+    bank %= static_cast<uint8_t>( numBanks );
     if( bank == 0 )
         bank = 1; // Bank 0 is always mapped to 0000-3FFF
 
@@ -205,7 +207,7 @@ void Cartridge::switchRamBank( uint8_t bank ) {
         return;
 
     uint32_t numBanks = ramSize / 8192;
-    bank %= numBanks;
+    bank %= static_cast<uint8_t>( numBanks );
 
     uint32_t offset = bank * 8192;
     if( offset + 8192 <= ramBank.size() ) {
@@ -243,7 +245,7 @@ Cartridge::Cartridge() {
         ramSize = rom[0x149];
         uint8_t headerChecksum = 0;
         for( uint16_t address = 0x0134; address <= 0x014C; address++ ) {
-            headerChecksum = headerChecksum - rom[address] - 1;
+            headerChecksum = static_cast<uint8_t>( headerChecksum - rom[address] - 1 );
         }
         if( headerChecksum != rom[0x14D] ) {
             logFatal( ErrorCode::RomHeaderChecksumMismatch,

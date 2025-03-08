@@ -3,6 +3,7 @@
 #include "core/memory.hpp"
 #include "core/ppu.hpp"
 #include "raylib.h"
+#include "raylib/Cartridge.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
@@ -37,7 +38,8 @@ void log( int errorCode, ErrorSeverity severity, std::string message, std::strin
 };
 
 int main() {
-    Memory mem;
+    Cartridge cartridge;
+    Memory mem( cartridge );
     CPU cpu( mem );
 
     InitWindow( 160 * 7, 144 * 7, "Little boy" );
@@ -57,7 +59,7 @@ int main() {
 
 void CPU::handleJoypad() {
     //TODO make buttons configurable
-    auto& joyp = mem[Memory::JOYPAD_INPUT];
+    auto joyp = mem.read( Memory::JOYPAD_INPUT );
     uint8_t result = 0x0F; // only first half-byte used, 0 means pressed
     // bit 0 is A/Right, bit 1 is B/Left, bit 2 is Select/Up, bit 3 is Start/Down
 
@@ -83,7 +85,9 @@ void CPU::handleJoypad() {
             result &= static_cast<uint8_t>( ~( 1 << 3 ) );
     }
 
-    if( joyp & ( result ^ ( joyp & 0x0F ) ) )      // at lest one bit was 1 and changed to 0
-        mem[Memory::INTERRUPT_FLAG] |= ( 1 << 4 ); // so set joypad interrupt flag
-    joyp = ( joyp & 0xF0 ) | result;
+    if( joyp & ( result ^ ( joyp & 0x0F ) ) ) // at lest one bit was 1 and changed to 0
+        mem.write( Memory::INTERRUPT_FLAG,
+                   mem.read( Memory::INTERRUPT_FLAG ) |
+                           ( 1 << 4 ) ); // so set joypad interrupt flag
+    mem.write( Memory::JOYPAD_INPUT, ( joyp & 0xF0 ) | result );
 }
