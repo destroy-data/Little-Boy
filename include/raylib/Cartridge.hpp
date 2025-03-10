@@ -30,7 +30,7 @@ class Cartridge final : public ICartridge {
         void writeRTC( uint8_t reg, uint8_t value );
         void latchClockData( uint8_t value );
     };
-    static constexpr auto romExtensions = { "gb", "sgb" };
+    static constexpr auto romExtensions = { ".gb", ".sgb" };
     enum class CartridgeType : uint8_t {
         ROM_ONLY = 0x00,
         MBC1 = 0x01,
