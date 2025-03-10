@@ -4,6 +4,7 @@
 
 struct Memory {
     //To change cartridge, you have to turn off Gameboy
+    uint64_t& tickNr;
     ICartridge& cartridge; // ROM + optional external RAM
     uint8_t videoRam[8192];
     uint8_t workRam00[4096];
@@ -55,6 +56,8 @@ struct Memory {
 
     uint8_t read( const uint16_t index ) const;
     void write( const uint16_t index, uint8_t value );
-    Memory( ICartridge& cartridge_ ) : cartridge( cartridge_ ) {
+    Memory( uint64_t& tickNr_, ICartridge& cartridge_ )
+        : tickNr( tickNr_ )
+        , cartridge( cartridge_ ) {
     }
 };

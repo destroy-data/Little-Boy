@@ -721,3 +721,6 @@ void CPU::handleInterrupts() {
         PC = 0x60;
     }
 };
+
+int CPU::tick() {
+}

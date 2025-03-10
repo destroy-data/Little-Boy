@@ -1,4 +1,5 @@
 #include "core/cpu.hpp"
+#include "core/emulator.hpp"
 #include "core/logging.hpp"
 #include "core/memory.hpp"
 #include "core/ppu.hpp"
@@ -38,9 +39,7 @@ void log( int errorCode, ErrorSeverity severity, std::string message, std::strin
 };
 
 int main() {
-    Cartridge cartridge;
-    Memory mem( cartridge );
-    CPU cpu( mem );
+    Emulator emulator;
 
     InitWindow( 160 * 7, 144 * 7, "Little boy" );
     SetTargetFPS( 60 ); //It's the closest to 59.7 Gameboy had
