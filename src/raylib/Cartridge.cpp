@@ -224,7 +224,7 @@ Cartridge::Cartridge() {
         //Take the first file that have appropiate extension, ignore the rest
         for( const auto extension: romExtensions ) {
             if( dirFile.path().extension() == extension ) {
-                logDebug( 0, std::format( "Found file: {} with size {}KB", dirFile.path().string(),
+                logDebug( 0, std::format( "Found file: {} with size {}K", dirFile.path().string(),
                                           dirFile.file_size() / 1024 ) );
                 std::ifstream file( dirFile.path(), std::ios::binary );
                 const auto size = static_cast<std::streamsize>( dirFile.file_size() );

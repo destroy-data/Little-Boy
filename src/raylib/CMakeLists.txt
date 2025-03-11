@@ -16,4 +16,4 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(raylib)
 target_link_libraries(raylib_frontend raylib)
-target_link_libraries(raylib_frontend core)
+target_link_libraries(raylib_frontend gb_core)
