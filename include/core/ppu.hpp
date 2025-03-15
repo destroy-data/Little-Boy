@@ -1,10 +1,19 @@
 #pragma once
+#include "core/fifo.hpp"
 #include "core/memory.hpp"
+#include <array>
 #include <cstdint>
 #include <span>
 
 class PPU {
-    static constexpr int displayWidth = 160, displayHeight = 144, tileSize = 16;
+public:
+    static constexpr int displayWidth = 160, displayHeight = 144, tileSize = 16,
+                         scanlineDuration = 456;
+    struct Pixel {
+        unsigned color : 2;
+        unsigned palette : 3;  //in DMG only for objects and only 0 or 1
+        unsigned priority : 1; //CGB only
+    };
     enum registers {
         LCD_CONTROL = 0xFF40,
         LCD_STATUS = 0xFF41,
@@ -35,15 +44,27 @@ class PPU {
     using TileAtlas_t = std::span<uint8_t, 256 * 16>;
     using Tilemap_t = std::span<uint8_t, 32 * 32>;
     using Tile_t = std::span<uint8_t, 16>;
+    uint64_t& tickNr;
     Memory& mem;
     TileAtlas_t tileAtlas[2]; // they overlap
     Tilemap_t tilemap[2];
 
-    uint8_t getPixelColor( Tile_t tile, int x, int y );
+    struct {
+        std::span<uint8_t> object[10] = {};
+        int objCount = 0;
+        int currentX = 0;
+        StaticFifo<Pixel, 16> bgPixelsFifo;
+        StaticFifo<Pixel, 16> spritePixelsFifo;
+    } state;
+
+    std::array<Pixel, 8> fetch();
+    uint8_t getPixelColor( const Tile_t& tile, int x, int y );
+    void oamScan();
 
 public:
-    PPU( Memory& mem_ )
-        : mem( mem_ )
+    PPU( uint64_t& tickNr_, Memory& mem_ )
+        : tickNr( tickNr_ )
+        , mem( mem_ )
         // video RAM starts at 0x8000, so adresses must be offseted
         , tileAtlas { TileAtlas_t( mem.videoRam, TileAtlas_t::extent ),
                       TileAtlas_t( mem.videoRam + 0x800, TileAtlas_t::extent ) }
@@ -52,5 +73,5 @@ public:
                     Tilemap_t( mem.videoRam + 0x1C00, Tilemap_t::extent ) } {
     }
 
-    std::array<uint8_t, displayWidth * 3> draw();
+    void tick();
 };
