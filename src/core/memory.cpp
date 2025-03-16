@@ -48,9 +48,21 @@ void Memory::write( const uint16_t index, uint8_t value ) {
     else if( index < OBJECT_ATTRIBUTE_MEMORY + sizeof( oam ) )
         oam[index - OBJECT_ATTRIBUTE_MEMORY] = value;
     // TODO else if (index < NOT_USABLE + X)
-    else if( index < IO_REGISTERS + sizeof( ioRegisters ) )
+    else if( index < IO_REGISTERS + sizeof( ioRegisters ) ) {
         ioRegisters[index - IO_REGISTERS] = value;
-    else if( index < HIGH_RAM + sizeof( highRam ) )
+        // side effects
+        if( index == LCD_Y ) {
+            if( value == read( LYC ) ) {
+                ioRegisters[static_cast<int>( LCD_STATUS ) - static_cast<int>( IO_REGISTERS )] |=
+                        ( 1 << 2 );
+                //TODO interrupt
+            } else
+                ioRegisters[static_cast<int>( LCD_STATUS ) - static_cast<int>( IO_REGISTERS )] &=
+                        ~( 1 << 2 );
+        }
+
+
+    } else if( index < HIGH_RAM + sizeof( highRam ) )
         highRam[index - HIGH_RAM] = value;
     else if( index == 0xFFFF )
         interruptEnableRegister = value;

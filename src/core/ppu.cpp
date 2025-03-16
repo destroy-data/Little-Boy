@@ -6,8 +6,8 @@ void PPU::oamScan() {
     //mode 2 - search for objects which overlap current scanline
     //it takes 80 dots
     state.objCount = 0;
-    const bool objSize8x8 = ~mem.read( LCD_CONTROL ) & ( 1 << 2 );
-    const int ly = mem.read( LCD_Y );
+    const bool objSize8x8 = ~mem.read( Memory::LCD_CONTROL ) & ( 1 << 2 );
+    const int ly = mem.read( Memory::LCD_Y );
 
     // obj Y = pos + 16
     for( unsigned i = 0; i < sizeof( mem.oam ) && state.objCount < 10; i += 4 ) {
@@ -31,13 +31,13 @@ void PPU::oamScan() {
 }
 
 std::array<PPU::Pixel, 8> PPU::fetch() {
-    const uint8_t lcdc = mem.read( LCD_CONTROL );
+    const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
     const bool bgWinEnabled = lcdc & 0x1;
-    const uint8_t ly = mem.read( LCD_Y );
-    const uint8_t winX = mem.read( WIN_X );
-    const uint8_t winY = mem.read( WIN_Y );
-    const uint8_t scrollX = mem.read( BG_SCROLL_X );
-    const uint8_t scrollY = mem.read( BG_SCROLL_Y );
+    const uint8_t ly = mem.read( Memory::LCD_Y );
+    const uint8_t winX = mem.read( Memory::WIN_X );
+    const uint8_t winY = mem.read( Memory::WIN_Y );
+    const uint8_t scrollX = mem.read( Memory::BG_SCROLL_X );
+    const uint8_t scrollY = mem.read( Memory::BG_SCROLL_Y );
     const bool winEnabled = ( lcdc & ( 1 << 5 ) ) && ( winY <= ly ) && ( winX < 168 );
     const bool objEnabled = lcdc & ( 1 << 1 );
     const bool useSecondBgMap = lcdc & ( 1 << 3 );
@@ -55,7 +55,7 @@ std::array<PPU::Pixel, 8> PPU::fetch() {
                 const auto pixX = static_cast<uint8_t>( state.currentX - winX + 7 );
                 const auto pixY = static_cast<uint8_t>( ly - winY );
                 const uint8_t winTileId = tilemap[useSecondWinMap][pixY / 8 * 32 + pixX / 8];
-                const int tileAddress =
+                const int tileAddress = // 0 is start of VRAM
                         base8000Addr ? tileSize * winTileId
                                      : 0x1000 + tileSize * static_cast<int8_t>( winTileId );
                 const auto tile = Tile_t( &mem.videoRam[tileAddress], Tile_t::extent );
@@ -65,7 +65,7 @@ std::array<PPU::Pixel, 8> PPU::fetch() {
                 const auto pixX = static_cast<uint8_t>( state.currentX + scrollX );
                 const auto pixY = static_cast<uint8_t>( ly + scrollY );
                 const auto bgTileId = tilemap[useSecondBgMap][pixY / 8 * 32 + pixX / 8];
-                const int tileAddress =
+                const int tileAddress = // 0 is start of VRAM
                         base8000Addr ? tileSize * bgTileId
                                      : 0x1000 + tileSize * static_cast<int8_t>( bgTileId );
                 const auto tile = Tile_t( &mem.videoRam[tileAddress], Tile_t::extent );
@@ -73,7 +73,7 @@ std::array<PPU::Pixel, 8> PPU::fetch() {
                 bgBuffer[i] = { .color = colorId };
             }
         }
-        if( objEnabled ) { //FIXME
+        if( objEnabled ) {
             const int objHeight = ( ~lcdc & ( 1 << 2 ) ) ? 8 : 16;
 
             // For each object found during OAM scan
@@ -105,7 +105,10 @@ std::array<PPU::Pixel, 8> PPU::fetch() {
                         Tile_t( &mem.videoRam[tileId * ( tileY < 8 ? tileSize : tileSize + 1 )],
                                 Tile_t::extent );
 
-                for( int x = state.currentX; x < end && x < objX + 8; x++ ) {
+                if( tileY >= 8 )
+                    tileY -= 8;
+
+                for( int x = state.currentX; x < end && x < objX + 8; x++ ) { //FIXME
                     // Skip if pixel is outside object bounds
                     if( x < objX || x >= objX + 8 )
                         continue;
@@ -147,14 +150,14 @@ uint8_t PPU::getPixelColor( const Tile_t& tile, int x, int y ) {
 
 void PPU::tick() {
     // Check if LCD is enabled
-    const uint8_t lcdc = mem.read( LCD_CONTROL );
+    const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
     if( !( lcdc & ( 1 << 7 ) ) ) {
         return; // LCD disabled, nothing to do
     }
 
-    uint8_t stat = mem.read( LCD_STATUS );
+    uint8_t stat = mem.read( Memory::LCD_STATUS );
     uint8_t currentMode = stat & 0x3;
-    uint8_t ly = mem.read( LCD_Y );
+    uint8_t ly = mem.read( Memory::LCD_Y );
 
     // State machine to handle PPU modes
     state.scanlineCycleNr++;
@@ -165,19 +168,19 @@ void PPU::tick() {
             state.scanlineCycleNr = 0;
 
             ly++;
-            mem.write( LCD_Y, ly );
+            mem.write( Memory::LCD_Y, ly );
 
             if( ly >= 144 ) {
                 // Enter V-Blank mode
                 stat = stat | 0x1;
-                mem.write( LCD_STATUS, stat );
+                mem.write( Memory::LCD_STATUS, stat );
 
                 // Request V-Blank interrupt
                 mem.write( Memory::INTERRUPT_FLAG, mem.read( Memory::INTERRUPT_FLAG ) | 0x01 );
             } else {
                 // Move to OAM search mode for next line
                 stat = stat | 0x2;
-                mem.write( LCD_STATUS, stat );
+                mem.write( Memory::LCD_STATUS, stat );
                 mem.setOamLock( true );
             }
         }
@@ -191,14 +194,14 @@ void PPU::tick() {
             if( ly >= 154 ) {
                 // End of V-Blank, back to first scanline
                 ly = 0;
-                mem.write( LCD_Y, ly );
+                mem.write( Memory::LCD_Y, ly );
 
                 // Move to OAM search
                 stat = ( stat & ~0x3 ) | 0x2;
-                mem.write( LCD_STATUS, stat );
+                mem.write( Memory::LCD_STATUS, stat );
                 mem.setOamLock( true );
             } else {
-                mem.write( LCD_Y, ly );
+                mem.write( Memory::LCD_Y, ly );
             }
         }
         break;
@@ -215,7 +218,7 @@ void PPU::tick() {
 
             // Move to Pixel Transfer mode
             stat = stat | 0x3;
-            mem.write( LCD_STATUS, stat );
+            mem.write( Memory::LCD_STATUS, stat );
             mem.setVramLock( true );
         }
         break;
@@ -228,10 +231,9 @@ void PPU::tick() {
 
         // Check if we're done rendering this line
         if( state.currentX >= displayWidth ) {
-
             // Move to H-Blank
             stat = stat & ~0x3;
-            mem.write( LCD_STATUS, stat );
+            mem.write( Memory::LCD_STATUS, stat );
             mem.setVramLock( false );
             mem.setOamLock( false );
         }

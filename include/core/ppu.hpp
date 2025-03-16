@@ -14,26 +14,6 @@ public:
         unsigned palette : 3;  //in DMG only for objects and only 0 or 1
         unsigned priority : 1; //CGB only
     };
-    enum registers {
-        LCD_CONTROL = 0xFF40,
-        LCD_STATUS = 0xFF41,
-        BG_SCROLL_Y = 0xFF42,
-        BG_SCROLL_X = 0xFF43,
-        LCD_Y = 0xFF44,
-        LYC = 0xFF45,
-        // non-CGB mode only
-        BG_PALETTE = 0xFF47,
-        OBJECT_PALETTE_0 = 0xFF48,
-        OBJECT_PALETTE_1 = 0xFF49,
-        // both modes
-        WIN_Y = 0xFF4A,
-        WIN_X = 0xFF4B,
-        // CGB mode only
-        BG_PALETTE_SPEC = 0xFF68,
-        BG_PALETTE_DATA = 0xFF69,
-        OBJ_PALETTE_SPEC = 0xFF6A,
-        OBJ_PALETTE_DATA = 0xFF6B
-    };
     // DMG color values
     const uint8_t colorMap[4][3] = {
             { 255, 255, 255 }, // White
