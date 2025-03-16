@@ -157,13 +157,12 @@ void PPU::tick() {
     uint8_t ly = mem.read( LCD_Y );
 
     // State machine to handle PPU modes
-    static int scanlineCycleNr = 0; // one scanline takes 456 cycles
-    scanlineCycleNr++;
+    state.scanlineCycleNr++;
 
     switch( currentMode ) {
     case 0: // H-Blank
-        if( scanlineCycleNr >= scanlineDuration ) {
-            scanlineCycleNr = 0;
+        if( state.scanlineCycleNr >= scanlineDuration ) {
+            state.scanlineCycleNr = 0;
 
             ly++;
             mem.write( LCD_Y, ly );
@@ -179,13 +178,14 @@ void PPU::tick() {
                 // Move to OAM search mode for next line
                 stat = stat | 0x2;
                 mem.write( LCD_STATUS, stat );
+                mem.setOamLock( true );
             }
         }
         break;
 
     case 1: // V-Blank
-        if( scanlineCycleNr >= scanlineDuration ) {
-            scanlineCycleNr = 0;
+        if( state.scanlineCycleNr >= scanlineDuration ) {
+            state.scanlineCycleNr = 0;
 
             ly++;
             if( ly >= 154 ) {
@@ -196,16 +196,15 @@ void PPU::tick() {
                 // Move to OAM search
                 stat = ( stat & ~0x3 ) | 0x2;
                 mem.write( LCD_STATUS, stat );
+                mem.setOamLock( true );
             } else {
                 mem.write( LCD_Y, ly );
             }
         }
         break;
 
-    case 2:                           // OAM Search
-        if( scanlineCycleNr >= 80 ) { // OAM search lasts 80 cycles
-            scanlineCycleNr = 0;
-
+    case 2:                                 // OAM Search
+        if( state.scanlineCycleNr >= 80 ) { // OAM search lasts 80 cycles
             // At least for now do it in one go
             oamScan();
 
@@ -217,21 +216,24 @@ void PPU::tick() {
             // Move to Pixel Transfer mode
             stat = stat | 0x3;
             mem.write( LCD_STATUS, stat );
+            mem.setVramLock( true );
         }
         break;
 
     case 3: // Pixel Transfer
         if( state.bgPixelsFifo.size() == 0 && state.currentX < displayWidth ) {
             fetch();
+            postFetchHook();
         }
 
         // Check if we're done rendering this line
         if( state.currentX >= displayWidth ) {
-            scanlineCycleNr = 0;
 
             // Move to H-Blank
             stat = stat & ~0x3;
             mem.write( LCD_STATUS, stat );
+            mem.setVramLock( false );
+            mem.setOamLock( false );
         }
         break;
     }

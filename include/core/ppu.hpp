@@ -55,11 +55,15 @@ public:
         int currentX = 0;
         StaticFifo<Pixel, 16> bgPixelsFifo;
         StaticFifo<Pixel, 16> spritePixelsFifo;
+        int scanlineCycleNr = 0; // one scanline takes 456 cycles
     } state;
 
     std::array<Pixel, 8> fetch();
     uint8_t getPixelColor( const Tile_t& tile, int x, int y );
     void oamScan();
+
+    // Functions not implemented in core
+    void postFetchHook();
 
 public:
     PPU( uint64_t& tickNr_, Memory& mem_ )
