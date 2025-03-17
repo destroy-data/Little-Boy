@@ -174,6 +174,7 @@ void PPU::tick() {
                 // Enter V-Blank mode
                 stat = stat | 0x1;
                 mem.write( Memory::LCD_STATUS, stat );
+                mem.setOamLock( false );
 
                 // Request V-Blank interrupt
                 mem.write( Memory::INTERRUPT_FLAG, mem.read( Memory::INTERRUPT_FLAG ) | 0x01 );
@@ -226,7 +227,6 @@ void PPU::tick() {
     case 3: // Pixel Transfer
         if( state.bgPixelsFifo.size() == 0 && state.currentX < displayWidth ) {
             fetch();
-            postFetchHook();
         }
 
         // Check if we're done rendering this line
@@ -239,4 +239,49 @@ void PPU::tick() {
         }
         break;
     }
+    state.currentX++;
+}
+
+uint8_t PPU::mergePixel( Pixel bgPixel, Pixel spritePixel ) {
+    // Merge background and object pixels
+    const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
+    const bool bgEnabled = lcdc & 0x01;
+    const bool objEnabled = lcdc & 0x02;
+
+    uint8_t bgPalette = mem.read( Memory::BG_PALETTE );
+    uint8_t bgColors[4] = { static_cast<uint8_t>( bgPalette & 0x3 ),
+                            static_cast<uint8_t>( ( bgPalette >> 2 ) & 0x3 ),
+                            static_cast<uint8_t>( ( bgPalette >> 4 ) & 0x3 ),
+                            static_cast<uint8_t>( ( bgPalette >> 6 ) & 0x3 ) };
+
+    uint8_t objPalette0 = mem.read( Memory::OBJECT_PALETTE_0 );
+    uint8_t obp0Colors[4] = { 0, // Color 0 is always transparent for objects
+                              static_cast<uint8_t>( ( objPalette0 >> 2 ) & 0x3 ),
+                              static_cast<uint8_t>( ( objPalette0 >> 4 ) & 0x3 ),
+                              static_cast<uint8_t>( ( objPalette0 >> 6 ) & 0x3 ) };
+
+    uint8_t objPalette1 = mem.read( Memory::OBJECT_PALETTE_1 );
+    uint8_t obp1Colors[4] = { 0, // Color 0 is always transparent for objects
+                              static_cast<uint8_t>( ( objPalette1 >> 2 ) & 0x3 ),
+                              static_cast<uint8_t>( ( objPalette1 >> 4 ) & 0x3 ),
+                              static_cast<uint8_t>( ( objPalette1 >> 6 ) & 0x3 ) };
+
+    uint8_t finalColor;
+    // Determine which pixel to display according to priority rules
+    if( objEnabled && spritePixel.color != 0 ) {
+        // Sprite pixel is not transparent
+        if( bgEnabled && bgPixel.color != 0 && spritePixel.priority ) {
+            // Background has priority over this sprite and is not transparent
+            finalColor = bgPalette >> ( bgPixel.color * 2 ) & 0x03;
+        } else {
+            // Sprite has priority or background is transparent/disabled
+            uint8_t objPalette = spritePixel.palette ? objPalette1 : objPalette0;
+            finalColor = objPalette >> ( spritePixel.color * 2 ) & 0x03;
+        }
+    } else if( bgEnabled ) {
+        finalColor = bgPalette >> ( bgPixel.color * 2 ) & 0x03;
+    } else {
+        finalColor = 0;
+    }
+    return finalColor;
 }
