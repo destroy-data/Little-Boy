@@ -111,7 +111,6 @@ class CPU {
         OperandVar_t operand2;
     };
 
-    uint64_t& tickNr;
     uint8_t registers[8]; //b,c,d,e,h,l,a,f
     uint16_t SP, PC;
     Memory& mem;
@@ -164,7 +163,7 @@ class CPU {
     }
 
 public:
-    CPU( uint64_t& tickNr_, Memory& mem_ ) : tickNr( tickNr_ ), mem( mem_ ) {
+    CPU( Memory& mem_ ) : mem( mem_ ) {
         logDebug( ErrorCode::NoError, "test" );
     };
     int tick();

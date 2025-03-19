@@ -4,7 +4,6 @@
 
 struct Memory {
     //To change cartridge, you have to turn off Gameboy
-    uint64_t& tickNr;
     bool vramLock = 0;
     bool oamLock = 0;
 
@@ -81,8 +80,6 @@ struct Memory {
     void write( const uint16_t index, uint8_t value );
     void setVramLock( bool locked );
     void setOamLock( bool locked );
-    Memory( uint64_t& tickNr_, ICartridge& cartridge_ )
-        : tickNr( tickNr_ )
-        , cartridge( cartridge_ ) {
+    Memory( ICartridge& cartridge_ ) : cartridge( cartridge_ ) {
     }
 };
