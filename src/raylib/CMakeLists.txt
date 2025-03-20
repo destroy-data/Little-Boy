@@ -1,5 +1,5 @@
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-add_executable(raylib_frontend ${SOURCES})
+add_library(gb_raylib STATIC ${SOURCES})
 
 # Adding Raylib
 include(FetchContent)
@@ -16,5 +16,7 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(raylib)
-target_link_libraries(raylib_frontend raylib)
-target_link_libraries(raylib_frontend gb_core)
+target_link_libraries(gb_raylib PRIVATE
+    raylib
+    gb_core
+)

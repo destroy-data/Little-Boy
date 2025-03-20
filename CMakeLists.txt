@@ -21,6 +21,9 @@ set(MODULES
 add_compile_options("$<$<NOT:$<CONFIG:Debug>>:-Werror>")
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/src/core)
-add_subdirectory(${CMAKE_SOURCE_DIR}/src/raylib)
+foreach(MODULE ${MODULES})
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/${MODULE})
+endforeach()
+
+enable_testing()
 add_subdirectory(${CMAKE_SOURCE_DIR}/test)
