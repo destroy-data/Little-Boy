@@ -109,6 +109,15 @@ class CPU {
         OperandVar_t operand1;
         OperandType_t operandType2;
         OperandVar_t operand2;
+        Operation_t( OperationType_t operationType_, OperandType_t operandType1_ = {},
+                     OperandVar_t operand1_ = {}, OperandType_t operandType2_ = {},
+                     OperandVar_t operand2_ = {} )
+            : operationType( operationType_ )
+            , operandType1( operandType1_ )
+            , operand1( operand1_ )
+            , operandType2( operandType2_ )
+            , operand2( operand2_ ) {
+        }
     };
 
     uint8_t registers[8]; //b,c,d,e,h,l,a,f
