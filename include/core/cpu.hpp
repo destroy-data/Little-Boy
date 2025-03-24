@@ -8,7 +8,7 @@
 template<typename T>
 concept uint8or16_t = std::same_as<T, uint8_t> || std::same_as<T, uint16_t>;
 
-class CPU {
+class CoreCpu {
     using Enum_t = uint8_t;
     enum class OperationType_t : Enum_t {
         INVALID,
@@ -171,12 +171,12 @@ class CPU {
         setCFlag( C );
     }
 
+    virtual void handleJoypad() = 0;
+
 public:
-    CPU( Memory& mem_ ) : mem( mem_ ) {
+    CoreCpu( Memory& mem_ ) : mem( mem_ ) {
         logDebug( ErrorCode::NoError, "test" );
     };
+    virtual ~CoreCpu() = default;
     int tick();
-
-    // Functions not implemented in core
-    void handleJoypad();
 };

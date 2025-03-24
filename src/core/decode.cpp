@@ -1,7 +1,7 @@
 #include "core/cpu.hpp"
 #include <utility>
 
-CPU::Operation_t CPU::decode() {
+CoreCpu::Operation_t CoreCpu::decode() {
     // first check instructions without different operand variants
     switch( mem.read( PC ) ) {
     //block 0
@@ -110,7 +110,7 @@ CPU::Operation_t CPU::decode() {
     return { OperationType_t::INVALID };
 }
 
-CPU::Operation_t CPU::decodeBlock0() {
+CoreCpu::Operation_t CoreCpu::decodeBlock0() {
     //count from 0
     auto bits345 = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
     auto bits45 = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 4 ) );
@@ -145,7 +145,7 @@ CPU::Operation_t CPU::decodeBlock0() {
     return Operation_t { OperationType_t::INVALID };
 }
 
-CPU::Operation_t CPU::decodeBlock2() {
+CoreCpu::Operation_t CoreCpu::decodeBlock2() {
     auto r8 = static_cast<Operand_t>( 0x7 & mem.read( PC ) );
     auto opType = OperationType_t::INVALID;
     switch( 0x7 & ( mem.read( PC ) >> 3 ) ) {
@@ -177,7 +177,7 @@ CPU::Operation_t CPU::decodeBlock2() {
 }
 
 
-CPU::Operation_t CPU::decodeBlock3() {
+CoreCpu::Operation_t CoreCpu::decodeBlock3() {
     auto condition = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 3 ) );
     auto r16stk = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 4 ) );
     switch( 0x7 & mem.read( PC ) ) {
@@ -198,7 +198,7 @@ CPU::Operation_t CPU::decodeBlock3() {
     return { OperationType_t::INVALID };
 }
 
-CPU::Operation_t CPU::decodeCB() {
+CoreCpu::Operation_t CoreCpu::decodeCB() {
     auto r8 = static_cast<Operand_t>( mem.read( PC ) & 0x7 );
     auto b3index = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
     switch( 0x3 & ( mem.read( PC ) >> 6 ) ) {

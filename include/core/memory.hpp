@@ -1,5 +1,5 @@
 #pragma once
-#include "core/ICartridge.hpp"
+#include "core/cartridge.hpp"
 #include <cstdint>
 
 struct Memory {
@@ -7,7 +7,7 @@ struct Memory {
     bool vramLock = 0;
     bool oamLock = 0;
 
-    ICartridge& cartridge; // ROM + optional external RAM
+    CoreCartridge& cartridge; // ROM + optional external RAM
     uint8_t videoRam[8192];
     uint8_t workRam00[4096];
     uint8_t workRam0N[4096];
@@ -80,6 +80,6 @@ struct Memory {
     void write( const uint16_t index, uint8_t value );
     void setVramLock( bool locked );
     void setOamLock( bool locked );
-    Memory( ICartridge& cartridge_ ) : cartridge( cartridge_ ) {
+    Memory( CoreCartridge& cartridge_ ) : cartridge( cartridge_ ) {
     }
 };

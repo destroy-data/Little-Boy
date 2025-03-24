@@ -2,7 +2,7 @@
 #include <core/ppu.hpp>
 #include <cstdint>
 
-void PPU::oamScan() {
+void CorePpu::oamScan() {
     //mode 2 - search for objects which overlap current scanline
     //it takes 80 dots
     state.objCount = 0;
@@ -30,7 +30,7 @@ void PPU::oamScan() {
     }
 }
 
-std::array<PPU::Pixel, 8> PPU::fetch() {
+std::array<CorePpu::Pixel, 8> CorePpu::fetch() {
     const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
     const bool bgWinEnabled = lcdc & 0x1;
     const uint8_t ly = mem.read( Memory::LCD_Y );
@@ -138,7 +138,7 @@ std::array<PPU::Pixel, 8> PPU::fetch() {
     return bgBuffer;
 }
 
-uint8_t PPU::getPixelColor( const Tile_t& tile, int x, int y ) {
+uint8_t CorePpu::getPixelColor( const Tile_t& tile, int x, int y ) {
     if( x < 0 || x > 7 || y < 0 || y > 7 ) {
         return 0; // no better idea
     }
@@ -153,7 +153,7 @@ uint8_t PPU::getPixelColor( const Tile_t& tile, int x, int y ) {
 }
 
 
-void PPU::tick() {
+void CorePpu::tick() {
     // Check if LCD is enabled
     const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
     if( !( lcdc & ( 1 << 7 ) ) ) {
@@ -177,7 +177,7 @@ void PPU::tick() {
             mem.write( Memory::LCD_Y, ly );
 
             if( ly >= 144 ) {
-                status = status | static_cast<uint8_t>( V_BLANK );
+                status = ( status & ~0x3 ) | static_cast<uint8_t>( V_BLANK );
                 mem.write( Memory::LCD_STATUS, status );
                 mem.setOamLock( false );
 
@@ -185,7 +185,7 @@ void PPU::tick() {
                 mem.write( Memory::INTERRUPT_FLAG,
                            static_cast<uint8_t>( mem.read( Memory::INTERRUPT_FLAG ) | 0x01u ) );
             } else {
-                status = status | static_cast<uint8_t>( OAM_SEARCH );
+                status = ( status & ~0x3 ) | static_cast<uint8_t>( OAM_SEARCH );
                 mem.write( Memory::LCD_STATUS, status );
                 mem.setOamLock( true );
             }
@@ -221,7 +221,7 @@ void PPU::tick() {
             state.bgPixelsFifo.clear();
             state.spritePixelsFifo.clear();
 
-            status = status | static_cast<uint8_t>( PIXEL_TRANSFER );
+            status = ( status & ~0x3 ) | static_cast<uint8_t>( PIXEL_TRANSFER );
             mem.write( Memory::LCD_STATUS, status );
             mem.setVramLock( true );
         }
@@ -249,10 +249,9 @@ void PPU::tick() {
         }
         break;
     }
-    state.currentX++;
 }
 
-uint8_t PPU::mergePixel( Pixel bgPixel, Pixel spritePixel ) {
+uint8_t CorePpu::mergePixel( Pixel bgPixel, Pixel spritePixel ) {
     // Merge background and object pixels
     const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
     const bool bgEnabled = lcdc & 0x01;

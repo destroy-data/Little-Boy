@@ -1,11 +1,11 @@
 #pragma once
-#include "core/ICartridge.hpp"
+#include "core/cartridge.hpp"
 #include <cstdint>
 #include <ctime>
 #include <span>
 #include <vector>
 
-class Cartridge final : public ICartridge {
+class RaylibCartridge final : public CoreCartridge {
     class RTC {
         struct RTCRegisters {
             uint8_t seconds; // 0-59
@@ -78,8 +78,8 @@ class Cartridge final : public ICartridge {
     void switchRamBank( uint8_t bank );
 
 public:
-    Cartridge();
-    ~Cartridge() final = default;
+    RaylibCartridge();
+    ~RaylibCartridge() final = default;
     uint8_t read( const uint16_t address ) final;
     void write( const uint16_t address, uint8_t value ) final;
 };

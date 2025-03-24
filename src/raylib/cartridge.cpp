@@ -1,4 +1,4 @@
-#include "raylib/Cartridge.hpp"
+#include "raylib/cartridge.hpp"
 #include "core/logging.hpp"
 #include <cstdint>
 #include <exception>
@@ -6,7 +6,7 @@
 #include <format>
 #include <fstream>
 
-void Cartridge::RTC::updateRTC() {
+void RaylibCartridge::RTC::updateRTC() {
     if( rtcHalted )
         return;
 
@@ -30,7 +30,7 @@ void Cartridge::RTC::updateRTC() {
     }
 }
 
-uint8_t Cartridge::RTC::readRTC( uint8_t reg ) {
+uint8_t RaylibCartridge::RTC::readRTC( uint8_t reg ) {
     if( !rtcLatchedData )
         updateRTC();
 
@@ -52,7 +52,7 @@ uint8_t Cartridge::RTC::readRTC( uint8_t reg ) {
     }
 }
 
-void Cartridge::RTC::writeRTC( uint8_t reg, uint8_t value ) {
+void RaylibCartridge::RTC::writeRTC( uint8_t reg, uint8_t value ) {
     switch( reg ) {
     case 0x08:
         rtcRegs.seconds = value & 0x3F; // 0-59
@@ -81,7 +81,7 @@ void Cartridge::RTC::writeRTC( uint8_t reg, uint8_t value ) {
     }
 }
 
-void Cartridge::RTC::latchClockData( uint8_t value ) {
+void RaylibCartridge::RTC::latchClockData( uint8_t value ) {
     if( !rtcLatchedData && value == 0x1 ) {
         updateRTC();
         latchedRtcRegs = rtcRegs;
@@ -91,7 +91,7 @@ void Cartridge::RTC::latchClockData( uint8_t value ) {
     }
 }
 
-uint8_t Cartridge::read( const uint16_t address ) {
+uint8_t RaylibCartridge::read( const uint16_t address ) {
     //TODO
     if( address < 0x4000 )
         return rom[address];
@@ -105,7 +105,7 @@ uint8_t Cartridge::read( const uint16_t address ) {
 }
 
 
-void Cartridge::write( const uint16_t address, uint8_t value ) {
+void RaylibCartridge::write( const uint16_t address, uint8_t value ) {
     switch( static_cast<CartridgeType>( cartridgeType ) ) {
     case CartridgeType::MBC1:
     case CartridgeType::MBC1_RAM:
@@ -158,11 +158,11 @@ void Cartridge::write( const uint16_t address, uint8_t value ) {
     }
 }
 
-void Cartridge::switchBankingMode( uint8_t value ) {
+void RaylibCartridge::switchBankingMode( uint8_t value ) {
     //TODO
 }
 
-void Cartridge::switchRomBank( uint8_t bank ) {
+void RaylibCartridge::switchRomBank( uint8_t bank ) {
     //TODO after adding switching banking mode, make sure it interoperates with this
     // Make sure we don't exceed available ROM banks
     int numBanks = static_cast<int>( rom.size() ) / 16384;
@@ -179,7 +179,7 @@ void Cartridge::switchRomBank( uint8_t bank ) {
     }
 }
 
-void Cartridge::switchRamBank( uint8_t bank ) {
+void RaylibCartridge::switchRamBank( uint8_t bank ) {
     //TODO after adding switching banking mode, make sure it interoperates with this
     // Calculate RAM size based on header value
     uint32_t ramSize = 0;
@@ -217,7 +217,7 @@ void Cartridge::switchRamBank( uint8_t bank ) {
     }
 }
 
-Cartridge::Cartridge() {
+RaylibCartridge::RaylibCartridge() {
     const auto romDir = std::filesystem::current_path() / "roms";
     auto dirFiles = std::filesystem::directory_iterator( romDir );
     for( const auto& dirFile: dirFiles ) {

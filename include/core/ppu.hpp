@@ -3,12 +3,10 @@
 #include "core/memory.hpp"
 #include <array>
 #include <cstdint>
-#include <optional>
 #include <span>
 
-class PPU {
+class CorePpu {
 public:
-    friend class Tester;
     static constexpr int displayWidth = 160, displayHeight = 144, tileSize = 16,
                          scanlineDuration = 456;
     struct Pixel {
@@ -41,7 +39,7 @@ public:
         unsigned currentX = 0;
         StaticFifo<Pixel, 16> bgPixelsFifo;
         StaticFifo<Pixel, 16> spritePixelsFifo;
-        int scanlineCycleNr = 0; // one scanline takes 456 cycles
+        int scanlineCycleNr = 0;
     } state;
 
     std::array<Pixel, 8> fetch();
@@ -49,14 +47,11 @@ public:
     void oamScan();
     uint8_t mergePixel( Pixel bgPixel, Pixel spritePixel );
 
-    void enterHBlankHook();
-
-    // Functions not implemented in core
-    void drawPixel( uint8_t colorId );
+    virtual void drawPixel( uint8_t colorId ) = 0;
 
 public:
-    PPU( Memory& mem_ ) : mem( mem_ ) {
+    CorePpu( Memory& mem_ ) : mem( mem_ ) {
     }
-
+    virtual ~CorePpu() = default;
     void tick();
 };

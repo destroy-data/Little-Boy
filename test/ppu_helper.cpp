@@ -66,21 +66,21 @@ void setupSpriteTiles( uint8_t vram[] ) {
     }
 }
 
-void createTestSprite( Memory& mem, int index, uint8_t x, uint8_t y, uint8_t tileId,
+void createTestSprite( uint8_t oam[], int index, uint8_t x, uint8_t y, uint8_t tileId,
                        uint8_t attributes ) {
     const int oamBase = index * 4;
 
     // Y position (add 16 as Y=0 is 16 pixels above the screen)
-    mem.oam[oamBase] = 16 + y;
+    oam[oamBase] = 16 + y;
 
     // X position (add 8 as X=0 is 8 pixels left of the screen)
-    mem.oam[oamBase + 1] = 8 + x;
+    oam[oamBase + 1] = 8 + x;
 
     // Tile ID
-    mem.oam[oamBase + 2] = tileId;
+    oam[oamBase + 2] = tileId;
 
     // Attributes (flags)
-    mem.oam[oamBase + 3] = attributes;
+    oam[oamBase + 3] = attributes;
 }
 
 void setupTestSprites( Memory& mem ) {
@@ -91,20 +91,53 @@ void setupTestSprites( Memory& mem ) {
     // Arguments: memory, OAM index, x, y, tile ID, attributes
 
     // Square sprite at the top left
-    createTestSprite( mem, 0, 20, 20, 2, 0 );
+    createTestSprite( mem.oam, 0, 20, 20, 2, 0 );
 
     // Cross sprite at the top right
-    createTestSprite( mem, 1, 100, 20, 3, 0 );
+    createTestSprite( mem.oam, 1, 100, 20, 3, 0 );
 
     // Square sprite with horizontal flip at bottom left
-    createTestSprite( mem, 2, 20, 100, 2, ( 1 << 5 ) ); // Bit 5 = X-flip
+    createTestSprite( mem.oam, 2, 20, 100, 2, ( 1 << 5 ) ); // Bit 5 = X-flip
 
     // Cross sprite with vertical flip at bottom right
-    createTestSprite( mem, 3, 100, 100, 3, ( 1 << 6 ) ); // Bit 6 = Y-flip
+    createTestSprite( mem.oam, 3, 100, 100, 3, ( 1 << 6 ) ); // Bit 6 = Y-flip
 
     // Square sprite with low priority (behind background)
-    createTestSprite( mem, 4, 60, 60, 2, ( 1 << 7 ) ); // Bit 7 = BG Priority
+    createTestSprite( mem.oam, 4, 60, 60, 2, ( 1 << 7 ) ); // Bit 7 = BG Priority
 
     // Cross sprite using alternate palette
-    createTestSprite( mem, 5, 80, 40, 3, ( 1 << 4 ) ); // Bit 4 = Palette number
+    createTestSprite( mem.oam, 5, 80, 40, 3, ( 1 << 4 ) ); // Bit 4 = Palette number
+}
+
+void setupLcdRegisters( Memory& mem ) {
+    // Set LCD Control register (LCDC) - Enable display, BG, etc.
+    mem.write( Memory::LCD_CONTROL, 0x91 ); // 10010001
+                                            // Bit 7: LCD enabled
+                                            // Bit 0: BG & Window display enabled
+                                            // Bit 4: BG & Window tile data at 0x8000-0x8FFF
+
+    // Set scroll registers to 0
+    mem.write( Memory::BG_SCROLL_X, 0 );
+    mem.write( Memory::BG_SCROLL_Y, 0 );
+
+    // Set window position off-screen by default
+    mem.write( Memory::WIN_X, 166 );
+    mem.write( Memory::WIN_Y, 144 );
+
+    // Set palettes for DMG mode
+    mem.write( Memory::BG_PALETTE, 0xE4 );       // 11100100 - Darkest to lightest
+    mem.write( Memory::OBJECT_PALETTE_0, 0xE4 ); // 11100100 - Same as BG
+    mem.write( Memory::OBJECT_PALETTE_1, 0xD2 ); // 11010010 - Alternate palette
+
+    // Set LCD Y-coordinate to 0
+    mem.write( Memory::LCD_Y, 0 );
+
+    // Set LYC to 0
+    mem.write( Memory::LYC, 0 );
+
+    // Set LCD status register
+    mem.write( Memory::LCD_STATUS, 0x86 ); // 10000101
+                                           // Bit 7: Always 1
+                                           // Bit 2: LYC=LY coincidence flag
+                                           // Bit 0-1: Mode flag (01 = V-Blank)
 }

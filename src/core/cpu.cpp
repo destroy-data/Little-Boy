@@ -5,8 +5,8 @@
 #include <limits>
 #include <utility>
 
-template<CPU::OperandType_t type, uint8or16_t T>
-void CPU::write( OperandVar_t operand, T writeValue ) {
+template<CoreCpu::OperandType_t type, uint8or16_t T>
+void CoreCpu::write( OperandVar_t operand, T writeValue ) {
     constexpr std::size_t writeSize = sizeof( T );
     const auto opdVal = std::get<Operand_t>( operand );
     const auto underlVal = static_cast<Enum_t>( opdVal );
@@ -86,8 +86,8 @@ void CPU::write( OperandVar_t operand, T writeValue ) {
         static_assert( false, "Wrong operand type" );
 }
 
-template<CPU::OperandType_t type>
-uint8or16_t auto CPU::read( const OperandVar_t operand ) {
+template<CoreCpu::OperandType_t type>
+uint8or16_t auto CoreCpu::read( const OperandVar_t operand ) {
     const auto opdVal = std::get<Operand_t>( operand );
     const auto underlVal = static_cast<Enum_t>( opdVal );
 
@@ -164,8 +164,8 @@ uint8or16_t auto CPU::read( const OperandVar_t operand ) {
     std::unreachable();
 }
 
-template<CPU::OperandType_t type, uint8or16_t T>
-void CPU::addTo( OperandVar_t operand, T value ) {
+template<CoreCpu::OperandType_t type, uint8or16_t T>
+void CoreCpu::addTo( OperandVar_t operand, T value ) {
     auto currentValue = read<type>( operand );
     bool cFlag = ( std::numeric_limits<T>::max() - currentValue < value );
     bool halfCarryFlag = std::same_as<decltype( currentValue ), uint8_t>
@@ -177,8 +177,8 @@ void CPU::addTo( OperandVar_t operand, T value ) {
     setZNHCFlags( !currentValue, false, halfCarryFlag, cFlag );
 };
 
-template<CPU::OperandType_t type>
-void CPU::subFrom( OperandVar_t operand, uint8_t value, bool discard ) {
+template<CoreCpu::OperandType_t type>
+void CoreCpu::subFrom( OperandVar_t operand, uint8_t value, bool discard ) {
     auto currentValue = read<type>( operand );
     bool cFlag = ( value > currentValue );
     //due to integer promotion substraction operands are promoted to ints
@@ -190,8 +190,8 @@ void CPU::subFrom( OperandVar_t operand, uint8_t value, bool discard ) {
     setZNHCFlags( !currentValue, true, halfCarryFlag, cFlag );
 };
 
-template<CPU::OperationType_t optype>
-void CPU::bitwise( const Operation_t& op ) {
+template<CoreCpu::OperationType_t optype>
+void CoreCpu::bitwise( const Operation_t& op ) {
     static_assert( ( optype == OperationType_t::AND ) || ( optype == OperationType_t::OR ) ||
                            ( optype == OperationType_t::XOR ),
                    "" );
@@ -222,8 +222,8 @@ void CPU::bitwise( const Operation_t& op ) {
     setZNHCFlags( !result, false, hFlag, false );
 }
 
-template<CPU::OperationType_t optype>
-void CPU::bitShift( Operation_t op ) {
+template<CoreCpu::OperationType_t optype>
+void CoreCpu::bitShift( Operation_t op ) {
     using OT = OperationType_t;
 
     if( std::holds_alternative<std::monostate>( op.operand1 ) ) {
@@ -268,18 +268,18 @@ void CPU::bitShift( Operation_t op ) {
     setZNHCFlags( zFlag, false, false, cFlag );
 }
 
-void CPU::pushToStack( uint16_t value ) {
+void CoreCpu::pushToStack( uint16_t value ) {
     mem.write( --SP, static_cast<uint8_t>( ( value & 0xFF00 ) >> 8 ) );
     mem.write( --SP, static_cast<uint8_t>( value & 0xFF ) );
 }
 
-uint16_t CPU::popFromStack() {
+uint16_t CoreCpu::popFromStack() {
     uint16_t value = mem.read( SP++ );
     value |= static_cast<uint16_t>( mem.read( SP++ ) << 8 );
     return value;
 }
 
-void CPU::ld( const Operation_t& op ) {
+void CoreCpu::ld( const Operation_t& op ) {
     uint16_t readVal; //also for 8-bit values, later truncate them if needed
     switch( op.operandType2 ) {
         using enum OperandType_t;
@@ -333,7 +333,7 @@ void CPU::ld( const Operation_t& op ) {
     }
 }
 
-void CPU::ldh( const Operation_t& op ) {
+void CoreCpu::ldh( const Operation_t& op ) {
     uint16_t readVal; //also for 8-bit values, later truncate them if needed
     switch( op.operandType2 ) {
         using enum OperandType_t;
@@ -373,7 +373,7 @@ void CPU::ldh( const Operation_t& op ) {
     }
 }
 
-void CPU::execute( const Operation_t& op ) {
+void CoreCpu::execute( const Operation_t& op ) {
     switch( op.operationType ) {
         using OT = OperationType_t;
         using opdt = OperandType_t;
@@ -399,7 +399,7 @@ void CPU::execute( const Operation_t& op ) {
             return;
         }
 
-        CPU::addTo<opdt::R8>( op.operand1, readVal );
+        CoreCpu::addTo<opdt::R8>( op.operand1, readVal );
     } break;
     case OT::ADD:
     case OT::SUB: {
@@ -697,7 +697,7 @@ void CPU::execute( const Operation_t& op ) {
     }
 }
 
-void CPU::handleInterrupts() {
+void CoreCpu::handleInterrupts() {
     auto interruptEnable = mem.read( 0xFFFF );
     auto interruptFlag = mem.read( 0xFF0F );
     if( interruptEnable & 1 && interruptFlag & 1 ) { //VBlank

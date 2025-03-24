@@ -1,18 +1,19 @@
 #pragma once
-#include "core/cpu.hpp"
-#include "core/memory.hpp"
-#include "core/ppu.hpp"
-#include "raylib/Cartridge.hpp"
-#include <cstdint>
+#include <memory>
+#include <tuple>
 
+template<typename Tcartridge, typename Tmemory, typename Tcpu, typename Tppu>
 class Emulator {
 public:
-    Cartridge cartridge;
-    Memory mem;
-    CPU cpu;
-    PPU ppu;
+    Tcartridge cartridge;
+    Tmemory memory;
+    Tcpu cpu;
+    Tppu ppu;
 
 public:
-    Emulator() : mem( cartridge ), cpu( mem ), ppu( mem ) {};
-    int tick();
+    Emulator() : memory( cartridge ), cpu( memory ), ppu( memory ) {
+    }
+
+    void tick() {
+    }
 };
