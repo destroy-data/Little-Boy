@@ -218,6 +218,7 @@ void CorePpu::tick() {
 
             // Reset FIFO state for next line
             state.currentX = 0;
+            state.renderedX = 0;
             state.bgPixelsFifo.clear();
             state.spritePixelsFifo.clear();
 
@@ -228,19 +229,19 @@ void CorePpu::tick() {
         break;
 
     case PIXEL_TRANSFER:
-        if( state.bgPixelsFifo.size() == 0 && state.currentX < displayWidth ) {
+        if( state.bgPixelsFifo.size() == 0 && state.renderedX < displayWidth ) {
             fetch();
             auto bg = state.bgPixelsFifo.popBatch();
-            for( unsigned i = 0; i < 8 && state.currentX < displayWidth; i++ ) {
+            for( unsigned i = 0; i < 8 && state.renderedX < displayWidth; i++ ) {
                 drawPixel( mergePixel( bg[i], {} ) );
-                state.currentX++;
+                state.renderedX++;
             }
             state.bgPixelsFifo.clear();
             state.spritePixelsFifo.clear();
         }
 
         // Check if we're done rendering this line
-        if( state.currentX >= displayWidth ) {
+        if( state.renderedX >= displayWidth ) {
             // Move to H-Blank
             status = status & ~0x3;
             mem.write( Memory::LCD_STATUS, status );

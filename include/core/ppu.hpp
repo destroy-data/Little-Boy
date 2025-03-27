@@ -37,6 +37,7 @@ public:
         std::span<uint8_t> object[10] = {};
         unsigned objCount = 0;
         unsigned currentX = 0;
+        unsigned renderedX = 0;
         StaticFifo<Pixel, 16> bgPixelsFifo;
         StaticFifo<Pixel, 16> spritePixelsFifo;
         int scanlineCycleNr = 0;
