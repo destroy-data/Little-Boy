@@ -5,11 +5,32 @@
 #include <limits>
 #include <utility>
 
+consteval size_t CoreCpu::getOperandVarType( CoreCpu::OperandType_t operandType ) {
+    switch( operandType ) {
+        using enum OperandType_t;
+    case R8:
+    case R16:
+    case R16MEM:
+    case R16STK:
+    case pR8:
+    case SP_PLUS_IMM8:
+        return 1;
+    case BIT_INDEX:
+    case TGT3:
+        return 2;
+    default:
+        return 0;
+    }
+}
+
 template<CoreCpu::OperandType_t type, uint8or16_t T>
 void CoreCpu::write( OperandVar_t operand, T writeValue ) {
     constexpr std::size_t writeSize = sizeof( T );
-    const auto opdVal = std::get<Operand_t>( operand );
-    const auto underlVal = static_cast<Enum_t>( opdVal );
+    const auto opdVal = std::get<getOperandVarType( type )>( operand );
+    Enum_t underlVal;
+    if constexpr( std::is_same_v<std::decay_t<decltype( opdVal )>, Operand_t> ) {
+        underlVal = static_cast<Enum_t>( opdVal );
+    };
 
     if constexpr( type == OperandType_t::R8 ) {
         static_assert( writeSize == 1, "R8 write: wrong value size" );
@@ -88,8 +109,11 @@ void CoreCpu::write( OperandVar_t operand, T writeValue ) {
 
 template<CoreCpu::OperandType_t type>
 uint8or16_t auto CoreCpu::read( const OperandVar_t operand ) {
-    const auto opdVal = std::get<Operand_t>( operand );
-    const auto underlVal = static_cast<Enum_t>( opdVal );
+    const auto opdVal = std::get<getOperandVarType( type )>( operand );
+    Enum_t underlVal;
+    if constexpr( std::is_same_v<std::decay_t<decltype( opdVal )>, Operand_t> ) {
+        underlVal = static_cast<Enum_t>( opdVal );
+    };
 
     if constexpr( type == OperandType_t::R8 ) {
         if( opdVal == Operand_t::pHL ) {

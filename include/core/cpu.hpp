@@ -9,6 +9,7 @@ template<typename T>
 concept uint8or16_t = std::same_as<T, uint8_t> || std::same_as<T, uint16_t>;
 
 class CoreCpu {
+protected:
     using Enum_t = uint8_t;
     enum class OperationType_t : Enum_t {
         INVALID,
@@ -138,6 +139,7 @@ class CoreCpu {
     template<OperationType_t optype>
     void bitShift( Operation_t op );
 
+    static consteval size_t getOperandVarType( CoreCpu::OperandType_t operandType );
     void execute( const Operation_t& op );
     void handleInterrupts();
     void ld( const Operation_t& op );
