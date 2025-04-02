@@ -29,41 +29,140 @@ void setupBackgroundChessboardPatternInVram( uint8_t vram[] ) {
 
 
 void setupSpriteTiles( uint8_t vram[] ) {
-    // Tile 2: Simple sprite pattern (square)
-    // Each tile is 16 bytes (8x8 pixels, 2 bits per pixel)
-    const int tileOffset = 2 * 16; // Tile ID 2
-
-    // Top row (black)
-    vram[tileOffset] = 0xFF;
-    vram[tileOffset + 1] = 0xFF;
-
-    // Middle rows (black on sides, white in middle)
-    for( int i = 2; i < 14; i += 2 ) {
-        vram[tileOffset + i] = 0x81;     // 10000001
-        vram[tileOffset + i + 1] = 0x81; // 10000001
+    // Clear the first few tiles to ensure a clean slate
+    for( int tile = 0; tile < 16; tile++ ) {
+        const int tileOffset = tile * 16;
+        for( int i = 0; i < 16; i++ ) {
+            vram[tileOffset + i] = 0;
+        }
     }
 
+    // Tile 0: Empty tile (transparent)
+    // Left as all zeros
+
+    // Tile 1: Solid block
+    const int solidTileOffset = 1 * 16;
+    for( int i = 0; i < 16; i++ ) {
+        vram[solidTileOffset + i] = 0xFF;
+    }
+
+    // Tile 2: Square outline (as in your original code)
+    const int squareTileOffset = 2 * 16;
+    // Top row (black)
+    vram[squareTileOffset + 1] = 0xFF;
+    // Middle rows (black on sides, white in middle)
+    for( int i = 2; i < 14; i += 2 ) {
+        vram[squareTileOffset + i] = 0x81;     // 10000001
+        vram[squareTileOffset + i + 1] = 0x81; // 10000001
+    }
     // Bottom row (black)
-    vram[tileOffset + 14] = 0xFF;
-    vram[tileOffset + 15] = 0xFF;
+    vram[squareTileOffset + 14] = 0xFF;
+    vram[squareTileOffset + 15] = 0xFF;
 
-    // Tile 3: Simple sprite pattern (cross)
-    const int crossTileOffset = 3 * 16; // Tile ID 3
-
+    // Tile 3: Cross (as in your original code)
+    const int crossTileOffset = 3 * 16;
     // Set entire tile to 0 (white)
     for( int i = 0; i < 16; i++ ) {
         vram[crossTileOffset + i] = 0;
     }
-
     // Horizontal line
     vram[crossTileOffset + 6] = 0xFF;
     vram[crossTileOffset + 7] = 0xFF;
-
     // Vertical line
     for( int i = 0; i < 16; i += 2 ) {
         vram[crossTileOffset + i] |= 0x18;     // 00011000
         vram[crossTileOffset + i + 1] |= 0x18; // 00011000
     }
+
+    // Tile 4: Circle
+    const int circleTileOffset = 4 * 16;
+    // Set entire tile to 0 (white)
+    for( int i = 0; i < 16; i++ ) {
+        vram[circleTileOffset + i] = 0;
+    }
+    // Top and bottom rows (partial circles)
+    vram[circleTileOffset + 0] = 0x3C;  // 00111100
+    vram[circleTileOffset + 1] = 0x3C;  // 00111100
+    vram[circleTileOffset + 14] = 0x3C; // 00111100
+    vram[circleTileOffset + 15] = 0x3C; // 00111100
+    // Middle rows
+    for( int i = 2; i < 14; i += 2 ) {
+        if( i == 2 || i == 12 ) {
+            vram[circleTileOffset + i] = 0x7E;     // 01111110
+            vram[circleTileOffset + i + 1] = 0x7E; // 01111110
+        } else {
+            vram[circleTileOffset + i] = 0x81;     // 10000001
+            vram[circleTileOffset + i + 1] = 0x81; // 10000001
+        }
+    }
+
+    // Tile 5: Triangle (pointing up)
+    const int triangleTileOffset = 5 * 16;
+    // Set entire tile to 0 (white)
+    for( int i = 0; i < 16; i++ ) {
+        vram[triangleTileOffset + i] = 0;
+    }
+    // Bottom row (full black)
+    vram[triangleTileOffset + 14] = 0xFF;
+    vram[triangleTileOffset + 15] = 0xFF;
+    // Building triangle from bottom to top
+    vram[triangleTileOffset + 12] = 0x7E; // 01111110
+    vram[triangleTileOffset + 13] = 0x7E; // 01111110
+    vram[triangleTileOffset + 10] = 0x3C; // 00111100
+    vram[triangleTileOffset + 11] = 0x3C; // 00111100
+    vram[triangleTileOffset + 8] = 0x18;  // 00011000
+    vram[triangleTileOffset + 9] = 0x18;  // 00011000
+    vram[triangleTileOffset + 6] = 0x08;  // 00001000
+    vram[triangleTileOffset + 7] = 0x08;  // 00001000
+
+    // Tile 6: Diamond
+    const int diamondTileOffset = 6 * 16;
+    // Set entire tile to 0 (white)
+    for( int i = 0; i < 16; i++ ) {
+        vram[diamondTileOffset + i] = 0;
+    }
+    // Diamond pattern
+    vram[diamondTileOffset + 0] = 0x08;  // 00001000
+    vram[diamondTileOffset + 1] = 0x08;  // 00001000
+    vram[diamondTileOffset + 2] = 0x1C;  // 00011100
+    vram[diamondTileOffset + 3] = 0x1C;  // 00011100
+    vram[diamondTileOffset + 4] = 0x3E;  // 00111110
+    vram[diamondTileOffset + 5] = 0x3E;  // 00111110
+    vram[diamondTileOffset + 6] = 0x7F;  // 01111111
+    vram[diamondTileOffset + 7] = 0x7F;  // 01111111
+    vram[diamondTileOffset + 8] = 0x3E;  // 00111110
+    vram[diamondTileOffset + 9] = 0x3E;  // 00111110
+    vram[diamondTileOffset + 10] = 0x1C; // 00011100
+    vram[diamondTileOffset + 11] = 0x1C; // 00011100
+    vram[diamondTileOffset + 12] = 0x08; // 00001000
+    vram[diamondTileOffset + 13] = 0x08; // 00001000
+
+    // Tile 7: Checkerboard pattern
+    const int checkerTileOffset = 7 * 16;
+    for( int i = 0; i < 16; i += 4 ) {
+        vram[checkerTileOffset + i] = 0xAA;     // 10101010
+        vram[checkerTileOffset + i + 1] = 0xAA; // 10101010
+        vram[checkerTileOffset + i + 2] = 0x55; // 01010101
+        vram[checkerTileOffset + i + 3] = 0x55; // 01010101
+    }
+
+    // Tile 8: Arrow (pointing right)
+    const int arrowTileOffset = 8 * 16;
+    // Set entire tile to 0 (white)
+    for( int i = 0; i < 16; i++ ) {
+        vram[arrowTileOffset + i] = 0;
+    }
+    // Arrow pattern
+    vram[arrowTileOffset + 4] = 0x10;  // 00010000
+    vram[arrowTileOffset + 5] = 0x10;  // 00010000
+    vram[arrowTileOffset + 6] = 0x18;  // 00011000
+    vram[arrowTileOffset + 7] = 0x18;  // 00011000
+    vram[arrowTileOffset + 8] = 0xFF;  // 11111111
+    vram[arrowTileOffset + 9] = 0xFF;  // 11111111
+    vram[arrowTileOffset + 10] = 0x18; // 00011000
+    vram[arrowTileOffset + 11] = 0x18; // 00011000
+    vram[arrowTileOffset + 12] = 0x10; // 00010000
+    vram[arrowTileOffset + 13] = 0x10; // 00010000
 }
 
 void createTestSprite( uint8_t oam[], int index, uint8_t x, uint8_t y, uint8_t tileId,

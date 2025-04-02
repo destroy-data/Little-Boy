@@ -1,3 +1,4 @@
+#include "core/logging.hpp"
 #include "core/memory.hpp"
 #include <core/ppu.hpp>
 #include <cstdint>
@@ -30,7 +31,7 @@ void CorePpu::oamScan() {
     }
 }
 
-std::array<CorePpu::Pixel, 8> CorePpu::fetch() {
+void CorePpu::fetch() {
     const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
     const bool bgWinEnabled = lcdc & 0x1;
     const uint8_t ly = mem.read( Memory::LCD_Y );
@@ -38,7 +39,7 @@ std::array<CorePpu::Pixel, 8> CorePpu::fetch() {
     const uint8_t winY = mem.read( Memory::WIN_Y );
     const uint8_t scrollX = mem.read( Memory::BG_SCROLL_X );
     const uint8_t scrollY = mem.read( Memory::BG_SCROLL_Y );
-    const bool winEnabled = ( lcdc & ( 1 << 5 ) ) && ( winY <= ly ) && ( winX < 168 );
+    const bool winEnabled = ( lcdc & ( 1 << 5 ) ) and ( winY <= ly ) and ( winX < 168 );
     const bool objEnabled = lcdc & ( 1 << 1 );
     const bool useSecondBgMap = lcdc & ( 1 << 3 );
     const bool base8000Addr = lcdc & ( 1 << 4 ); // For background and window tiles
@@ -61,7 +62,6 @@ std::array<CorePpu::Pixel, 8> CorePpu::fetch() {
                                      : 0x1000 + tileSize * static_cast<int8_t>( winTileId );
                 const auto tile = Tile_t( &mem.videoRam[tileAddress], Tile_t::extent );
                 colorId = getPixelColor( tile, pixX % 8, pixY % 8 );
-                bgBuffer[i] = { .colorId = colorId & 0x3u };
             } else {
                 const auto pixX = static_cast<uint8_t>( state.currentX + scrollX );
                 const auto pixY = static_cast<uint8_t>( ly + scrollY );
@@ -71,8 +71,8 @@ std::array<CorePpu::Pixel, 8> CorePpu::fetch() {
                                      : 0x1000 + tileSize * static_cast<int8_t>( bgTileId );
                 const auto tile = Tile_t( &mem.videoRam[tileAddress], Tile_t::extent );
                 colorId = getPixelColor( tile, pixX % 8, pixY % 8 );
-                bgBuffer[i] = { .colorId = colorId & 0x3u };
             }
+            bgBuffer[i] = { colorId };
         }
         if( objEnabled ) {
             const int objHeight = ( ~lcdc & ( 1 << 2 ) ) ? 8 : 16;
@@ -125,17 +125,14 @@ std::array<CorePpu::Pixel, 8> CorePpu::fetch() {
                     uint8_t colorId = getPixelColor( tile, tileX, tileY );
 
                     // Color 0 is transparent for objects
-                    if( objectBuffer[fifoIndex].colorId == 0 ) {
-                        objectBuffer[fifoIndex] = { .colorId = colorId & 0x3u,
-                                                    .palette = dmgUseOBP1,
-                                                    .priority = priority };
-                    }
+                    if( objectBuffer[fifoIndex].colorId == 0 )
+                        objectBuffer[fifoIndex] = { colorId, dmgUseOBP1, priority };
                 }
             }
         }
     }
     state.bgPixelsFifo.pushBatch( bgBuffer );
-    return bgBuffer;
+    state.spritePixelsFifo.pushBatch( objectBuffer );
 }
 
 uint8_t CorePpu::getPixelColor( const Tile_t& tile, int x, int y ) {
@@ -231,9 +228,10 @@ void CorePpu::tick() {
     case PIXEL_TRANSFER:
         if( state.bgPixelsFifo.size() == 0 && state.renderedX < displayWidth ) {
             fetch();
-            auto bg = state.bgPixelsFifo.popBatch();
+            const auto bg = state.bgPixelsFifo.popBatch();
+            const auto sprite = state.spritePixelsFifo.popBatch();
             for( unsigned i = 0; i < 8 && state.renderedX < displayWidth; i++ ) {
-                drawPixel( mergePixel( bg[i], {} ) );
+                drawPixel( mergePixel( bg[i], sprite[i] ) );
                 state.renderedX++;
             }
             state.bgPixelsFifo.clear();

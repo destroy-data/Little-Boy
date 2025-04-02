@@ -10,9 +10,14 @@ public:
     static constexpr int displayWidth = 160, displayHeight = 144, tileSize = 16,
                          scanlineDuration = 456;
     struct Pixel {
-        unsigned colorId : 2;
-        unsigned palette : 3; //in DMG only for objects and only 0 or 1
-        unsigned priority : 1;
+        uint8_t colorId : 2;
+        uint8_t palette : 3; //in DMG only for objects and only 0 or 1
+        uint8_t priority : 1;
+        Pixel( uint8_t colorId_ = 0, uint8_t palette_ = 0, uint8_t priority_ = 0 )
+            : colorId( colorId_ & 0x3 )
+            , palette( palette_ & 0x7 )
+            , priority( priority_ & 0x1 ) {
+        }
     };
     enum class PpuMode { H_BLANK, V_BLANK, OAM_SEARCH, PIXEL_TRANSFER };
     // DMG color values
@@ -43,7 +48,7 @@ public:
         int scanlineCycleNr = 0;
     } state;
 
-    std::array<Pixel, 8> fetch();
+    void fetch();
     uint8_t getPixelColor( const Tile_t& tile, int x, int y );
     void oamScan();
     uint8_t mergePixel( Pixel bgPixel, Pixel spritePixel );
