@@ -37,7 +37,7 @@ void CoreCpu::write( OperandVar_t operand, T writeValue ) {
 
         if( opdVal == Operand_t::pHL ) {
             const auto index = static_cast<Enum_t>( Operand_t::hl ) * 2;
-            mem.write( registers[index] | ( registers[index + 1] << 8 ),
+            mem.write( static_cast<uint16_t>( registers[index] | ( registers[index + 1] << 8 ) ),
                        static_cast<uint8_t>( writeValue ) );
         } else if( opdVal == Operand_t::a ) {
             const int aIndex = 6;
@@ -71,7 +71,8 @@ void CoreCpu::write( OperandVar_t operand, T writeValue ) {
         switch( opdVal ) {
         case Operand_t::bc:
         case Operand_t::de:
-            mem.write( registers[underlVal * 2] | ( registers[underlVal * 2 + 1] << 8 ),
+            mem.write( static_cast<uint16_t>( registers[underlVal * 2] |
+                                              ( registers[underlVal * 2 + 1] << 8 ) ),
                        writeValue );
             return;
         case Operand_t::hlPlus: {
@@ -118,7 +119,8 @@ uint8or16_t auto CoreCpu::read( const OperandVar_t operand ) {
     if constexpr( type == OperandType_t::R8 ) {
         if( opdVal == Operand_t::pHL ) {
             const auto index = static_cast<Enum_t>( Operand_t::hl ) * 2;
-            return mem.read( registers[index] | ( registers[index + 1] << 8 ) );
+            return mem.read(
+                    static_cast<uint16_t>( registers[index] | ( registers[index + 1] << 8 ) ) );
         } else if( opdVal == Operand_t::a ) {
             const int aIndex = 6;
             return registers[aIndex];
@@ -144,7 +146,8 @@ uint8or16_t auto CoreCpu::read( const OperandVar_t operand ) {
         switch( opdVal ) {
         case Operand_t::bc:
         case Operand_t::de:
-            return mem.read( registers[underlVal * 2] | ( registers[underlVal * 2 + 1] << 8 ) );
+            return mem.read( static_cast<uint16_t>( registers[underlVal * 2] |
+                                                    ( registers[underlVal * 2 + 1] << 8 ) ) );
         case Operand_t::hlPlus: {
             uint16_t currentHl =
                     registers[hlIndex] | static_cast<uint16_t>( registers[hlIndex + 1] << 8 );
@@ -335,20 +338,19 @@ void CoreCpu::ld( const Operation_t& op ) {
         return;
     }
 
-    auto readVal8 = static_cast<uint8_t>( readVal );
     switch( op.operandType1 ) {
         using enum OperandType_t;
     case R8:
-        write<R8>( op.operand1, readVal8 );
+        write<R8>( op.operand1, static_cast<uint8_t>( readVal ) );
         break;
     case R16:
         write<R16>( op.operand1, readVal );
         break;
     case R16MEM:
-        write<R16MEM>( op.operand1, readVal8 );
+        write<R16MEM>( op.operand1, static_cast<uint8_t>( readVal ) );
         break;
     case pIMM16:
-        write<pIMM16>( op.operand1, readVal8 );
+        write<pIMM16>( op.operand1, static_cast<uint8_t>( readVal ) );
         break;
     default:
         logError( ErrorCode::InvalidOperand,
@@ -364,13 +366,11 @@ void CoreCpu::ldh( const Operation_t& op ) {
     case R8:
         readVal = read<OperandType_t::R8>( op.operand2 );
         break;
-    case IMM8:
-        readVal = 0xFF00 + read<OperandType_t::IMM8>( op.operand2 );
+    case FF00_PLUS_R8:
+        readVal = mem.read( 0xFF00 + read<OperandType_t::R8>( op.operand2 ) );
         break;
-    case pIMM16:
-        readVal = read<OperandType_t::pIMM16>( op.operand2 );
-        if( readVal < 0xFF00 )
-            return;
+    case IMM8:
+        readVal = mem.read( 0xFF00 + read<OperandType_t::IMM8>( op.operand2 ) );
         break;
     default:
         logError( ErrorCode::InvalidOperand,
@@ -378,17 +378,18 @@ void CoreCpu::ldh( const Operation_t& op ) {
         return;
     }
 
-    auto readVal8 = static_cast<uint8_t>( readVal );
     switch( op.operandType1 ) {
         using enum OperandType_t;
     case R8:
-        write<OperandType_t::R8>( op.operand1, readVal8 );
+        write<OperandType_t::R8>( op.operand1, static_cast<uint8_t>( readVal ) );
         break;
-    case R16:
-        write<OperandType_t::R16>( op.operand1, readVal );
+    case FF00_PLUS_R8:
+        mem.write( 0xFF00 + read<OperandType_t::R8>( op.operand1 ),
+                   static_cast<uint8_t>( readVal ) );
         break;
-    case pIMM16:
-        write<OperandType_t::pIMM16>( op.operand1, readVal8 );
+    case IMM8:
+        mem.write( 0xFF00 + read<OperandType_t::IMM8>( op.operand1 ),
+                   static_cast<uint8_t>( readVal ) );
         break;
     default:
         logError( ErrorCode::InvalidOperand,
@@ -746,5 +747,5 @@ void CoreCpu::handleInterrupts() {
     }
 };
 
-int CPU::tick() {
+void CoreCpu::tick() {
 }

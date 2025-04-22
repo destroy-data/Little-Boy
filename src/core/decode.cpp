@@ -1,6 +1,8 @@
 #include "core/cpu.hpp"
 #include <utility>
 
+// source: https://gbdev.io/pandocs/CPU_Instruction_Set.html
+
 CoreCpu::Operation_t CoreCpu::decode() {
     // first check instructions without different operand variants
     switch( mem.read( PC ) ) {
@@ -68,15 +70,20 @@ CoreCpu::Operation_t CoreCpu::decode() {
     case 0xCB:
         PC++;
         return decodeCB();
+    // Sources give contradictory informations
+    // rgbds.gbdev.io/docs/v0.9.1/gbz80.7 says that there are n16 operands used
+    // gbdev.io/pandocs/CPU_Instruction_Set.html says that n8 is used
+    // gekkio.fi/files/gb-docs/gbctr.pdf also says that n8 is used
+    // I'll go with n8
     case 0xE2:
-        return { OperationType_t::LDH, OperandType_t::R8, Operand_t::c, OperandType_t::R8,
+        return { OperationType_t::LDH, OperandType_t::FF00_PLUS_R8, Operand_t::c, OperandType_t::R8,
                  Operand_t::a };
     case 0xE0:
         return { OperationType_t::LDH, OperandType_t::IMM8, {}, OperandType_t::R8, Operand_t::a };
     case 0xEA:
         return { OperationType_t::LD, OperandType_t::pIMM16, {}, OperandType_t::R8, Operand_t::a };
     case 0xF2:
-        return { OperationType_t::LDH, OperandType_t::R8, Operand_t::a, OperandType_t::R8,
+        return { OperationType_t::LDH, OperandType_t::R8, Operand_t::a, OperandType_t::FF00_PLUS_R8,
                  Operand_t::c };
     case 0xF0:
         return { OperationType_t::LDH, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };

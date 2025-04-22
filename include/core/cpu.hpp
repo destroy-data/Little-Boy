@@ -71,7 +71,8 @@ protected:
         IMM8,
         IMM16,
         pIMM16,
-        SP_PLUS_IMM8
+        SP_PLUS_IMM8,
+        FF00_PLUS_R8
     };
     enum class Operand_t : Enum_t {
         // values correspond to their encoding in opcodes
@@ -180,5 +181,5 @@ public:
         logDebug( ErrorCode::NoError, "test" );
     };
     virtual ~CoreCpu() = default;
-    int tick();
+    void tick();
 };
