@@ -2,6 +2,7 @@
 #include "core/memory.hpp"
 #include <core/ppu.hpp>
 #include <cstdint>
+#include <utility>
 
 void CorePpu::oamScan() {
     //mode 2 - search for objects which overlap current scanline
@@ -150,11 +151,11 @@ uint8_t CorePpu::getPixelColor( const Tile_t& tile, int x, int y ) {
 }
 
 
-void CorePpu::tick() {
+CorePpu::PpuMode CorePpu::tick() {
     // Check if LCD is enabled
     const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
     if( !( lcdc & ( 1 << 7 ) ) ) {
-        return; // LCD disabled, nothing to do
+        return PpuMode::DISABLED; // LCD disabled, nothing to do
     }
 
     uint8_t status = mem.read( Memory::LCD_STATUS );
@@ -241,13 +242,17 @@ void CorePpu::tick() {
         // Check if we're done rendering this line
         if( state.renderedX >= displayWidth ) {
             // Move to H-Blank
-            status = status & ~0x3;
+            status = ( status & ~0x3 ) | static_cast<uint8_t>( H_BLANK );
             mem.write( Memory::LCD_STATUS, status );
             mem.setVramLock( false );
             mem.setOamLock( false );
         }
         break;
+    case DISABLED:
+        std::unreachable();
     }
+
+    return static_cast<PpuMode>( status & 0x3 );
 }
 
 uint8_t CorePpu::mergePixel( Pixel bgPixel, Pixel spritePixel ) {

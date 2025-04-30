@@ -19,7 +19,7 @@ public:
             , priority( priority_ & 0x1 ) {
         }
     };
-    enum class PpuMode { H_BLANK, V_BLANK, OAM_SEARCH, PIXEL_TRANSFER };
+    enum class PpuMode { H_BLANK = 0, V_BLANK = 1, OAM_SEARCH = 2, PIXEL_TRANSFER = 3, DISABLED };
     // DMG color values
     const uint8_t dmgColorMap[4][3] = {
             { 255, 255, 255 }, // White
@@ -59,5 +59,5 @@ public:
     CorePpu( Memory& mem_ ) : mem( mem_ ) {
     }
     virtual ~CorePpu() = default;
-    void tick();
+    PpuMode tick();
 };
