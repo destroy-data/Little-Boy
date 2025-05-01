@@ -52,7 +52,7 @@ void setupSpriteTiles( uint8_t vram[] ) {
     vram[squareTileOffset + 1] = 0xFF;
     // Middle rows (black on sides, white in middle)
     for( int i = 2; i < 14; i += 2 ) {
-        vram[squareTileOffset + i] = 0x81;     // 10000001
+        vram[squareTileOffset + i] = 0xFF;     // 10000001
         vram[squareTileOffset + i + 1] = 0x81; // 10000001
     }
     // Bottom row (black)
@@ -190,7 +190,7 @@ void setupTestSprites( Memory& mem ) {
     // Arguments: memory, OAM index, x, y, tile ID, attributes
 
     // Square sprite at the top left
-    createTestSprite( mem.oam, 0, 20, 20, 2, 0 );
+    createTestSprite( mem.oam, 0, 27, 27, 2, 0 );
 
     // Cross sprite at the top right
     createTestSprite( mem.oam, 1, 100, 20, 3, 0 );

@@ -79,6 +79,8 @@ int main() {
     emu.memory.write( Memory::BG_SCROLL_X, 0 );         // No scrolling
     emu.memory.write( Memory::BG_SCROLL_Y, 0 );         // No scrolling
 
+    std::string mousePosition;
+
     while( !WindowShouldClose() ) {
 
         // Run PPU for one frame
@@ -104,7 +106,13 @@ int main() {
                 Rectangle { 0, 0, (float)screenWidth, (float)screenHeight }, Vector2 { 0, 0 }, 0.0f,
                 WHITE );
 
-        DrawFPS( 0, 0 );
+        Vector2 mousePosition = GetMousePosition();
+        std::string mousePositionText =
+                "X: " + std::to_string( static_cast<int>( mousePosition.x / scaleFactor ) ) +
+                ", Y: " + std::to_string( static_cast<int>( mousePosition.y / scaleFactor ) );
+        int textWidth = MeasureText( mousePositionText.c_str(), 20 );
+        DrawText( mousePositionText.c_str(), screenWidth - textWidth - 10, 10, 20, RED );
+        DrawFPS( 5, 5 );
         EndDrawing();
     }
 
