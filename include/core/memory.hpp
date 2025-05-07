@@ -1,5 +1,6 @@
 #pragma once
 #include "core/cartridge.hpp"
+#include <array>
 #include <cstdint>
 
 struct Memory {
@@ -75,6 +76,44 @@ struct Memory {
         OBJ_PALETTE_SPEC = 0xFF6A,
         OBJ_PALETTE_DATA = 0xFF6B
     };
+
+    //helpers
+    bool inRom00( const uint16_t index ) const {
+        return index < ROM_0N;
+    }
+    bool inRom0N( const uint16_t index ) const {
+        return ROM_0N <= index and index <= VIDEO_RAM;
+    }
+    bool inVideoRam( const uint16_t index ) const {
+        return VIDEO_RAM <= index and index <= EXTERNAL_RAM;
+    }
+    bool inExternalRam( const uint16_t index ) const {
+        return EXTERNAL_RAM <= index and index <= WORK_RAM_00;
+    }
+    bool inWorkRam00( const uint16_t index ) const {
+        return WORK_RAM_00 <= index and index <= WORK_RAM_0N;
+    }
+    bool inWorkRam0N( const uint16_t index ) const {
+        return WORK_RAM_0N <= index and index <= ECHO_RAM_00;
+    }
+    bool inEchoRam00( const uint16_t index ) const {
+        return ECHO_RAM_00 <= index and index <= ECHO_RAM_0N;
+    }
+    bool inEchoRam0N( const uint16_t index ) const {
+        return ECHO_RAM_0N <= index and index <= OBJECT_ATTRIBUTE_MEMORY;
+    }
+    bool inObjectAttributeMemory( const uint16_t index ) const {
+        return OBJECT_ATTRIBUTE_MEMORY <= index and index <= NOT_USABLE;
+    }
+    bool inNotUsable( const uint16_t index ) const {
+        return NOT_USABLE <= index and index <= IO_REGISTERS;
+    }
+    bool inIoRegisters( const uint16_t index ) const {
+        return IO_REGISTERS <= index and index <= HIGH_RAM;
+    }
+    bool inHighRam( const uint16_t index ) const {
+        return HIGH_RAM <= index and index <= INTERRUPT_ENABLE_REGISTER;
+    }
 
     uint8_t read( const uint16_t index ) const;
     void write( const uint16_t index, uint8_t value );
