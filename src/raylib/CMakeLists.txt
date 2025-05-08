@@ -1,5 +1,6 @@
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 add_library(gb_raylib STATIC ${SOURCES})
+add_strict_warnings(gb_raylib)
 
 # Adding Raylib
 include(FetchContent)

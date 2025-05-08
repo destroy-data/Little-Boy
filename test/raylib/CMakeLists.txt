@@ -35,6 +35,7 @@ foreach(itest ${RAYLIB_INTERACTIVE_TESTS})
         ${itest}
         ${HELPER_FILE}
     )
+    add_strict_warnings(itest_raylib_${test_name})
 
     target_link_libraries(itest_raylib_${test_name}
         PRIVATE

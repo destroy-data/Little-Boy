@@ -47,7 +47,7 @@ protected:
 };
 
 // Define our emulator type using the Emulator template with our implementations
-using LittleBoyEmulator = Emulator<RaylibCartridge, Memory, DummyCpu, RaylibPpu>;
+using LittleBoyEmulator = Emulator<DummyCartridge, Memory, DummyCpu, RaylibPpu>;
 
 int main() {
     // Initialize emulator
