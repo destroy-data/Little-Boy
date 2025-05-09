@@ -8,8 +8,8 @@ void CorePpu::oamScan() {
     //mode 2 - search for objects which overlap current scanline
     //it takes 80 dots
     state.objCount = 0;
-    const bool objSize8x8 = ~mem.read( Memory::LCD_CONTROL ) & ( 1 << 2 );
-    const int ly = mem.read( Memory::LCD_Y );
+    const bool objSize8x8 = ~mem.read( addr::lcdControl ) & ( 1 << 2 );
+    const int ly = mem.read( addr::lcdY );
 
     // obj Y = pos + 16
     for( unsigned i = 0; i < sizeof( mem.oam ) && state.objCount < 10; i += 4 ) {
@@ -33,13 +33,13 @@ void CorePpu::oamScan() {
 }
 
 void CorePpu::fetch() {
-    const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
+    const uint8_t lcdc = mem.read( addr::lcdControl );
     const bool bgWinEnabled = lcdc & 0x1;
-    const uint8_t ly = mem.read( Memory::LCD_Y );
-    const uint8_t winX = mem.read( Memory::WIN_X );
-    const uint8_t winY = mem.read( Memory::WIN_Y );
-    const uint8_t scrollX = mem.read( Memory::BG_SCROLL_X );
-    const uint8_t scrollY = mem.read( Memory::BG_SCROLL_Y );
+    const uint8_t ly = mem.read( addr::lcdY );
+    const uint8_t winX = mem.read( addr::winX );
+    const uint8_t winY = mem.read( addr::winY );
+    const uint8_t scrollX = mem.read( addr::bgScrollX );
+    const uint8_t scrollY = mem.read( addr::bgScrollY );
     const bool winEnabled = ( lcdc & ( 1 << 5 ) ) and ( winY <= ly ) and ( winX < 168 );
     const bool objEnabled = lcdc & ( 1 << 1 );
     const bool useSecondBgMap = lcdc & ( 1 << 3 );
@@ -153,14 +153,14 @@ uint8_t CorePpu::getPixelColor( const Tile_t& tile, int x, int y ) {
 
 CorePpu::PpuMode CorePpu::tick() {
     // Check if LCD is enabled
-    const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
+    const uint8_t lcdc = mem.read( addr::lcdControl );
     if( !( lcdc & ( 1 << 7 ) ) ) {
         return PpuMode::DISABLED; // LCD disabled, nothing to do
     }
 
-    uint8_t status = mem.read( Memory::LCD_STATUS );
+    uint8_t status = mem.read( addr::lcdStatus );
     const auto currentMode = static_cast<PpuMode>( status & 0x3 );
-    uint8_t ly = mem.read( Memory::LCD_Y );
+    uint8_t ly = mem.read( addr::lcdY );
 
     // State machine to handle PPU modes
     state.scanlineCycleNr++;
@@ -172,19 +172,19 @@ CorePpu::PpuMode CorePpu::tick() {
             state.scanlineCycleNr = 0;
 
             ly++;
-            mem.write( Memory::LCD_Y, ly );
+            mem.write( addr::lcdY, ly );
 
             if( ly >= 144 ) {
                 status = ( status & ~0x3 ) | static_cast<uint8_t>( V_BLANK );
-                mem.write( Memory::LCD_STATUS, status );
+                mem.write( addr::lcdStatus, status );
                 mem.setOamLock( false );
 
                 // Request V-Blank interrupt
-                mem.write( Memory::INTERRUPT_FLAG,
-                           static_cast<uint8_t>( mem.read( Memory::INTERRUPT_FLAG ) | 0x01u ) );
+                mem.write( addr::interruptFlag,
+                           static_cast<uint8_t>( mem.read( addr::interruptFlag ) | 0x01u ) );
             } else {
                 status = ( status & ~0x3 ) | static_cast<uint8_t>( OAM_SEARCH );
-                mem.write( Memory::LCD_STATUS, status );
+                mem.write( addr::lcdStatus, status );
                 mem.setOamLock( true );
             }
         }
@@ -198,13 +198,13 @@ CorePpu::PpuMode CorePpu::tick() {
             if( ly >= 154 ) {
                 // End of V-Blank, back to first scanline
                 ly = 0;
-                mem.write( Memory::LCD_Y, ly );
+                mem.write( addr::lcdY, ly );
 
                 status = ( status & ~0x3 ) | static_cast<uint8_t>( OAM_SEARCH );
-                mem.write( Memory::LCD_STATUS, status );
+                mem.write( addr::lcdStatus, status );
                 mem.setOamLock( true );
             } else {
-                mem.write( Memory::LCD_Y, ly );
+                mem.write( addr::lcdY, ly );
             }
         }
         break;
@@ -221,7 +221,7 @@ CorePpu::PpuMode CorePpu::tick() {
             state.spritePixelsFifo.clear();
 
             status = ( status & ~0x3 ) | static_cast<uint8_t>( PIXEL_TRANSFER );
-            mem.write( Memory::LCD_STATUS, status );
+            mem.write( addr::lcdStatus, status );
             mem.setVramLock( true );
         }
         break;
@@ -243,7 +243,7 @@ CorePpu::PpuMode CorePpu::tick() {
         if( state.renderedX >= displayWidth ) {
             // Move to H-Blank
             status = ( status & ~0x3 ) | static_cast<uint8_t>( H_BLANK );
-            mem.write( Memory::LCD_STATUS, status );
+            mem.write( addr::lcdStatus, status );
             mem.setVramLock( false );
             mem.setOamLock( false );
         }
@@ -257,13 +257,13 @@ CorePpu::PpuMode CorePpu::tick() {
 
 uint8_t CorePpu::mergePixel( Pixel bgPixel, Pixel spritePixel ) {
     // Merge background and object pixels
-    const uint8_t lcdc = mem.read( Memory::LCD_CONTROL );
+    const uint8_t lcdc = mem.read( addr::lcdControl );
     const bool bgEnabled = lcdc & 0x01;
     const bool objEnabled = lcdc & 0x02;
 
-    const uint8_t bgPalette = mem.read( Memory::BG_PALETTE );
-    const uint8_t objPalette0 = mem.read( Memory::OBJECT_PALETTE_0 );
-    const uint8_t objPalette1 = mem.read( Memory::OBJECT_PALETTE_1 );
+    const uint8_t bgPalette = mem.read( addr::bgPalette );
+    const uint8_t objPalette0 = mem.read( addr::objectPalette0 );
+    const uint8_t objPalette1 = mem.read( addr::objectPalette1 );
 
     uint8_t finalColor;
     // Determine which pixel to display according to priority rules

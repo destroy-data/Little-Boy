@@ -210,33 +210,33 @@ void setupTestSprites( Memory& mem ) {
 
 void setupLcdRegisters( Memory& mem ) {
     // Set LCD Control register (LCDC) - Enable display, BG, etc.
-    mem.write( Memory::LCD_CONTROL, 0x91 ); // 10010001
-                                            // Bit 7: LCD enabled
-                                            // Bit 0: BG & Window display enabled
-                                            // Bit 4: BG & Window tile data at 0x8000-0x8FFF
+    mem.write( addr::lcdControl, 0x91 ); // 10010001
+                                         // Bit 7: LCD enabled
+                                         // Bit 0: BG & Window display enabled
+                                         // Bit 4: BG & Window tile data at 0x8000-0x8FFF
 
     // Set scroll registers to 0
-    mem.write( Memory::BG_SCROLL_X, 0 );
-    mem.write( Memory::BG_SCROLL_Y, 0 );
+    mem.write( addr::bgScrollX, 0 );
+    mem.write( addr::bgScrollY, 0 );
 
     // Set window position off-screen by default
-    mem.write( Memory::WIN_X, 166 );
-    mem.write( Memory::WIN_Y, 144 );
+    mem.write( addr::winX, 166 );
+    mem.write( addr::winY, 144 );
 
     // Set palettes for DMG mode
-    mem.write( Memory::BG_PALETTE, 0xE4 );       // 11100100 - Darkest to lightest
-    mem.write( Memory::OBJECT_PALETTE_0, 0xE4 ); // 11100100 - Same as BG
-    mem.write( Memory::OBJECT_PALETTE_1, 0xD2 ); // 11010010 - Alternate palette
+    mem.write( addr::bgPalette, 0xE4 );      // 11100100 - Darkest to lightest
+    mem.write( addr::objectPalette0, 0xE4 ); // 11100100 - Same as BG
+    mem.write( addr::objectPalette1, 0xD2 ); // 11010010 - Alternate palette
 
     // Set LCD Y-coordinate to 0
-    mem.write( Memory::LCD_Y, 0 );
+    mem.write( addr::lcdY, 0 );
 
     // Set LYC to 0
-    mem.write( Memory::LYC, 0 );
+    mem.write( addr::lyc, 0 );
 
     // Set LCD status register
-    mem.write( Memory::LCD_STATUS, 0x86 ); // 10000101
-                                           // Bit 7: Always 1
-                                           // Bit 2: LYC=LY coincidence flag
-                                           // Bit 0-1: Mode flag (01 = V-Blank)
+    mem.write( addr::lcdStatus, 0x86 ); // 10000101
+                                        // Bit 7: Always 1
+                                        // Bit 2: LYC=LY coincidence flag
+                                        // Bit 0-1: Mode flag (01 = V-Blank)
 }

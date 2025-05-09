@@ -1,3 +1,4 @@
+#include "core/memory.hpp"
 #include "dummy_types.hpp"
 #include "ppu_helper.hpp"
 #include <catch2/catch_test_macros.hpp>
@@ -18,23 +19,23 @@ public:
 
 TEST_CASE( "oam_scan", "[oam]" ) {
     Emulator<DummyCartridge, Memory, DummyCpu, TestPpu> emu;
-    emu.memory.write( Memory::LCD_CONTROL, 0x0 );
+    emu.memory.write( addr::lcdControl, 0x0 );
     createTestSprite( emu.memory.oam, 0, 1, 1, 0, 0 );
 
-    emu.memory.write( Memory::LCD_Y, 0 );
+    emu.memory.write( addr::lcdY, 0 );
     emu.ppu.oamScan();
     REQUIRE( emu.ppu.state.objCount == 0 );
 
-    emu.memory.write( Memory::LCD_Y, 1 );
+    emu.memory.write( addr::lcdY, 1 );
     emu.ppu.oamScan();
     REQUIRE( emu.ppu.state.objCount == 1 );
 
-    emu.memory.write( Memory::LCD_Y, 9 );
+    emu.memory.write( addr::lcdY, 9 );
     emu.ppu.oamScan();
     REQUIRE( emu.ppu.state.objCount == 0 );
 
     //Turn on 8x16 sprites
-    emu.memory.write( Memory::LCD_CONTROL, 0x4 );
+    emu.memory.write( addr::lcdControl, 0x4 );
     emu.ppu.oamScan();
     REQUIRE( emu.ppu.state.objCount == 1 );
 }
