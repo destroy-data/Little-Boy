@@ -8,8 +8,8 @@ function(add_strict_warnings target)
             -Wextra
             -Wpedantic
             -Wconversion
-            -Werror
         )
+        target_compile_options(${target} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-Werror>")
     elseif(MSVC)
         target_compile_options(${target} PRIVATE
             /W4
@@ -21,6 +21,7 @@ function(add_strict_warnings target)
             /w14254  # Conversion warnings (-Wconversion)
             /w14267  # Conversion warnings (-Wconversion)
         )
+        target_compile_options(${target} "$<$<NOT:$<CONFIG:Debug>>:/WX")
     endif()
 endfunction()
 
@@ -39,8 +40,6 @@ set(MODULES
     raylib
 )
 
-# Add -Werror for all configurations except Debug
-add_compile_options("$<$<NOT:$<CONFIG:Debug>>:-Werror>")
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 foreach(MODULE ${MODULES})
