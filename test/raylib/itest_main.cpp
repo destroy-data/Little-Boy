@@ -54,7 +54,7 @@ int main() {
     LittleBoyEmulator emu;
 
     // Setup the display
-    const int scaleFactor = 4;
+    const int scaleFactor = 7;
     const int screenWidth = CorePpu::displayWidth * scaleFactor;
     const int screenHeight = CorePpu::displayHeight * scaleFactor;
 

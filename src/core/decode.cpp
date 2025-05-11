@@ -70,7 +70,7 @@ CoreCpu::Operation_t CoreCpu::decode() {
     case 0xCB:
         PC++;
         return decodeCB();
-    // Sources give contradictory informations
+    // Sources give contradictory information
     // rgbds.gbdev.io/docs/v0.9.1/gbz80.7 says that there are n16 operands used
     // gbdev.io/pandocs/CPU_Instruction_Set.html says that n8 is used
     // gekkio.fi/files/gb-docs/gbctr.pdf also says that n8 is used

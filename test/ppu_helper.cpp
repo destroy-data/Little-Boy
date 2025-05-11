@@ -14,12 +14,14 @@ void setupBackgroundChessboardPatternInVram( uint8_t vram[] ) {
 
     // Set up background map as a chessboard pattern
     // The background map starts at 0x1800 in VRAM and is a 32x32 grid of tile numbers
+    const auto chessboardSize = 4; // 4x4 tiles per square
     for( int y = 0; y < 32; y++ ) {
         for( int x = 0; x < 32; x++ ) {
             unsigned mapOffset = 0x1800 + y * 32 + x;
 
-            // Integer division by 2 creates 2x2 tile squares
-            bool isBlackSquare = ( ( x / 2 ) + ( y / 2 ) ) % 2;
+            // Determine if this tile is in a black square
+            // Using integer division to create the chessboard pattern
+            bool isBlackSquare = ( ( x / chessboardSize ) + ( y / chessboardSize ) ) % 2;
 
             // Set the tile value (0 for white, 1 for black)
             vram[mapOffset] = static_cast<uint8_t>( isBlackSquare );
@@ -49,6 +51,7 @@ void setupSpriteTiles( uint8_t vram[] ) {
     // Tile 2: Square outline (as in your original code)
     const int squareTileOffset = 2 * 16;
     // Top row (black)
+    vram[squareTileOffset + 0] = 0xFF;
     vram[squareTileOffset + 1] = 0xFF;
     // Middle rows (black on sides, white in middle)
     for( int i = 2; i < 14; i += 2 ) {

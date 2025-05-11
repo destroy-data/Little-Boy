@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.28.3)
 project(gameboy C CXX)
 
+option(BUILD_TESTS "Build the test suite" ON)
 function(add_strict_warnings target)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(${target} PRIVATE
@@ -47,5 +48,7 @@ foreach(MODULE ${MODULES})
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/${MODULE})
 endforeach()
 
-enable_testing()
-add_subdirectory(${CMAKE_SOURCE_DIR}/test)
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(${CMAKE_SOURCE_DIR}/test)
+endif()

@@ -1,35 +1,30 @@
 #include <array>
 
-template<typename T, std::size_t Size>
+template<typename T, std::size_t N>
 class StaticFifo {
 private:
-    std::array<T, Size> buffer {};
+    std::array<T, N> buffer {};
     std::size_t head = 0;
     std::size_t tail = 0;
     std::size_t count = 0;
-    static constexpr std::size_t BatchSize = 8;
+    static constexpr std::size_t BatchN = 8;
 
 public:
-    bool pushBatch( const std::array<T, BatchSize>& values ) {
-        if( count + BatchSize > Size )
+    bool push( const T& value ) {
+        if( count >= N )
             return false;
-
-        for( std::size_t i = 0; i < BatchSize; ++i ) {
-            buffer[tail] = values[i];
-            tail = ( tail + 1 ) % Size;
-        }
-        count += BatchSize;
+        buffer[tail] = value;
+        tail = ( tail + 1 ) % N;
+        ++count;
         return true;
     }
 
-    std::array<T, BatchSize> popBatch() {
-        std::array<T, BatchSize> result {};
-        if( count >= BatchSize ) {
-            for( std::size_t i = 0; i < BatchSize; ++i ) {
-                result[i] = buffer[head];
-                head = ( head + 1 ) % Size;
-            }
-            count -= BatchSize;
+    T pop() {
+        T result {};
+        if( count > 0 ) {
+            result = buffer[head];
+            head = ( head + 1 ) % N;
+            --count;
         }
         return result;
     }
@@ -39,7 +34,7 @@ public:
     }
 
     bool full() const {
-        return count >= Size;
+        return count >= N;
     }
 
     std::size_t size() const {
@@ -47,7 +42,7 @@ public:
     }
 
     std::size_t capacity() const {
-        return Size;
+        return N;
     }
 
     void clear() {

@@ -149,6 +149,8 @@ uint8_t CorePpu::getPixelColor( const Tile_t& tile, int x, int y ) {
 }
 
 
+=======
+>>>>>>> 7ab00c71 (extract logically fetcher from ppu (1/2 - only background implemented))
 CorePpu::PpuMode CorePpu::tick() {
     // Check if LCD is enabled
     const uint8_t lcdc = mem.read( addr::lcdControl );
@@ -213,10 +215,8 @@ CorePpu::PpuMode CorePpu::tick() {
             oamScan();
 
             // Reset FIFO state for next line
-            state.currentX = 0;
-            state.renderedX = 0;
-            state.bgPixelsFifo.clear();
-            state.spritePixelsFifo.clear();
+            state.bgPixelsFifo = {};
+            state.spritePixelsFifo = {};
 
             status = ( status & ~0x3 ) | static_cast<uint8_t>( PIXEL_TRANSFER );
             mem.write( addr::lcdStatus, status );
@@ -226,15 +226,12 @@ CorePpu::PpuMode CorePpu::tick() {
 
     case PIXEL_TRANSFER:
         if( state.bgPixelsFifo.size() == 0 && state.renderedX < displayWidth ) {
-            fetch();
-            const auto bg = state.bgPixelsFifo.popBatch();
-            const auto sprite = state.spritePixelsFifo.popBatch();
-            for( unsigned i = 0; i < 8 && state.renderedX < displayWidth; i++ ) {
-                drawPixel( mergePixel( bg[i], sprite[i] ) );
-                state.renderedX++;
-            }
-            state.bgPixelsFifo.clear();
-            state.spritePixelsFifo.clear();
+            fetcher.tick( true );
+            if( !state.bgPixelsFifo.empty() )
+                drawPixel( mergePixel( state.bgPixelsFifo.pop(), state.spritePixelsFifo.pop() ) );
+            //TODO
+            state.bgPixelsFifo = {};
+            state.spritePixelsFifo = {};
         }
 
         // Check if we're done rendering this line
@@ -267,7 +264,7 @@ uint8_t CorePpu::mergePixel( Pixel bgPixel, Pixel spritePixel ) {
     // Determine which pixel to display according to priority rules
     if( objEnabled && spritePixel.colorId != 0 ) {
         // Sprite pixel is not transparent
-        if( bgEnabled && bgPixel.colorId != 0 && spritePixel.priority ) {
+        if( bgEnabled && bgPixel.colorId != 0 && spritePixel.bgPriority ) {
             // Background has priority over this sprite and is not transparent
             finalColor = bgPalette >> ( bgPixel.colorId * 2 ) & 0x03;
         } else {
