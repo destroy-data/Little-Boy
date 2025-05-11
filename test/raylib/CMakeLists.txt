@@ -5,7 +5,6 @@ file(GLOB RAYLIB_TESTS
 add_executable(test_raylib
     ${CMAKE_SOURCE_DIR}/test/test_main.cpp
     ${CMAKE_SOURCE_DIR}/test/ppu_helper.cpp
-    ${CMAKE_SOURCE_DIR}/test/desktop_logging.cpp
     ${RAYLIB_TESTS}
     ${HELPER_FILE}
 )
@@ -31,7 +30,6 @@ foreach(itest ${RAYLIB_INTERACTIVE_TESTS})
     add_executable(itest_raylib_${test_name}
         ${CMAKE_SOURCE_DIR}/test/test_main.cpp
         ${CMAKE_SOURCE_DIR}/test/ppu_helper.cpp
-        ${CMAKE_SOURCE_DIR}/test/desktop_logging.cpp
         ${itest}
         ${HELPER_FILE}
     )
