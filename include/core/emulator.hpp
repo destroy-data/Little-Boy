@@ -9,7 +9,7 @@ public:
     Tppu ppu;
 
 public:
-    static constexpr unsigned tickrate = 8388608;
+    static constexpr unsigned tickrate = 4194304;
     static constexpr double oscillatoryTime = 1. / tickrate;
     Emulator() : memory( cartridge ), cpu( memory ), ppu( memory ) {
     }
