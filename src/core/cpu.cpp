@@ -328,10 +328,15 @@ void CoreCpu::ld( const Operation_t& op ) {
     case pIMM16:
         readVal = read<pIMM16>( op.operand2 );
         break;
-    case SP_PLUS_IMM8:
+    case SP_PLUS_IMM8: {
         readVal = read<R16>( { Operand_t::sp } );
-        readVal += read<IMM8>( op.operand2 );
-        break;
+        const auto imm8 = read<IMM8>( op.operand2 );
+        bool cFlag = ( std::numeric_limits<uint16_t>::max() - readVal < imm8 );
+        bool halfCarryFlag = ( ( readVal & 0xFFF ) + ( imm8 & 0xFFF ) ) > 0xFFF;
+
+        readVal += imm8;
+        setZNHCFlags( !readVal, false, halfCarryFlag, cFlag );
+    } break;
     default:
         logError( ErrorCode::InvalidOperand,
                   std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
@@ -473,13 +478,14 @@ void CoreCpu::execute( const Operation_t& op ) {
         subFrom<opdt::R8>( { opd::a }, val2, true );
     } break;
     case OT::DEC:
-        if( op.operandType1 == opdt::R8 ) {
-            auto current = read<opdt::R8>( op.operand1 );
-            write<opdt::R8>( op.operand1, --current );
-        } else if( op.operandType1 == opdt::R16 ) {
+        const auto cFlag = getCFlag();
+        if( op.operandType1 == opdt::R8 )
+            subFrom<opdt::R8>( op.operand1, 1 );
+        else if( op.operandType1 == opdt::R16 ) {
             auto current = read<opdt::R16>( op.operand1 );
             write<opdt::R16>( op.operand1, --current );
         }
+        setCFlag( cFlag );
         break;
     case OT::INC:
         if( op.operandType1 == opdt::R8 ) {

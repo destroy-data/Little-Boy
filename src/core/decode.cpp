@@ -132,6 +132,7 @@ CoreCpu::Operation_t CoreCpu::decodeBlock0() {
     case 0x6:
         return { OperationType_t::LD, OperandType_t::R8, bits345, OperandType_t::IMM8 };
     }
+
     switch( 0xF & mem.read( PC ) ) {
     case 0x1:
         return { OperationType_t::LD, OperandType_t::R16, bits45, OperandType_t::IMM16 };
@@ -147,6 +148,8 @@ CoreCpu::Operation_t CoreCpu::decodeBlock0() {
         return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM,
                  bits45 };
     case 0xB:
+        if( mem.read( PC ) >> 4 == (int)Operand_t::hl )
+            return { OperationType_t::DEC, OperandType_t::R8, Operand_t::pHL };
         return { OperationType_t::DEC, OperandType_t::R16, bits45 };
     }
     return Operation_t { OperationType_t::INVALID };
