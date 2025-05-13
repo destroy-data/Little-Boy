@@ -7,7 +7,6 @@ private:
     std::size_t head = 0;
     std::size_t tail = 0;
     std::size_t count = 0;
-    static constexpr std::size_t BatchN = 8;
 
 public:
     bool push( const T& value ) {

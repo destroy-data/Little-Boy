@@ -1,7 +1,6 @@
 #pragma once
 #include "core/fifo.hpp"
 #include "core/memory.hpp"
-#include <array>
 #include <cstdint>
 #include <span>
 
@@ -33,21 +32,35 @@ public:
     using Tile_t = std::span<uint8_t, 16>;
     using TileRow = std::span<uint8_t, 2>;
 
-    class BackgroundFetcher {
+    class Fetcher {
     public:
         enum class FetcherState_t { FETCH_TILE, FETCH_DATA_LOW, FETCH_DATA_HIGH, PUSH };
         FetcherState_t state = FetcherState_t::FETCH_TILE;
         uint_fast8_t ticksInCurrentState;
-        uint8_t currentTileX;
         uint8_t tileId;
         uint8_t tileDataLow;
         uint8_t tileDataHigh;
         CorePpu& ppu;
         Memory& mem;
-
-        BackgroundFetcher( CorePpu& ppu_, Memory& mem_ ) : ppu( ppu_ ), mem( mem_ ) {
+        Fetcher( CorePpu& ppu_, Memory& mem_ ) : ppu( ppu_ ), mem( mem_ ) {
         }
-        void tick();
+        virtual void tick() = 0;
+        virtual void reset() = 0;
+    };
+    class BackgroundFetcher final : public Fetcher {
+    public:
+        uint8_t currentTileX;
+        BackgroundFetcher( CorePpu& ppu_, Memory& mem_ ) : Fetcher( ppu_, mem_ ) {
+        }
+        void tick() override;
+        void reset() override;
+    };
+    class SpriteFetcher final : public Fetcher {
+    public:
+        SpriteFetcher( CorePpu& ppu_, Memory& mem_ ) : Fetcher( ppu_, mem_ ) {
+        }
+        void tick() override;
+        void reset() override;
     };
 
     Memory& mem;
@@ -59,12 +72,13 @@ public:
                            Tilemap_t( mem.videoRam + 0x1C00, Tilemap_t::extent ) };
 
     BackgroundFetcher bgFetcher;
+    BackgroundFetcher spriteFetcher;
     struct {
         std::span<uint8_t> object[10] = {};
         unsigned objCount = 0;
         StaticFifo<Pixel, 8> bgPixelsFifo {};
         StaticFifo<Pixel, 8> spritePixelsFifo {};
-        int_fast16_t renderedX;
+        int_fast16_t renderedX = 0;
         int scanlineCycleNr = 0;
     } state;
 
@@ -74,7 +88,10 @@ public:
     virtual void drawPixel( uint8_t colorId ) = 0;
 
 public:
-    CorePpu( Memory& mem_ ) : mem( mem_ ), fetcher { *this, mem_ } {
+    CorePpu( Memory& mem_ ) : mem( mem_ ), bgFetcher { *this, mem_ }, spriteFetcher( *this, mem_ ) {
+        uint8_t status = mem.read( addr::lcdStatus );
+        status = ( status & ~0x3 ) | static_cast<uint8_t>( PpuMode::OAM_SEARCH );
+        mem.write( addr::lcdStatus, status );
     }
     virtual ~CorePpu() = default;
     PpuMode tick();

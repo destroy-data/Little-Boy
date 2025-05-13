@@ -4,11 +4,8 @@
 #include "dummy_types.hpp"
 #include "ppu_helper.hpp"
 #include "raylib.h"
-#include "raylib/cartridge.hpp"
-#include <array>
 #include <cstdint>
 #include <cstring>
-#include <vector>
 
 class RaylibPpu final : public CorePpu {
 private:
@@ -67,18 +64,21 @@ int main() {
 
     // Initialize test patterns in VRAM
     setupBackgroundChessboardPatternInVram( emu.memory.videoRam );
-    setupTestSprites( emu.memory );
+    // Don't use sprites for now
+    // setupTestSprites(emu.memory);
 
     // Setup PPU registers
-    emu.memory.write( addr::lcdControl, 0x93 ); // Enable LCD, BG and sprites
-    emu.memory.write( addr::lcdStatus, 0x00 );  // Mode 0 (H-Blank)
-    emu.memory.write( addr::lcdY, 0 );          // LY = 0
+    // 0x91 = Enable LCD (bit 7) and BG (bit 0), disable sprites (bit 1 = 0)
+    emu.memory.write( addr::lcdControl, 0x91 );
+    emu.memory.write( addr::lcdStatus, 0x00 ); // Mode 0 (H-Blank)
+    emu.memory.write( addr::lcdY, 0 );         // LY = 0
     emu.memory.write( addr::bgPalette,
                       0xE4 ); // BG palette: black, dark gray, light gray, white
-    emu.memory.write( addr::objectPalette0, 0xE4 ); // Same palette for sprites
-    emu.memory.write( addr::objectPalette1, 0x1B ); // Alternate palette for some sprites
-    emu.memory.write( addr::bgScrollX, 0 );         // No scrolling
-    emu.memory.write( addr::bgScrollY, 0 );         // No scrolling
+    // Sprite palettes not needed for now
+    // emu.memory.write(addr::objectPalette0, 0xE4);
+    // emu.memory.write(addr::objectPalette1, 0x1B);
+    emu.memory.write( addr::bgScrollX, 0 ); // No scrolling
+    emu.memory.write( addr::bgScrollY, 0 ); // No scrolling
 
     std::string mousePosition;
 
@@ -87,6 +87,9 @@ int main() {
         // Run PPU for one frame
         for( int ly = 0; ly < CorePpu::displayHeight; ly++ ) {
             emu.memory.write( addr::lcdY, static_cast<uint8_t>( ly ) );
+
+            // Initialize renderedX for each scanline
+            emu.ppu.state.renderedX = 0;
 
             // Run PPU for this scanline
             for( int i = 0; i < CorePpu::scanlineDuration; i++ ) {

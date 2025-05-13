@@ -1,4 +1,3 @@
-#include "core/logging.hpp"
 #include "core/memory.hpp"
 #include <core/ppu.hpp>
 #include <cstdint>
@@ -161,18 +160,16 @@ CorePpu::PpuMode CorePpu::tick() {
     uint8_t status = mem.read( addr::lcdStatus );
     const auto currentMode = static_cast<PpuMode>( status & 0x3 );
     uint8_t ly = mem.read( addr::lcdY );
+    auto newLy = ly;
+    bool resetScanlineCycleNr = false;
 
     // State machine to handle PPU modes
-    state.scanlineCycleNr++;
-
     switch( currentMode ) {
         using enum PpuMode;
     case H_BLANK:
-        if( state.scanlineCycleNr >= scanlineDuration ) {
-            state.scanlineCycleNr = 0;
-
-            ly++;
-            mem.write( addr::lcdY, ly );
+        if( state.scanlineCycleNr >= scanlineDuration - 1 ) {
+            resetScanlineCycleNr = true;
+            newLy++;
 
             if( ly >= 144 ) {
                 status = ( status & ~0x3 ) | static_cast<uint8_t>( V_BLANK );
@@ -191,21 +188,18 @@ CorePpu::PpuMode CorePpu::tick() {
         break;
 
     case V_BLANK:
-        if( state.scanlineCycleNr >= scanlineDuration ) {
-            state.scanlineCycleNr = 0;
+        if( state.scanlineCycleNr >= scanlineDuration - 1 ) {
+            resetScanlineCycleNr = true;
 
-            ly++;
             if( ly >= 154 ) {
                 // End of V-Blank, back to first scanline
-                ly = 0;
-                mem.write( addr::lcdY, ly );
+                newLy = 0;
 
                 status = ( status & ~0x3 ) | static_cast<uint8_t>( OAM_SEARCH );
                 mem.write( addr::lcdStatus, status );
                 mem.setOamLock( true );
-            } else {
-                mem.write( addr::lcdY, ly );
-            }
+            } else
+                newLy++;
         }
         break;
 
@@ -214,10 +208,6 @@ CorePpu::PpuMode CorePpu::tick() {
             // At least for now do it in one go
             oamScan();
 
-            // Reset FIFO state for next line
-            state.bgPixelsFifo = {};
-            state.spritePixelsFifo = {};
-
             status = ( status & ~0x3 ) | static_cast<uint8_t>( PIXEL_TRANSFER );
             mem.write( addr::lcdStatus, status );
             mem.setVramLock( true );
@@ -225,28 +215,39 @@ CorePpu::PpuMode CorePpu::tick() {
         break;
 
     case PIXEL_TRANSFER:
-        if( state.bgPixelsFifo.size() == 0 && state.renderedX < displayWidth ) {
-            fetcher.tick( true );
-            if( !state.bgPixelsFifo.empty() )
-                drawPixel( mergePixel( state.bgPixelsFifo.pop(), state.spritePixelsFifo.pop() ) );
-            //TODO
-            state.bgPixelsFifo = {};
-            state.spritePixelsFifo = {};
+        bgFetcher.tick();
+        if( !state.bgPixelsFifo.empty() && state.renderedX < displayWidth ) {
+            // Get and mix pixels from both FIFOs (for now, sprite FIFO will be empty)
+            const Pixel bgPixel = state.bgPixelsFifo.pop();
+            const Pixel spritePixel = state.spritePixelsFifo.empty() ? Pixel( 0, 0, 0 )
+                                                                     : state.spritePixelsFifo.pop();
+
+            drawPixel( mergePixel( bgPixel, spritePixel ) );
+            state.renderedX++;
         }
 
-        // Check if we're done rendering this line
         if( state.renderedX >= displayWidth ) {
             // Move to H-Blank
+            state.renderedX = 0;
             status = ( status & ~0x3 ) | static_cast<uint8_t>( H_BLANK );
             mem.write( addr::lcdStatus, status );
             mem.setVramLock( false );
             mem.setOamLock( false );
+
+            state.bgPixelsFifo.clear();
+            state.spritePixelsFifo.clear();
+            bgFetcher.reset();
+            spriteFetcher.reset();
         }
         break;
     case DISABLED:
         std::unreachable();
     }
-
+    if( resetScanlineCycleNr )
+        state.scanlineCycleNr = 0;
+    else
+        state.scanlineCycleNr++;
+    mem.write( addr::lcdY, newLy );
     return static_cast<PpuMode>( status & 0x3 );
 }
 
