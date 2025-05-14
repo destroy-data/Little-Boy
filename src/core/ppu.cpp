@@ -51,8 +51,7 @@ void CorePpu::fetch() {
     const unsigned end = state.currentX + 8;
     for( unsigned i = 0; state.currentX < end; ++i, ++state.currentX ) {
         if( bgWinEnabled ) {
-            const bool windowPixel =
-                    winEnabled && ( state.currentX >= static_cast<uint8_t>( winX - 7 ) );
+            const bool windowPixel = winEnabled && ( state.currentX >= static_cast<uint8_t>( winX - 7 ) );
             uint8_t colorId = 0;
             if( windowPixel ) {
                 const auto pixX = static_cast<uint8_t>( state.currentX - winX + 7 );
@@ -105,9 +104,8 @@ void CorePpu::fetch() {
                 }
 
                 // objects always use 8000 addressing mode
-                const auto tile =
-                        Tile_t( &mem.videoRam[tileId * ( tileY < 8 ? tileSize : tileSize + 1 )],
-                                Tile_t::extent );
+                const auto tile = Tile_t( &mem.videoRam[tileId * ( tileY < 8 ? tileSize : tileSize + 1 )],
+                                          Tile_t::extent );
 
                 if( tileY >= 8 )
                     tileY -= 8;

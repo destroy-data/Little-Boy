@@ -127,6 +127,7 @@ protected:
     Memory& mem;
     bool interruptMasterEnabled = false;
 
+    consteval size_t getOperandVarType( CoreCpu::OperandType_t operandType );
     template<OperandType_t type>
     uint8or16_t auto read( const OperandVar_t operand );
     template<OperandType_t type, uint8or16_t T>
@@ -140,13 +141,13 @@ protected:
     template<OperationType_t optype>
     void bitShift( Operation_t op );
 
-    static consteval size_t getOperandVarType( CoreCpu::OperandType_t operandType );
     void execute( const Operation_t& op );
     void handleInterrupts();
     void ld( const Operation_t& op );
     void ldh( const Operation_t& op );
     void pushToStack( uint16_t value );
     uint16_t popFromStack();
+    bool isConditionMet( Operand_t condition );
 
     Operation_t decode();
     //helpers
