@@ -15,19 +15,20 @@ enum CoreError : int {
 
     // CPU errors (400-599)
     InvalidOpcode = 400,
-    InvalidOperand = 401,
-    CPUHalted = 402,
-    StackOverflow = 403,
-    StackUnderflow = 404,
+    InvalidOperandType = 401,
+    InvalidOperand = 402,
+    CPUHalted = 410,
+    StackOverflow = 420,
+    StackUnderflow = 421,
 
     // Cartridge errors (600-799)
     CartridgeNotFound = 600,
     InvalidCartridge = 601,
     UnsupportedCartridgeType = 602,
-    RomHeaderChecksumMismatch = 603,
-    RomGlobalCheksumMismatch = 604,
-    BankSwitchingError = 605,
-    SaveDataError = 606,
+    RomHeaderChecksumMismatch = 610,
+    RomGlobalCheksumMismatch = 611,
+    BankSwitchingError = 620,
+    SaveDataError = 630,
 
     // PPU errors (800-999)
     PPURenderingError = 800,

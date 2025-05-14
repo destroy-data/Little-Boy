@@ -38,6 +38,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(MODULES
     core
     raylib
+    std_logging
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/include)

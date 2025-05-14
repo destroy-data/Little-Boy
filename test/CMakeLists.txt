@@ -16,7 +16,12 @@ include_directories(${CMAKE_SOURCE_DIR}/test)
 
 #One test module per prod module
 foreach(MODULE ${MODULES})
-    add_subdirectory(${MODULE})
+    set(MODULE_PATH "${CMAKE_SOURCE_DIR}/test/${MODULE}")
+    if(EXISTS "${MODULE_PATH}")
+        add_subdirectory(${MODULE_PATH})
+    else()
+        message(STATUS "Test directory for '${MODULE}' module not found, skipping.")
+    endif()
 endforeach()
 
 add_custom_target( automatic_test

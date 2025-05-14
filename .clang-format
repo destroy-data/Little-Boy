@@ -31,7 +31,7 @@ BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeComma
 BreakInheritanceList: BeforeColon
-ColumnLimit: 100
+ColumnLimit: 111
 CompactNamespaces: false
 ContinuationIndentWidth: 8
 IndentCaseLabels: false
