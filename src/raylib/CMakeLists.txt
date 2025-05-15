@@ -17,7 +17,7 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(raylib)
-target_link_libraries(gb_raylib PRIVATE
+target_link_libraries(gb_raylib PUBLIC
     raylib
     gb_core
 )
