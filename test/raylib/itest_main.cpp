@@ -70,7 +70,7 @@ int main() {
     // Setup PPU registers
     // 0x91 = Enable LCD (bit 7) and BG (bit 0), disable sprites (bit 1 = 0)
     emu.memory.write( addr::lcdControl, 0x91 );
-    emu.memory.write( addr::lcdStatus, 0x00 ); // Mode 0 (H-Blank)
+    emu.memory.write( addr::lcdStatus, 0x02 ); // Mode 2 (OAM Search)
     emu.memory.write( addr::lcdY, 0 );         // LY = 0
     emu.memory.write( addr::bgPalette,
                       0xE4 ); // BG palette: black, dark gray, light gray, white
@@ -86,11 +86,6 @@ int main() {
 
         // Run PPU for one frame
         for( int ly = 0; ly < CorePpu::displayHeight; ly++ ) {
-            emu.memory.write( addr::lcdY, static_cast<uint8_t>( ly ) );
-
-            // Initialize renderedX for each scanline
-            emu.ppu.state.renderedX = 0;
-
             // Run PPU for this scanline
             for( int i = 0; i < CorePpu::scanlineDuration; i++ ) {
                 emu.ppu.tick();

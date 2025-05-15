@@ -107,3 +107,40 @@ void CorePpu::BackgroundFetcher::tick() {
         std::unreachable();
     }
 }
+
+void CorePpu::BackgroundFetcher::reset() {
+    state = FetcherState_t::FETCH_TILE;
+    ticksInCurrentState = 0;
+    currentTileX = 0;
+}
+
+//--------------------------------------------------
+void CorePpu::SpriteFetcher::tick() {
+    const uint8_t lcdc = mem.read( addr::lcdControl );
+    const bool bgWinEnabled = lcdc & 0x1;
+    const bool objEnabled = lcdc & ( 1 << 1 );
+
+    const uint8_t scrollX = mem.read( addr::bgScrollX );
+    const uint8_t scrollY = mem.read( addr::bgScrollY );
+    const uint8_t ly = mem.read( addr::lcdY );
+    //TODO handle transitioning to window mid-tile
+    switch( state ) {
+        using enum FetcherState_t;
+    case FETCH_TILE: {
+
+    } break;
+    case FETCH_DATA_LOW:
+        break;
+    case FETCH_DATA_HIGH:
+        break;
+    case PUSH:
+        break;
+    default:
+        std::unreachable();
+    }
+}
+
+void CorePpu::SpriteFetcher::reset() {
+    state = FetcherState_t::FETCH_TILE;
+    ticksInCurrentState = 0;
+}
