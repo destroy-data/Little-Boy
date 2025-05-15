@@ -31,125 +31,6 @@ void CorePpu::oamScan() {
     }
 }
 
-void CorePpu::fetch() {
-    const uint8_t lcdc = mem.read( addr::lcdControl );
-    const bool bgWinEnabled = lcdc & 0x1;
-    const uint8_t ly = mem.read( addr::lcdY );
-    const uint8_t winX = mem.read( addr::winX );
-    const uint8_t winY = mem.read( addr::winY );
-    const uint8_t scrollX = mem.read( addr::bgScrollX );
-    const uint8_t scrollY = mem.read( addr::bgScrollY );
-    const bool winEnabled = ( lcdc & ( 1 << 5 ) ) and ( winY <= ly ) and ( winX < 168 );
-    const bool objEnabled = lcdc & ( 1 << 1 );
-    const bool useSecondBgMap = lcdc & ( 1 << 3 );
-    const bool base8000Addr = lcdc & ( 1 << 4 ); // For background and window tiles
-    const bool useSecondWinMap = lcdc & ( 1 << 6 );
-
-    std::array<Pixel, 8> bgBuffer {};
-    std::array<Pixel, 8> objectBuffer {};
-    const unsigned end = state.currentX + 8;
-    for( unsigned i = 0; state.currentX < end; ++i, ++state.currentX ) {
-        if( bgWinEnabled ) {
-            const bool windowPixel = winEnabled && ( state.currentX >= static_cast<uint8_t>( winX - 7 ) );
-            uint8_t colorId = 0;
-            if( windowPixel ) {
-                const auto pixX = static_cast<uint8_t>( state.currentX - winX + 7 );
-                const auto pixY = static_cast<uint8_t>( ly - winY );
-                const uint8_t winTileId = tilemap[useSecondWinMap][pixY / 8 * 32 + pixX / 8];
-                const int tileAddress = // 0 is start of VRAM
-                        base8000Addr ? tileSize * winTileId
-                                     : 0x1000 + tileSize * static_cast<int8_t>( winTileId );
-                const auto tile = Tile_t( &mem.videoRam[tileAddress], Tile_t::extent );
-                colorId = getPixelColor( tile, pixX % 8, pixY % 8 );
-            } else {
-                const auto pixX = static_cast<uint8_t>( state.currentX + scrollX );
-                const auto pixY = static_cast<uint8_t>( ly + scrollY );
-                const auto bgTileId = tilemap[useSecondBgMap][pixY / 8 * 32 + pixX / 8];
-                const int tileAddress = // 0 is start of VRAM
-                        base8000Addr ? tileSize * bgTileId
-                                     : 0x1000 + tileSize * static_cast<int8_t>( bgTileId );
-                const auto tile = Tile_t( &mem.videoRam[tileAddress], Tile_t::extent );
-                colorId = getPixelColor( tile, pixX % 8, pixY % 8 );
-            }
-            bgBuffer[i] = { colorId };
-        }
-        if( objEnabled ) {
-            const int objHeight = ( ~lcdc & ( 1 << 2 ) ) ? 8 : 16;
-
-            // For each object found during OAM scan
-            for( unsigned j = 0; j < state.objCount; j++ ) {
-                const uint8_t objX = state.object[j][1] - 8;
-                const uint8_t objY = state.object[j][0] - 16;
-
-                if( objY + objHeight < ly || objY > ly )
-                    continue;
-                if( static_cast<unsigned>( objX + 8 ) <= state.currentX || objX >= end )
-                    continue;
-
-                uint8_t tileId = state.object[j][2];
-                if( objHeight == 16 )
-                    tileId &= 0xFE;
-
-                const uint8_t attributes = state.object[j][3];
-                const bool xFlip = attributes & ( 1 << 5 );
-                const bool yFlip = attributes & ( 1 << 6 );
-                const bool priority = attributes & ( 1 << 7 );
-                const bool dmgUseOBP1 = attributes & ( 1 << 4 );
-
-                uint8_t tileY = static_cast<uint8_t>( ly - objY );
-                if( yFlip ) {
-                    uint8_t flip = static_cast<uint8_t>( objHeight - 1 );
-                    tileY = static_cast<uint8_t>( flip - tileY );
-                }
-
-                // objects always use 8000 addressing mode
-                const auto tile = Tile_t( &mem.videoRam[tileId * ( tileY < 8 ? tileSize : tileSize + 1 )],
-                                          Tile_t::extent );
-
-                if( tileY >= 8 )
-                    tileY -= 8;
-
-                for( unsigned x = state.currentX; x < end && x < static_cast<unsigned>( objX + 8 );
-                     x++ ) { //FIXME
-                    // Skip if pixel is outside object bounds
-                    if( x < objX || x >= static_cast<unsigned>( objX + 8 ) )
-                        continue;
-
-                    unsigned fifoIndex = x - state.currentX;
-                    uint8_t tileX = static_cast<uint8_t>( x - objX );
-                    if( xFlip ) {
-                        tileX = 7 - tileX;
-                    }
-                    uint8_t colorId = getPixelColor( tile, tileX, tileY );
-
-                    // Color 0 is transparent for objects
-                    if( objectBuffer[fifoIndex].colorId == 0 )
-                        objectBuffer[fifoIndex] = { colorId, dmgUseOBP1, priority };
-                }
-            }
-        }
-    }
-    state.bgPixelsFifo.pushBatch( bgBuffer );
-    state.spritePixelsFifo.pushBatch( objectBuffer );
-}
-
-uint8_t CorePpu::getPixelColor( const Tile_t& tile, int x, int y ) {
-    if( x < 0 || x > 7 || y < 0 || y > 7 ) {
-        return 0; // no better idea
-    }
-    // How tiles are encoded:
-    // https://gbdev.io/pandocs/Tile_Data.html#data-format
-    int bitPosition = 7 - x;
-    auto rowIndex = static_cast<std::size_t>( y * 2 );
-    bool lBit = ( tile[rowIndex] & ( 1 << bitPosition ) );
-    bool hBit = ( tile[rowIndex + 1] & ( 1 << bitPosition ) );
-
-    return static_cast<uint8_t>( ( hBit << 1 ) | lBit );
-}
-
-
-=======
->>>>>>> 7ab00c71 (extract logically fetcher from ppu (1/2 - only background implemented))
 CorePpu::PpuMode CorePpu::tick() {
     // Check if LCD is enabled
     const uint8_t lcdc = mem.read( addr::lcdControl );
@@ -219,8 +100,8 @@ CorePpu::PpuMode CorePpu::tick() {
         if( !state.bgPixelsFifo.empty() && state.renderedX < displayWidth ) {
             // Get and mix pixels from both FIFOs (for now, sprite FIFO will be empty)
             const Pixel bgPixel = state.bgPixelsFifo.pop();
-            const Pixel spritePixel = state.spritePixelsFifo.empty() ? Pixel( 0, 0, 0 )
-                                                                     : state.spritePixelsFifo.pop();
+            const Pixel spritePixel =
+                    state.spritePixelsFifo.empty() ? Pixel( 0, 0, 0 ) : state.spritePixelsFifo.pop();
 
             drawPixel( mergePixel( bgPixel, spritePixel ) );
             state.renderedX++;
