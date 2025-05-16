@@ -3,18 +3,7 @@
 #include <print>
 #include <stacktrace>
 
-#if defined( __GNUC__ ) || defined( __clang__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#endif
-
-#ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable : 4101 )
-#endif
-
 namespace ansi {
-using std::string_view;
 // Text formatting
 constexpr auto reset = "\033[0m";
 constexpr auto bold = "\033[1m";
@@ -72,44 +61,52 @@ using namespace ansi;
 
 void log( int errorCode, ErrorSeverity severity, std::string message, std::string file, int line ) {
     std::string_view severityStr;
+    std::string_view format;
+    std::string_view color;
     switch( severity ) {
     case ErrorSeverity::Debug:
-        severityStr = "DEBUG";
+        severityStr = "[DEBUG]";
+        color = green;
         break;
     case ErrorSeverity::Info:
-        severityStr = "INFO";
+        severityStr = "[INFO]";
+        color = brightGreen;
         break;
     case ErrorSeverity::Warning:
-        severityStr = "WARNING";
+        severityStr = "[WARNING]";
+        color = magenta;
         break;
     case ErrorSeverity::Error:
-        severityStr = "ERROR";
+        severityStr = "[ERROR]";
+        color = red;
         break;
     case ErrorSeverity::Fatal:
-        severityStr = "FATAL";
+        severityStr = "[FATAL]";
+        format = bold;
+        color = brightYellow;
         break;
     default:
-        severityStr = "UNKNOWN";
+        severityStr = "[UNKNOWN]";
         break;
     }
 
     std::filesystem::path filePath( file );
     std::string filename = filePath.filename().string();
-    std::print( "[{}] code {:04d}: {} ({}:{})\n", severityStr, errorCode, message, filename, line );
+    std::print( "{}{}{:<9}#{} code {:04d}: {} ({}:{})\n", format, color, severityStr, reset, errorCode,
+                message, filename, line );
 }
 
 void logStacktrace() {
     std::println( "{}{}STACKTRACE{}", bold, brightYellow, reset );
     const auto stacktrace = std::stacktrace::current();
     for( size_t i = 0; const auto& entry: stacktrace ) {
-        std::println( "{}{:4d}#{} {}", green, i++, reset, std::to_string( entry ) );
+        auto entryStr = std::to_string( entry );
+        const auto pathPos = entryStr.find( '/' );
+        const auto relevantPartOfPathPos = entryStr.find( "gameboy" ) + 8;
+        entryStr.erase( pathPos, relevantPartOfPathPos - pathPos );
+
+        std::println( "{}{:4d}#{} {}", green, i++, reset, entryStr );
+        if( entry.description() == "main" )
+            break;
     }
 }
-
-#if defined( __GNUC__ ) || defined( __clang__ )
-#pragma GCC diagnostic pop
-#endif
-
-#ifdef _MSC_VER
-#pragma warning( pop )
-#endif
