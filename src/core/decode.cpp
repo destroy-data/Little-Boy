@@ -12,8 +12,7 @@ CoreCpu::Operation_t CoreCpu::decode() {
     case 0x10:
         return { OperationType_t::STOP };
     case 0x08:
-        return {
-                OperationType_t::LD, OperandType_t::pIMM16, {}, OperandType_t::R16, Operand_t::sp };
+        return { OperationType_t::LD, OperandType_t::pIMM16, {}, OperandType_t::R16, Operand_t::sp };
     case 0x07:
         return { OperationType_t::RLCA };
     case 0x0F:
@@ -90,11 +89,9 @@ CoreCpu::Operation_t CoreCpu::decode() {
     case 0xFA:
         return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::pIMM16 };
     case 0xF8:
-        return { OperationType_t::LD, OperandType_t::R16, Operand_t::hl,
-                 OperandType_t::SP_PLUS_IMM8 };
+        return { OperationType_t::LD, OperandType_t::R16, Operand_t::hl, OperandType_t::SP_PLUS_IMM8 };
     case 0xF9:
-        return { OperationType_t::LD, OperandType_t::R16, Operand_t::sp, OperandType_t::R16,
-                 Operand_t::hl };
+        return { OperationType_t::LD, OperandType_t::R16, Operand_t::sp, OperandType_t::R16, Operand_t::hl };
     case 0xF3:
         return { OperationType_t::DI };
     case 0xFB:
@@ -137,16 +134,13 @@ CoreCpu::Operation_t CoreCpu::decodeBlock0() {
     case 0x1:
         return { OperationType_t::LD, OperandType_t::R16, bits45, OperandType_t::IMM16 };
     case 0x2:
-        return { OperationType_t::LD, OperandType_t::R16MEM, bits45, OperandType_t::R8,
-                 Operand_t::a };
+        return { OperationType_t::LD, OperandType_t::R16MEM, bits45, OperandType_t::R8, Operand_t::a };
     case 0x3:
         return { OperationType_t::INC, OperandType_t::R16, bits45 };
     case 0x9:
-        return { OperationType_t::ADD, OperandType_t::R16, Operand_t::hl, OperandType_t::R16,
-                 bits45 };
+        return { OperationType_t::ADD, OperandType_t::R16, Operand_t::hl, OperandType_t::R16, bits45 };
     case 0xA:
-        return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM,
-                 bits45 };
+        return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM, bits45 };
     case 0xB:
         if( mem.read( PC ) >> 4 == (int)Operand_t::hl )
             return { OperationType_t::DEC, OperandType_t::R8, Operand_t::pHL };

@@ -168,8 +168,7 @@ void setupSpriteTiles( uint8_t vram[] ) {
     vram[arrowTileOffset + 13] = 0x10; // 00010000
 }
 
-void createTestSprite( uint8_t oam[], int index, uint8_t x, uint8_t y, uint8_t tileId,
-                       uint8_t attributes ) {
+void createTestSprite( uint8_t oam[], int index, uint8_t x, uint8_t y, uint8_t tileId, uint8_t attributes ) {
     const int oamBase = index * 4;
 
     // Y position (add 16 as Y=0 is 16 pixels above the screen)

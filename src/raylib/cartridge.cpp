@@ -16,8 +16,7 @@ void RaylibCartridge::RTC::updateRTC() {
     rtcRegs.seconds = static_cast<uint8_t>( ( elapsedSeconds % 60 ) );
     rtcRegs.minutes = static_cast<uint8_t>( ( elapsedSeconds / 60 ) % 60 );
     rtcRegs.hours = static_cast<uint8_t>( ( elapsedSeconds / 3600 ) % 24 );
-    uint16_t days =
-            static_cast<uint16_t>( ( elapsedSeconds / 86400 ) % 512 ); // 9-bit day counter (0-511)
+    uint16_t days = static_cast<uint16_t>( ( elapsedSeconds / 86400 ) % 512 ); // 9-bit day counter (0-511)
     rtcRegs.dayLow = static_cast<uint8_t>( days & 0xFF );
 
     // Bit 0 of dayHigh is the upper bit of the day counter

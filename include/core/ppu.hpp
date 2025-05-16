@@ -7,8 +7,7 @@
 class CorePpu {
 public:
     friend class Fetcher;
-    static constexpr int displayWidth = 160, displayHeight = 144, tileSize = 16,
-                         scanlineDuration = 456;
+    static constexpr int displayWidth = 160, displayHeight = 144, tileSize = 16, scanlineDuration = 456;
     struct Pixel {
         uint8_t colorId : 2;
         uint8_t palette : 3; //in DMG only for objects and only 0 or 1

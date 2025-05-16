@@ -19,8 +19,7 @@ void CorePpu::BackgroundFetcher::tick() {
             const uint8_t winX = mem.read( addr::winX );
             const uint8_t winY = mem.read( addr::winY );
             const bool winEnabled = ( lcdc & ( 1 << 5 ) );
-            const bool windowTile =
-                    winEnabled && ( currentTileX * 8 >= static_cast<uint8_t>( winX - 7 ) );
+            const bool windowTile = winEnabled && ( currentTileX * 8 >= static_cast<uint8_t>( winX - 7 ) );
             const bool useSecondMap =
                     ( windowTile && lcdc & ( 1 << 6 ) ) || ( !windowTile && lcdc & ( 1 << 3 ) );
 
@@ -41,14 +40,12 @@ void CorePpu::BackgroundFetcher::tick() {
         else {
             const bool base8000Addr = lcdc & ( 1 << 4 ); // For background and window tiles
             const int tileAddress =                      // 0 is start of VRAM
-                    base8000Addr ? tileSize * tileId
-                                 : 0x1000 + tileSize * static_cast<int8_t>( tileId );
+                    base8000Addr ? tileSize * tileId : 0x1000 + tileSize * static_cast<int8_t>( tileId );
 
             const uint8_t winX = mem.read( addr::winX );
             const uint8_t winY = mem.read( addr::winY );
             const bool winEnabled = ( lcdc & ( 1 << 5 ) );
-            const bool windowTile =
-                    winEnabled && ( winY <= ly ) && ( currentTileX * 8 >= winX - 7 );
+            const bool windowTile = winEnabled && ( winY <= ly ) && ( currentTileX * 8 >= winX - 7 );
 
             int row;
             if( windowTile )
@@ -66,14 +63,12 @@ void CorePpu::BackgroundFetcher::tick() {
         else {
             const bool base8000Addr = lcdc & ( 1 << 4 ); // For background and window tiles
             const int tileAddress =                      // 0 is start of VRAM
-                    base8000Addr ? tileSize * tileId
-                                 : 0x1000 + tileSize * static_cast<int8_t>( tileId );
+                    base8000Addr ? tileSize * tileId : 0x1000 + tileSize * static_cast<int8_t>( tileId );
 
             const uint8_t winX = mem.read( addr::winX );
             const uint8_t winY = mem.read( addr::winY );
             const bool winEnabled = ( lcdc & ( 1 << 5 ) );
-            const bool windowTile =
-                    winEnabled && ( winY <= ly ) && ( currentTileX * 8 >= winX - 7 );
+            const bool windowTile = winEnabled && ( winY <= ly ) && ( currentTileX * 8 >= winX - 7 );
 
             int row;
             if( windowTile )
