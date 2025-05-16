@@ -127,7 +127,7 @@ protected:
     Memory& mem;
     bool interruptMasterEnabled = false;
 
-    consteval size_t getOperandVarType( CoreCpu::OperandType_t operandType );
+    static consteval size_t getOperandVarType( CoreCpu::OperandType_t operandType );
     template<OperandType_t type>
     uint8or16_t auto read( const OperandVar_t operand );
     template<OperandType_t type, uint8or16_t T>

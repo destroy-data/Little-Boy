@@ -6,8 +6,13 @@
 #include <utility>
 
 #define invalidOperandType( OPERAND )                                                                         \
-    logFatal( ErrorCode::InvalidOperandType, std::format( "Invalid operand " #OPERAND " with value: {0}",     \
-                                                          static_cast<Enum_t>( OPERAND ) ) );
+    do {                                                                                                      \
+        logFatal( ErrorCode::InvalidOperandType, std::format( "Invalid operand " #OPERAND " with value: {0}", \
+                                                              static_cast<Enum_t>( OPERAND ) ) );             \
+        logStacktrace();                                                                                      \
+        std::abort();                                                                                         \
+    } while( false )
+
 
 consteval size_t CoreCpu::getOperandVarType( CoreCpu::OperandType_t operandType ) {
     switch( operandType ) {
@@ -240,10 +245,9 @@ void CoreCpu::bitwise( const Operation_t& op ) {
         readVal = read<OperandType_t::R8>( op.operand2 );
     else if( op.operandType2 == OperandType_t::IMM8 ) {
         readVal = read<OperandType_t::IMM8>( op.operand2 );
-    } else {
+    } else
         invalidOperandType( op.operandType2 );
-        return;
-    }
+
     uint8_t result;
     if constexpr( optype == OperationType_t::AND )
         result = a & readVal;
@@ -347,9 +351,7 @@ void CoreCpu::ld( const Operation_t& op ) {
         setZNHCFlags( !readVal, false, halfCarryFlag, cFlag );
     } break;
     default:
-        logError( ErrorCode::InvalidOperand,
-                  std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
-        return;
+        invalidOperandType( op.operandType2 );
     }
 
     switch( op.operandType1 ) {
@@ -367,9 +369,7 @@ void CoreCpu::ld( const Operation_t& op ) {
         write<pIMM16>( op.operand1, static_cast<uint8_t>( readVal ) );
         break;
     default:
-        logError( ErrorCode::InvalidOperand,
-                  std::format( "op.operandType1: {0}", static_cast<Enum_t>( op.operandType1 ) ) );
-        return;
+        invalidOperandType( op.operandType1 );
     }
 }
 
@@ -387,9 +387,7 @@ void CoreCpu::ldh( const Operation_t& op ) {
         readVal = mem.read( 0xFF00 + read<IMM8>( op.operand2 ) );
         break;
     default:
-        logError( ErrorCode::InvalidOperand,
-                  std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
-        return;
+        invalidOperandType( op.operandType2 );
     }
 
     switch( op.operandType1 ) {
@@ -404,9 +402,7 @@ void CoreCpu::ldh( const Operation_t& op ) {
         mem.write( 0xFF00 + read<IMM8>( op.operand1 ), static_cast<uint8_t>( readVal ) );
         break;
     default:
-        logError( ErrorCode::InvalidOperand,
-                  std::format( "op.operandType1: {0}", static_cast<Enum_t>( op.operandType1 ) ) );
-        return;
+        invalidOperandType( op.operandType1 );
     }
 }
 
@@ -429,11 +425,8 @@ void CoreCpu::execute( const Operation_t& op ) {
             readVal += read<opdt::R8>( op.operand2 );
         else if( op.operandType2 == opdt::IMM8 ) {
             readVal += read<opdt::IMM8>( op.operand2 );
-        } else {
-            logError( ErrorCode::InvalidOperand,
-                      std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
-            return;
-        }
+        } else
+            invalidOperandType( op.operandType2 );
 
         CoreCpu::addTo<opdt::R8>( op.operand1, readVal );
     } break;
@@ -452,9 +445,7 @@ void CoreCpu::execute( const Operation_t& op ) {
             readVal = read<IMM8>( op.operand2 );
             break;
         default:
-            logError( ErrorCode::InvalidOperand,
-                      std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
-            return;
+            invalidOperandType( op.operandType2 );
         }
 
         bool _add { op.operationType == OT::ADD };
@@ -595,46 +586,49 @@ void CoreCpu::execute( const Operation_t& op ) {
         if( withCondition ) {
             if( op.operandType2 != opdt::IMM16 ) {
                 invalidOperandType( op.operandType2 );
-                std::abort();
             }
             const auto condition = std::get<Operand_t>( op.operand1 );
             if( !isConditionMet( condition ) )
-                //PC+=3;
                 return;
         }
         pushToStack( PC + 3 );
         PC = read<opdt::IMM16>( withCondition ? op.operand2 : op.operand1 );
     } break;
     case OT::JP: {
-        if( op.operandType1 == opdt::IMM16 )
+        switch( op.operandType1 ) {
+        case opdt::IMM16:
             PC = read<opdt::IMM16>( op.operand1 );
-        else if( op.operandType1 == opdt::R16 )
+            break;
+        case opdt::R16:
             PC = read<opdt::R16>( op.operand1 );
-        else if( op.operandType1 == opdt::COND && op.operandType2 == opdt::IMM16 ) {
+            break;
+        case opdt::COND: {
+            if( op.operandType2 != opdt::IMM16 )
+                invalidOperandType( op.operandType2 );
             const auto condition = std::get<Operand_t>( op.operand1 );
             const auto address = read<opdt::IMM16>( op.operand2 );
             if( isConditionMet( condition ) )
                 PC = address;
-        } else {
+        } break;
+        default:
             invalidOperandType( op.operandType1 );
-            return;
         }
     } break;
     case OT::JR: {
         // When reading IMM8, PC is incremented by 1 and points to just read byte,
         // so when making jump relative to the byte immediately after this instruction
         // we need to add another 1 to PC before applying offset
-        if( op.operandType1 == opdt::IMM8 )
-            PC = static_cast<uint16_t>( PC + 1 + static_cast<int8_t>( read<opdt::IMM8>( op.operand1 ) ) );
-        else if( op.operandType1 == opdt::COND && op.operandType2 == opdt::IMM8 ) {
+        if( op.operandType1 == opdt::IMM8 ) {
+            const auto offset = static_cast<int8_t>( read<opdt::IMM8>( op.operand1 ) );
+            PC = static_cast<uint16_t>( PC + 1 + offset );
+        } else if( op.operandType1 == opdt::COND && op.operandType2 == opdt::IMM8 ) {
             const auto condition = std::get<Operand_t>( op.operand1 );
             const auto offset = static_cast<int8_t>( read<opdt::IMM8>( op.operand2 ) );
             if( isConditionMet( condition ) )
                 PC = static_cast<uint16_t>( PC + 1 + offset );
-        } else {
+        } else
             invalidOperandType( op.operandType1 );
-            return;
-        }
+
     } break;
     case OT::RET:
         if( op.operandType1 == opdt::NONE )
@@ -645,15 +639,19 @@ void CoreCpu::execute( const Operation_t& op ) {
                 PC = popFromStack();
         } else {
             invalidOperandType( op.operandType1 );
-            return;
         }
         break;
     case OT::RETI:
-        interruptMasterEnabled = true;
+        interruptMasterEnabled = true; //TODO should be set right after this instruction
         PC = popFromStack();
         break;
     case OT::RST:
-        //TODO
+        if( op.operandType1 == opdt::TGT3 ) {
+            const uint16_t jumpTo = std::get<uint8_t>( op.operand1 ) * 8;
+            pushToStack( PC + 1 );
+            PC = jumpTo;
+        } else
+            invalidOperandType( op.operandType1 );
         break;
     //Carry flag instructions
     case OT::CCF:

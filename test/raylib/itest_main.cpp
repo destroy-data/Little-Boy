@@ -13,8 +13,7 @@ private:
 
 public:
     RaylibPpu( Memory& mem_ ) : CorePpu( mem_ ) {
-        screenBuffer =
-                static_cast<Color*>( MemAlloc( sizeof( Color ) * displayWidth * displayHeight ) );
+        screenBuffer = static_cast<Color*>( MemAlloc( sizeof( Color ) * displayWidth * displayHeight ) );
         std::memset( screenBuffer, 0, sizeof( Color ) * displayWidth * displayHeight );
     }
 
@@ -43,12 +42,11 @@ protected:
     }
 };
 
-// Define our emulator type using the Emulator template with our implementations
-using LittleBoyEmulator = Emulator<DummyCartridge, Memory, DummyCpu, RaylibPpu>;
+using Emulator_t = Emulator<DummyCartridge, Memory, DummyCpu, RaylibPpu>;
 
 int main() {
     // Initialize emulator
-    LittleBoyEmulator emu;
+    Emulator_t emu;
 
     // Setup the display
     const int scaleFactor = 7;
@@ -59,8 +57,8 @@ int main() {
     SetTargetFPS( 60 );
 
     // Create a texture to render the Game Boy screen
-    Texture2D screenTexture = LoadTextureFromImage(
-            GenImageColor( CorePpu::displayWidth, CorePpu::displayHeight, BLACK ) );
+    Texture2D screenTexture =
+            LoadTextureFromImage( GenImageColor( CorePpu::displayWidth, CorePpu::displayHeight, BLACK ) );
 
     // Initialize test patterns in VRAM
     setupBackgroundChessboardPatternInVram( emu.memory.videoRam );
@@ -100,10 +98,8 @@ int main() {
 
         // Draw the Game Boy screen scaled to window size
         DrawTexturePro(
-                screenTexture,
-                Rectangle { 0, 0, (float)CorePpu::displayWidth, (float)CorePpu::displayHeight },
-                Rectangle { 0, 0, (float)screenWidth, (float)screenHeight }, Vector2 { 0, 0 }, 0.0f,
-                WHITE );
+                screenTexture, Rectangle { 0, 0, (float)CorePpu::displayWidth, (float)CorePpu::displayHeight },
+                Rectangle { 0, 0, (float)screenWidth, (float)screenHeight }, Vector2 { 0, 0 }, 0.0f, WHITE );
 
         Vector2 mousePosition = GetMousePosition();
         std::string mousePositionText =

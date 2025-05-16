@@ -9,8 +9,8 @@ function(add_strict_warnings target)
             -Wextra
             -Wpedantic
             -Wconversion
+            "$<$<NOT:$<CONFIG:Debug>>:-Werror>"
         )
-        target_compile_options(${target} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-Werror>")
     elseif(MSVC)
         target_compile_options(${target} PRIVATE
             /W4
@@ -21,8 +21,8 @@ function(add_strict_warnings target)
             /w14244  # Conversion warnings (-Wconversion)
             /w14254  # Conversion warnings (-Wconversion)
             /w14267  # Conversion warnings (-Wconversion)
+            "$<$<NOT:$<CONFIG:Debug>>:/WX>"
         )
-        target_compile_options(${target} "$<$<NOT:$<CONFIG:Debug>>:/WX")
     endif()
 endfunction()
 
