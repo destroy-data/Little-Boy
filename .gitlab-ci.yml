@@ -1,0 +1,33 @@
+image: alpine:latest
+
+stages:
+  - lint
+
+format-check:
+  stage: lint
+  before_script:
+    - apk add --no-cache clang-extra-tools git
+  script:
+    # Find all C++ source files and headers
+    - echo "Checking code formatting..."
+    - FILES=$(find src include test -name "*.cpp" -o -name "*.hpp" -o -name "*.h")
+    # Check if files are properly formatted (dry-run)
+    - |
+      FAILED=0
+      for FILE in $FILES; do
+        echo "Checking $FILE..."
+        if ! clang-format -style=file --dry-run -Werror "$FILE"; then
+          echo "❌ $FILE is not properly formatted"
+          FAILED=1
+        fi
+      done
+      if [ $FAILED -eq 1 ]; then
+        echo "Some files need formatting. Run clang-format locally to fix them."
+        exit 1
+      else
+        echo "✅ All files are properly formatted!"
+      fi
+  # Only run on merge requests targeting master branch and on master branch
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+    - if: $CI_COMMIT_BRANCH == "master"
