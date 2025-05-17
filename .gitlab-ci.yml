@@ -1,4 +1,14 @@
-image: alpine:latest
+image: alpine:3.18
+
+variables:
+  # Cache directories
+  FORMATTER_PATH: /usr/bin/clang-format
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}-formatter
+  paths:
+    - ${FORMATTER_PATH}
+  policy: pull-push
 
 stages:
   - lint
@@ -6,27 +16,36 @@ stages:
 format-check:
   stage: lint
   before_script:
-    - apk add --no-cache clang-extra-tools git
-  script:
-    # Find all C++ source files and headers
-    - echo "Checking code formatting..."
-    - FILES=$(find src include test -name "*.cpp" -o -name "*.hpp" -o -name "*.h")
-    # Check if files are properly formatted (dry-run)
+    # Use specific version tag instead of latest
+    - apk update
+    # Install only what's needed - we don't need git
     - |
-      FAILED=0
-      for FILE in $FILES; do
-        echo "Checking $FILE..."
-        if ! clang-format -style=file --dry-run -Werror "$FILE"; then
-          echo "❌ $FILE is not properly formatted"
-          FAILED=1
-        fi
-      done
-      if [ $FAILED -eq 1 ]; then
-        echo "Some files need formatting. Run clang-format locally to fix them."
-        exit 1
+      if [ ! -f ${FORMATTER_PATH} ]; then
+        echo "Installing clang-format..."
+        apk add --no-cache clang-extra-tools
       else
-        echo "✅ All files are properly formatted!"
+        echo "Using cached clang-format"
       fi
+  script:
+    # Find all C++ source files and headers in one command
+    - echo "Checking code formatting..."
+    # Process multiple files at once using xargs for better performance
+    - |
+      find src include test -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) -print0 | 
+      xargs -0 -P $(nproc) -I{} sh -c '
+        echo "Checking {}..."; 
+        if ! clang-format -style=file --dry-run -Werror "{}"; then 
+          echo "❌ {} is not properly formatted" >&2; 
+          exit 1; 
+        fi
+      ' || (echo "Some files need formatting. Run clang-format locally to fix them." && exit 1)
+    - echo "✅ All files are properly formatted!"
+  # Add artifacts for diagnostic purposes
+  artifacts:
+    when: on_failure
+    expire_in: 1 week
+    paths:
+      - format-check-results.txt
   # Only run on merge requests targeting master branch and on master branch
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
