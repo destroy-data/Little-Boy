@@ -155,8 +155,8 @@ protected:
     Operation_t decodeBlock2();
     Operation_t decodeBlock3();
     Operation_t decodeCB();
-
     // clang-format off
+    OperandType_t getR8Type( Operand_t operand ) { return operand == Operand_t::pHL ? OperandType_t::pR8 : OperandType_t::R8; }
     bool getZFlag() { return registers[7] &( 1 << 7 ); } // Zero flag
     bool getNFlag() { return registers[7] &( 1 << 6 ); } // BDC substraction flag
     bool getHFlag() { return registers[7] &( 1 << 5 ); } // BDC half carry flag

@@ -69,7 +69,7 @@ CoreCpu::Operation_t CoreCpu::decode() {
     case 0xCB:
         PC++;
         return decodeCB();
-    // Sources give contradictory information
+    // SOURCES_DISAGREE
     // rgbds.gbdev.io/docs/v0.9.1/gbz80.7 says that there are n16 operands used
     // gbdev.io/pandocs/CPU_Instruction_Set.html says that n8 is used
     // gekkio.fi/files/gb-docs/gbctr.pdf also says that n8 is used
@@ -102,9 +102,10 @@ CoreCpu::Operation_t CoreCpu::decode() {
     case 0x0:
         return decodeBlock0();
     case 0x1: {
-        auto dest = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
-        auto src = static_cast<Operand_t>( 0x7 & mem.read( PC ) );
-        return { OperationType_t::LD, OperandType_t::R8, dest, OperandType_t::R8, src };
+        const auto dest = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
+        const auto src = static_cast<Operand_t>( 0x7 & mem.read( PC ) );
+
+        return { OperationType_t::LD, getR8Type( dest ), dest, getR8Type( src ), src };
     }
     case 0x2:
         return decodeBlock2();
@@ -123,11 +124,11 @@ CoreCpu::Operation_t CoreCpu::decodeBlock0() {
         return { OperationType_t::JR, OperandType_t::COND,
                  static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 3 ) ), OperandType_t::IMM8 };
     case 0x4:
-        return { OperationType_t::INC, OperandType_t::R8, bits345 };
+        return { OperationType_t::INC, getR8Type( bits345 ), bits345 };
     case 0x5:
-        return { OperationType_t::DEC, OperandType_t::R8, bits345 };
+        return { OperationType_t::DEC, getR8Type( bits345 ), bits345 };
     case 0x6:
-        return { OperationType_t::LD, OperandType_t::R8, bits345, OperandType_t::IMM8 };
+        return { OperationType_t::LD, getR8Type( bits345 ), bits345, OperandType_t::IMM8 };
     }
 
     switch( 0xF & mem.read( PC ) ) {
@@ -142,8 +143,6 @@ CoreCpu::Operation_t CoreCpu::decodeBlock0() {
     case 0xA:
         return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM, bits45 };
     case 0xB:
-        if( mem.read( PC ) >> 4 == (int)Operand_t::hl )
-            return { OperationType_t::DEC, OperandType_t::R8, Operand_t::pHL };
         return { OperationType_t::DEC, OperandType_t::R16, bits45 };
     }
     return Operation_t { OperationType_t::INVALID };
@@ -151,6 +150,7 @@ CoreCpu::Operation_t CoreCpu::decodeBlock0() {
 
 CoreCpu::Operation_t CoreCpu::decodeBlock2() {
     auto r8 = static_cast<Operand_t>( 0x7 & mem.read( PC ) );
+    auto r8Type = getR8Type( r8 );
     auto opType = OperationType_t::INVALID;
     switch( 0x7 & ( mem.read( PC ) >> 3 ) ) {
     case 0x0:
@@ -177,7 +177,7 @@ CoreCpu::Operation_t CoreCpu::decodeBlock2() {
     case 0x7:
         opType = OperationType_t::CP;
     }
-    return { opType, OperandType_t::R8, Operand_t::a, OperandType_t::R8, r8 };
+    return { opType, OperandType_t::R8, Operand_t::a, r8Type, r8 };
 }
 
 
@@ -204,36 +204,37 @@ CoreCpu::Operation_t CoreCpu::decodeBlock3() {
 
 CoreCpu::Operation_t CoreCpu::decodeCB() {
     auto r8 = static_cast<Operand_t>( mem.read( PC ) & 0x7 );
+    auto r8Type = getR8Type( r8 );
     auto b3index = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
     switch( 0x3 & ( mem.read( PC ) >> 6 ) ) {
     case 0x0:
         switch( 0x7 & mem.read( PC ) ) {
         case 0x0:
-            return { OperationType_t::RLC, OperandType_t::R8, r8 };
+            return { OperationType_t::RLC, r8Type, r8 };
         case 0x1:
-            return { OperationType_t::RRC, OperandType_t::R8, r8 };
+            return { OperationType_t::RRC, r8Type, r8 };
         case 0x2:
-            return { OperationType_t::RL, OperandType_t::R8, r8 };
+            return { OperationType_t::RL, r8Type, r8 };
         case 0x3:
-            return { OperationType_t::RR, OperandType_t::R8, r8 };
+            return { OperationType_t::RR, r8Type, r8 };
         case 0x4:
-            return { OperationType_t::SLA, OperandType_t::R8, r8 };
+            return { OperationType_t::SLA, r8Type, r8 };
         case 0x5:
-            return { OperationType_t::SRA, OperandType_t::R8, r8 };
+            return { OperationType_t::SRA, r8Type, r8 };
         case 0x6:
-            return { OperationType_t::SWAP, OperandType_t::R8, r8 };
+            return { OperationType_t::SWAP, r8Type, r8 };
         case 0x7:
-            return { OperationType_t::SRL, OperandType_t::R8, r8 };
+            return { OperationType_t::SRL, r8Type, r8 };
         default:
             std::unreachable();
         }
 
     case 0x1:
-        return { OperationType_t::BIT, OperandType_t::BIT_INDEX, b3index, OperandType_t::R8, r8 };
+        return { OperationType_t::BIT, OperandType_t::BIT_INDEX, b3index, r8Type, r8 };
     case 0x2:
-        return { OperationType_t::RES, OperandType_t::BIT_INDEX, b3index, OperandType_t::R8, r8 };
+        return { OperationType_t::RES, OperandType_t::BIT_INDEX, b3index, r8Type, r8 };
     case 0x3:
-        return { OperationType_t::SET, OperandType_t::BIT_INDEX, b3index, OperandType_t::R8, r8 };
+        return { OperationType_t::SET, OperandType_t::BIT_INDEX, b3index, r8Type, r8 };
     default:
         std::unreachable();
     }
