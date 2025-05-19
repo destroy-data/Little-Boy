@@ -21,7 +21,7 @@ consteval size_t CoreCpu::getOperandVarType( CoreCpu::OperandType_t operandType 
     case R16:
     case R16MEM:
     case R16STK:
-    case pR8:
+    case pHL:
     case SP_PLUS_IMM8:
         return 1;
     case BIT_INDEX:
@@ -44,15 +44,17 @@ void CoreCpu::write( OperandVar_t operand, T writeValue ) {
     if constexpr( type == OperandType_t::R8 ) {
         static_assert( writeSize == 1, "R8 write: wrong value size" );
 
-        if( opdVal == Operand_t::pHL ) {
-            const auto index = static_cast<Enum_t>( Operand_t::hl ) * 2;
-            mem.write( static_cast<uint16_t>( registers[index] | ( registers[index + 1] << 8 ) ),
-                       static_cast<uint8_t>( writeValue ) );
-        } else if( opdVal == Operand_t::a ) {
+        if( opdVal == Operand_t::a ) {
             constexpr int aIndex = 6;
             registers[aIndex] = writeValue;
         }
         registers[underlVal] = writeValue;
+    }
+
+    else if constexpr( type == OperandType_t::pHL ) {
+        const auto index = static_cast<Enum_t>( Operand_t::hl ) * 2;
+        mem.write( static_cast<uint16_t>( registers[index] | ( registers[index + 1] << 8 ) ),
+                   static_cast<uint8_t>( writeValue ) );
     }
 
     else if constexpr( type == OperandType_t::R16 ) {
@@ -123,14 +125,16 @@ uint8or16_t auto CoreCpu::read( const OperandVar_t operand ) {
     };
 
     if constexpr( type == OperandType_t::R8 ) {
-        if( opdVal == Operand_t::pHL ) {
-            const auto index = static_cast<Enum_t>( Operand_t::hl ) * 2;
-            return mem.read( static_cast<uint16_t>( registers[index] | ( registers[index + 1] << 8 ) ) );
-        } else if( opdVal == Operand_t::a ) {
+        if( opdVal == Operand_t::a ) {
             const int aIndex = 6;
             return registers[aIndex];
         }
         return registers[underlVal];
+    }
+
+    else if constexpr( type == OperandType_t::pHL ) {
+        const auto index = static_cast<Enum_t>( Operand_t::hl ) * 2;
+        return mem.read( static_cast<uint16_t>( registers[index] | ( registers[index + 1] << 8 ) ) );
     }
 
     else if constexpr( type == OperandType_t::R16 ) {
@@ -239,22 +243,25 @@ void CoreCpu::bitwise( const Operation_t& op ) {
                            ( optype == OperationType_t::XOR ),
                    "" );
 
-    auto a = read<OperandType_t::R8>( { Operand_t::a } );
+    using enum OperandType_t;
+    const auto regA = read<R8>( { Operand_t::a } );
     uint8_t readVal;
-    if( op.operandType2 == OperandType_t::R8 )
-        readVal = read<OperandType_t::R8>( op.operand2 );
-    else if( op.operandType2 == OperandType_t::IMM8 ) {
+    if( op.operandType2 == R8 )
+        readVal = read<R8>( op.operand2 );
+    else if( op.operandType2 == pHL )
+        readVal = read<pHL>( op.operand2 );
+    else if( op.operandType2 == OperandType_t::IMM8 )
         readVal = read<OperandType_t::IMM8>( op.operand2 );
-    } else
+    else
         invalidOperandType( op.operandType2 );
 
     uint8_t result;
     if constexpr( optype == OperationType_t::AND )
-        result = a & readVal;
+        result = regA & readVal;
     else if constexpr( optype == OperationType_t::OR )
-        result = a | readVal;
+        result = regA | readVal;
     else if constexpr( optype == OperationType_t::XOR )
-        result = a ^ readVal;
+        result = regA ^ readVal;
     else
         static_assert( false, "" );
     write<OperandType_t::R8>( { Operand_t::a }, result );
@@ -270,7 +277,8 @@ void CoreCpu::bitShift( Operation_t op ) {
     if( std::holds_alternative<std::monostate>( op.operand1 ) ) {
         op.operand1 = { Operand_t::a };
     }
-    auto value = read<OperandType_t::R8>( op.operand1 );
+    auto value = op.operandType1 == OperandType_t::pHL ? read<OperandType_t::pHL>( op.operand1 )
+                                                       : read<OperandType_t::R8>( op.operand1 );
 
     bool zFlag, cFlag;
     int bits = ( getCFlag() << 9 ) | ( value << 1 ) | getCFlag();
@@ -326,6 +334,9 @@ void CoreCpu::ld( const Operation_t& op ) {
     case R8:
         readVal = read<R8>( op.operand2 );
         break;
+    case pHL:
+        readVal = read<pHL>( op.operand2 );
+        break;
     case R16:
         readVal = read<R16>( op.operand2 );
         break;
@@ -358,6 +369,9 @@ void CoreCpu::ld( const Operation_t& op ) {
         using enum OperandType_t;
     case R8:
         write<R8>( op.operand1, static_cast<uint8_t>( readVal ) );
+        break;
+    case pHL:
+        write<pHL>( op.operand1, static_cast<uint8_t>( readVal ) );
         break;
     case R16:
         write<R16>( op.operand1, readVal );
@@ -423,9 +437,11 @@ void CoreCpu::execute( const Operation_t& op ) {
         uint8_t readVal = getCFlag();
         if( op.operandType2 == opdt::R8 )
             readVal += read<opdt::R8>( op.operand2 );
-        else if( op.operandType2 == opdt::IMM8 ) {
+        else if( op.operandType2 == opdt::pHL )
+            readVal += read<opdt::pHL>( op.operand2 );
+        else if( op.operandType2 == opdt::IMM8 )
             readVal += read<opdt::IMM8>( op.operand2 );
-        } else
+        else
             invalidOperandType( op.operandType2 );
 
         CoreCpu::addTo<opdt::R8>( op.operand1, readVal );
@@ -440,6 +456,9 @@ void CoreCpu::execute( const Operation_t& op ) {
             break;
         case R8:
             readVal = read<R8>( op.operand2 );
+            break;
+        case pHL:
+            readVal = read<pHL>( op.operand2 );
             break;
         case IMM8:
             readVal = read<IMM8>( op.operand2 );
@@ -467,6 +486,8 @@ void CoreCpu::execute( const Operation_t& op ) {
         uint8_t val2;
         if( op.operandType2 == opdt::R8 )
             val2 = read<opdt::R8>( op.operand2 );
+        else if( op.operandType2 == opdt::pHL )
+            val2 = read<opdt::pHL>( op.operand2 );
         else if( op.operandType2 == opdt::IMM8 )
             val2 = read<opdt::IMM8>( op.operand2 );
         else
@@ -477,6 +498,8 @@ void CoreCpu::execute( const Operation_t& op ) {
         const auto cFlag = getCFlag();
         if( op.operandType1 == opdt::R8 )
             subFrom<opdt::R8>( op.operand1, 1 );
+        else if( op.operandType1 == opdt::pHL )
+            subFrom<opdt::pHL>( op.operand1, 1 );
         else if( op.operandType1 == opdt::R16 ) {
             auto current = read<opdt::R16>( op.operand1 );
             write<opdt::R16>( op.operand1, --current );
@@ -487,6 +510,8 @@ void CoreCpu::execute( const Operation_t& op ) {
         const auto cFlag = getCFlag();
         if( op.operandType1 == opdt::R8 )
             addTo<opdt::R8>( op.operand1, static_cast<uint8_t>( 1 ) );
+        else if( op.operandType1 == opdt::pHL )
+            addTo<opdt::pHL>( op.operand1, static_cast<uint8_t>( 1 ) );
         else if( op.operandType1 == opdt::R16 ) {
             auto current = read<opdt::R16>( op.operand1 );
             write<opdt::R16>( op.operand1, ++current );
@@ -497,6 +522,8 @@ void CoreCpu::execute( const Operation_t& op ) {
         uint8_t readVal = getCFlag();
         if( op.operandType2 == opdt::R8 )
             readVal += read<opdt::R8>( op.operand2 );
+        else if( op.operandType2 == opdt::pHL )
+            readVal += read<opdt::pHL>( op.operand2 );
         else if( op.operandType2 == opdt::IMM8 ) {
             readVal += read<opdt::IMM8>( op.operand2 );
         } else {
@@ -505,7 +532,7 @@ void CoreCpu::execute( const Operation_t& op ) {
             return;
         }
 
-        subFrom<opdt::R8>( op.operand1, readVal );
+        subFrom<opdt::R8>( { opd::a }, readVal );
     } break;
     //Bitwise logic instructions
     case OT::AND:
@@ -525,20 +552,33 @@ void CoreCpu::execute( const Operation_t& op ) {
     //Bit flag instructions
     case OT::BIT: {
         auto bitIndex = std::get<uint8_t>( op.operand1 );
-        auto value = read<opdt::R8>( op.operand2 );
+        auto value =
+                op.operandType2 == opdt::pHL ? read<opdt::pHL>( op.operand2 ) : read<opdt::R8>( op.operand2 );
         setZNHCFlags( !( value & ( 1 << bitIndex ) ), false, true, getCFlag() );
     } break;
     case OT::RES: {
         auto bitIndex = std::get<uint8_t>( op.operand1 );
-        auto value = read<opdt::R8>( op.operand2 );
-        value &= static_cast<uint8_t>( ~( 1 << bitIndex ) );
-        write<opdt::R8>( op.operand2, value );
+        if( op.operandType2 == opdt::pHL ) {
+            auto value = read<opdt::pHL>( op.operand2 );
+            value &= static_cast<uint8_t>( ~( 1 << bitIndex ) );
+            write<opdt::pHL>( op.operand2, value );
+        } else {
+            auto value = read<opdt::R8>( op.operand2 );
+            value &= static_cast<uint8_t>( ~( 1 << bitIndex ) );
+            write<opdt::R8>( op.operand2, value );
+        }
     } break;
     case OT::SET: {
         auto bitIndex = std::get<uint8_t>( op.operand1 );
-        auto value = read<opdt::R8>( op.operand2 );
-        value |= ( 1 << bitIndex );
-        write<opdt::R8>( op.operand2, value );
+        if( op.operandType2 == opdt::pHL ) {
+            auto value = read<opdt::pHL>( op.operand2 );
+            value |= ( 1 << bitIndex );
+            write<opdt::pHL>( op.operand2, value );
+        } else {
+            auto value = read<opdt::R8>( op.operand2 );
+            value |= ( 1 << bitIndex );
+            write<opdt::R8>( op.operand2, value );
+        }
     } break;
     //Bit shift instructions
     case OT::RL:
@@ -575,9 +615,16 @@ void CoreCpu::execute( const Operation_t& op ) {
         bitShift<OT::SRA>( op );
         break;
     case OT::SWAP: {
-        auto value = read<opdt::R8>( op.operand1 );
-        value = static_cast<uint8_t>( ( value >> 4 ) | ( value << 4 ) );
-        write<opdt::R8>( op.operand1, value );
+        uint8_t value;
+        if( op.operandType1 == opdt::pHL ) {
+            value = read<opdt::pHL>( op.operand1 );
+            value = static_cast<uint8_t>( ( value >> 4 ) | ( value << 4 ) );
+            write<opdt::pHL>( op.operand1, value );
+        } else {
+            value = read<opdt::R8>( op.operand1 );
+            value = static_cast<uint8_t>( ( value >> 4 ) | ( value << 4 ) );
+            write<opdt::R8>( op.operand1, value );
+        }
         setZNHCFlags( !value, false, false, false );
     } break;
     //Jumps and subroutine instructions

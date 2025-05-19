@@ -61,7 +61,7 @@ protected:
     enum class OperandType_t : Enum_t {
         NONE,
         R8,
-        pR8,
+        pHL,
         R16,
         R16STK,
         R16MEM,
@@ -83,7 +83,7 @@ protected:
         e,
         h,
         l,
-        pHL, //byte pointed to by HL
+        phl,
         a,
         // r16
         bc = 0,
@@ -156,7 +156,7 @@ protected:
     Operation_t decodeBlock3();
     Operation_t decodeCB();
     // clang-format off
-    OperandType_t getR8Type( Operand_t operand ) { return operand == Operand_t::pHL ? OperandType_t::pR8 : OperandType_t::R8; }
+    OperandType_t getR8orPHLType( Operand_t operand ) { return operand == Operand_t::phl ? OperandType_t::pHL : OperandType_t::R8; }
     bool getZFlag() { return registers[7] &( 1 << 7 ); } // Zero flag
     bool getNFlag() { return registers[7] &( 1 << 6 ); } // BDC substraction flag
     bool getHFlag() { return registers[7] &( 1 << 5 ); } // BDC half carry flag

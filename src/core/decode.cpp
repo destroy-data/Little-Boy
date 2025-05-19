@@ -105,7 +105,7 @@ CoreCpu::Operation_t CoreCpu::decode() {
         const auto dest = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
         const auto src = static_cast<Operand_t>( 0x7 & mem.read( PC ) );
 
-        return { OperationType_t::LD, getR8Type( dest ), dest, getR8Type( src ), src };
+        return { OperationType_t::LD, getR8orPHLType( dest ), dest, getR8orPHLType( src ), src };
     }
     case 0x2:
         return decodeBlock2();
@@ -124,11 +124,11 @@ CoreCpu::Operation_t CoreCpu::decodeBlock0() {
         return { OperationType_t::JR, OperandType_t::COND,
                  static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 3 ) ), OperandType_t::IMM8 };
     case 0x4:
-        return { OperationType_t::INC, getR8Type( bits345 ), bits345 };
+        return { OperationType_t::INC, getR8orPHLType( operandR8 ), operandR8 };
     case 0x5:
-        return { OperationType_t::DEC, getR8Type( bits345 ), bits345 };
+        return { OperationType_t::DEC, getR8orPHLType( operandR8 ), operandR8 };
     case 0x6:
-        return { OperationType_t::LD, getR8Type( bits345 ), bits345, OperandType_t::IMM8 };
+        return { OperationType_t::LD, getR8orPHLType( operandR8 ), operandR8, OperandType_t::IMM8 };
     }
 
     switch( 0xF & mem.read( PC ) ) {
@@ -149,8 +149,8 @@ CoreCpu::Operation_t CoreCpu::decodeBlock0() {
 }
 
 CoreCpu::Operation_t CoreCpu::decodeBlock2() {
-    auto r8 = static_cast<Operand_t>( 0x7 & mem.read( PC ) );
-    auto r8Type = getR8Type( r8 );
+    const auto r8 = static_cast<Operand_t>( 0x7 & mem.read( PC ) );
+    const auto r8Type = getR8orPHLType( r8 );
     auto opType = OperationType_t::INVALID;
     switch( 0x7 & ( mem.read( PC ) >> 3 ) ) {
     case 0x0:
@@ -203,9 +203,9 @@ CoreCpu::Operation_t CoreCpu::decodeBlock3() {
 }
 
 CoreCpu::Operation_t CoreCpu::decodeCB() {
-    auto r8 = static_cast<Operand_t>( mem.read( PC ) & 0x7 );
-    auto r8Type = getR8Type( r8 );
-    auto b3index = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
+    const auto r8 = static_cast<Operand_t>( mem.read( PC ) & 0x7 );
+    const auto r8Type = getR8orPHLType( r8 );
+    const auto b3index = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
     switch( 0x3 & ( mem.read( PC ) >> 6 ) ) {
     case 0x0:
         switch( 0x7 & mem.read( PC ) ) {
