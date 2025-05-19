@@ -117,8 +117,8 @@ CoreCpu::Operation_t CoreCpu::decode() {
 
 CoreCpu::Operation_t CoreCpu::decodeBlock0() {
     //count from 0
-    auto bits345 = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
-    auto bits45 = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 4 ) );
+    const auto operandR8 = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
+    const auto operandR16 = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 4 ) );
     switch( 0x7 & mem.read( PC ) ) {
     case 0x0:
         return { OperationType_t::JR, OperandType_t::COND,
@@ -133,17 +133,17 @@ CoreCpu::Operation_t CoreCpu::decodeBlock0() {
 
     switch( 0xF & mem.read( PC ) ) {
     case 0x1:
-        return { OperationType_t::LD, OperandType_t::R16, bits45, OperandType_t::IMM16 };
+        return { OperationType_t::LD, OperandType_t::R16, operandR16, OperandType_t::IMM16 };
     case 0x2:
-        return { OperationType_t::LD, OperandType_t::R16MEM, bits45, OperandType_t::R8, Operand_t::a };
+        return { OperationType_t::LD, OperandType_t::R16MEM, operandR16, OperandType_t::R8, Operand_t::a };
     case 0x3:
-        return { OperationType_t::INC, OperandType_t::R16, bits45 };
+        return { OperationType_t::INC, OperandType_t::R16, operandR16 };
     case 0x9:
-        return { OperationType_t::ADD, OperandType_t::R16, Operand_t::hl, OperandType_t::R16, bits45 };
+        return { OperationType_t::ADD, OperandType_t::R16, Operand_t::hl, OperandType_t::R16, operandR16 };
     case 0xA:
-        return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM, bits45 };
+        return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM, operandR16 };
     case 0xB:
-        return { OperationType_t::DEC, OperandType_t::R16, bits45 };
+        return { OperationType_t::DEC, OperandType_t::R16, operandR16 };
     }
     return Operation_t { OperationType_t::INVALID };
 }
@@ -182,8 +182,8 @@ CoreCpu::Operation_t CoreCpu::decodeBlock2() {
 
 
 CoreCpu::Operation_t CoreCpu::decodeBlock3() {
-    auto condition = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 3 ) );
-    auto r16stk = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 4 ) );
+    const auto condition = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 3 ) );
+    const auto r16stk = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 4 ) );
     switch( 0x7 & mem.read( PC ) ) {
     case 0x0:
         return { OperationType_t::RET, OperandType_t::COND, condition };

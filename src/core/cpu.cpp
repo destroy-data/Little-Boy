@@ -477,9 +477,8 @@ void CoreCpu::execute( const Operation_t& op ) {
         } else if( op.operandType1 == opdt::R16 ) {
             if( _add )
                 addTo<opdt::R16>( op.operand1, readVal );
-            else {
-                //ERRTODO
-            }
+            else
+                invalidOperandType( op.operandType1 );
         }
     } break;
     case OT::CP: {
@@ -491,7 +490,7 @@ void CoreCpu::execute( const Operation_t& op ) {
         else if( op.operandType2 == opdt::IMM8 )
             val2 = read<opdt::IMM8>( op.operand2 );
         else
-            return;
+            invalidOperandType( op.operandType2 );
         subFrom<opdt::R8>( { opd::a }, val2, true );
     } break;
     case OT::DEC: {
@@ -503,7 +502,8 @@ void CoreCpu::execute( const Operation_t& op ) {
         else if( op.operandType1 == opdt::R16 ) {
             auto current = read<opdt::R16>( op.operand1 );
             write<opdt::R16>( op.operand1, --current );
-        }
+        } else
+            invalidOperandType( op.operandType1 );
         setCFlag( cFlag );
     } break;
     case OT::INC: {
@@ -515,7 +515,9 @@ void CoreCpu::execute( const Operation_t& op ) {
         else if( op.operandType1 == opdt::R16 ) {
             auto current = read<opdt::R16>( op.operand1 );
             write<opdt::R16>( op.operand1, ++current );
-        }
+        } else
+            invalidOperandType( op.operandType1 );
+
         setCFlag( cFlag );
     } break;
     case OT::SBC: {
@@ -526,11 +528,8 @@ void CoreCpu::execute( const Operation_t& op ) {
             readVal += read<opdt::pHL>( op.operand2 );
         else if( op.operandType2 == opdt::IMM8 ) {
             readVal += read<opdt::IMM8>( op.operand2 );
-        } else {
-            logError( ErrorCode::InvalidOperand,
-                      std::format( "op.operandType2: {0}", static_cast<Enum_t>( op.operandType2 ) ) );
-            return;
-        }
+        } else
+            invalidOperandType( op.operandType2 );
 
         subFrom<opdt::R8>( { opd::a }, readVal );
     } break;
@@ -539,7 +538,7 @@ void CoreCpu::execute( const Operation_t& op ) {
         bitwise<OT::AND>( op );
         break;
     case OT::CPL:
-        write<opdt::R8>( { Operand_t::a }, static_cast<uint8_t>( ~( read<opdt::R8>( { Operand_t::a } ) ) ) );
+        write<opdt::R8>( { opd::a }, static_cast<uint8_t>( ~( read<opdt::R8>( { opd::a } ) ) ) );
         setNFlag( true );
         setHFlag( true );
         break;
@@ -551,13 +550,13 @@ void CoreCpu::execute( const Operation_t& op ) {
         break;
     //Bit flag instructions
     case OT::BIT: {
-        auto bitIndex = std::get<uint8_t>( op.operand1 );
-        auto value =
+        const auto bitIndex = std::get<uint8_t>( op.operand1 );
+        const auto value =
                 op.operandType2 == opdt::pHL ? read<opdt::pHL>( op.operand2 ) : read<opdt::R8>( op.operand2 );
         setZNHCFlags( !( value & ( 1 << bitIndex ) ), false, true, getCFlag() );
     } break;
     case OT::RES: {
-        auto bitIndex = std::get<uint8_t>( op.operand1 );
+        const auto bitIndex = std::get<uint8_t>( op.operand1 );
         if( op.operandType2 == opdt::pHL ) {
             auto value = read<opdt::pHL>( op.operand2 );
             value &= static_cast<uint8_t>( ~( 1 << bitIndex ) );
@@ -569,7 +568,7 @@ void CoreCpu::execute( const Operation_t& op ) {
         }
     } break;
     case OT::SET: {
-        auto bitIndex = std::get<uint8_t>( op.operand1 );
+        const auto bitIndex = std::get<uint8_t>( op.operand1 );
         if( op.operandType2 == opdt::pHL ) {
             auto value = read<opdt::pHL>( op.operand2 );
             value |= ( 1 << bitIndex );
@@ -712,9 +711,11 @@ void CoreCpu::execute( const Operation_t& op ) {
         setCFlag( true );
         break;
     //Stack manipulation instructions
-    case OT::POP:
-        write<opdt::R16STK>( op.operand1, popFromStack() );
-        break;
+    case OT::POP: {
+        const auto poped = popFromStack();
+        write<opdt::R16STK>( op.operand1, poped );
+        // TODO when writing to F, take into account that lowest 4 bits are not writeable
+    } break;
     case OT::PUSH:
         pushToStack( read<opdt::R16STK>( op.operand1 ) );
         break;
@@ -723,16 +724,21 @@ void CoreCpu::execute( const Operation_t& op ) {
         interruptMasterEnabled = false;
         break;
     case OT::EI:
-        //This should be delayed by one instruction
+        // TODO This should be delayed by one instruction
         interruptMasterEnabled = true;
         break;
-    case OT::HALT:
-        //TODO
-        break;
+    case OT::HALT: {
+        const auto interruptPending = ( mem.read( addr::interruptEnableRegister ) & 0x1F ) &
+                                      ( mem.read( addr::interruptFlag ) & 0x1F );
+        if( !interruptMasterEnabled && interruptPending ) {
+            // TODO halt bug
+        } else
+            halted = true;
+    } break;
     //Miscellaneous instructions
     case OT::DAA: {
         uint8_t adjustment = 0;
-        bool cFlag = false;
+        bool cFlag = getCFlag();
         if( getNFlag() ) {
             if( getHFlag() )
                 adjustment += 6;
@@ -757,15 +763,23 @@ void CoreCpu::execute( const Operation_t& op ) {
         break;
     //Invalid and unknown instructions
     case OT::INVALID:
-    default:
-        //ERRTODO
+        logFatal( ErrorCode::InvalidOperationType,
+                  std::format( "Known invalid operation type made it to execute stage, value: {0}",
+                               static_cast<Enum_t>( op.operationType ) ) );
+        logStacktrace();
+        std::abort();
         break;
+    default:
+        logFatal( ErrorCode::InvalidOperationType, std::format( "Unknown operation type, value: {0}",
+                                                                static_cast<Enum_t>( op.operationType ) ) );
+        logStacktrace();
+        std::abort();
     }
 }
 
 void CoreCpu::handleInterrupts() {
-    auto interruptEnable = mem.read( 0xFFFF );
-    auto interruptFlag = mem.read( 0xFF0F );
+    const auto interruptEnable = mem.read( addr::interruptEnableRegister );
+    const auto interruptFlag = mem.read( addr::interruptFlag );
     if( interruptEnable & 1 && interruptFlag & 1 ) { //VBlank
         pushToStack( PC );
         PC = 0x40;

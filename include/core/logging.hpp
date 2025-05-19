@@ -14,10 +14,10 @@ enum CoreError : int {
     // Memory errors (200-399)
 
     // CPU errors (400-599)
-    InvalidOpcode = 400,
+    InvalidOperationType = 400,
     InvalidOperandType = 401,
     InvalidOperand = 402,
-    CPUHalted = 410,
+    CPUHardLocked = 410,
     StackOverflow = 420,
     StackUnderflow = 421,
 

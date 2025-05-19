@@ -126,6 +126,7 @@ protected:
     uint16_t SP, PC;
     Memory& mem;
     bool interruptMasterEnabled = false;
+    bool halted = false;
 
     static consteval size_t getOperandVarType( CoreCpu::OperandType_t operandType );
     template<OperandType_t type>
