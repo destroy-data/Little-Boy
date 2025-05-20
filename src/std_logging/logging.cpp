@@ -59,7 +59,8 @@ constexpr auto bgBrightWhite = "\033[107m";
 
 using namespace ansi;
 
-void log( int errorCode, ErrorSeverity severity, std::string message, std::string file, int line ) {
+void log( const int errorCode, const ErrorSeverity severity, const std::string& message,
+          const std::string& file, const int line ) {
     std::string_view severityStr;
     std::string_view format;
     std::string_view color;
@@ -90,8 +91,8 @@ void log( int errorCode, ErrorSeverity severity, std::string message, std::strin
         break;
     }
 
-    std::filesystem::path filePath( file );
-    std::string filename = filePath.filename().string();
+    const std::filesystem::path filePath( file );
+    const std::string filename = filePath.filename().string();
     std::print( "{}{}{:<9}#{} code {:04d}: {} ({}:{})\n", format, color, severityStr, reset, errorCode,
                 message, filename, line );
 }

@@ -59,7 +59,8 @@ enum class ErrorSeverity : uint8_t {
     Fatal    // Something went very wrong, cannot continue execution
 };
 
-void log( int errorCode, ErrorSeverity severity, std::string message, std::string file, int line );
+void log( const int errorCode, const ErrorSeverity severity, const std::string& message,
+          const std::string& file, const int line );
 void logStacktrace();
 
 #define logDebug( code, message ) log( code, ErrorSeverity::Debug, message, __FILE__, __LINE__ )
