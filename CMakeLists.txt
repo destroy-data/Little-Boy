@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28.3)
+cmake_minimum_required(VERSION 3.25)
 project(gameboy C CXX)
 
 option(BUILD_TESTS "Build the test suite" ON)
@@ -40,6 +40,7 @@ set(MODULES
     core
     raylib
     std_logging
+    cartridge_impls
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
