@@ -1,52 +1,52 @@
-image: alpine:3.18
+image: silkeh/clang:20-bookworm
 
 variables:
-  # Cache directories
-  FORMATTER_PATH: /usr/bin/clang-format
+  CMAKE_BUILD_DIR: "build"
 
 cache:
-  key: ${CI_COMMIT_REF_SLUG}-formatter
+  key: ${CI_COMMIT_REF_SLUG}-deps
   paths:
-    - ${FORMATTER_PATH}
+    - ${CMAKE_BUILD_DIR}/_deps/
   policy: pull-push
 
 stages:
-  - lint
+  - check
 
 format-check:
-  stage: lint
-  before_script:
-    # Use specific version tag instead of latest
-    - apk update
-    # Install only what's needed - we don't need git
-    - |
-      if [ ! -f ${FORMATTER_PATH} ]; then
-        echo "Installing clang-format..."
-        apk add --no-cache clang-extra-tools
-      else
-        echo "Using cached clang-format"
-      fi
+  stage: check
   script:
-    # Find all C++ source files and headers in one command
-    - echo "Checking code formatting..."
-    # Process multiple files at once using xargs for better performance
     - |
-      find src include test -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) -print0 | 
+      find src include -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) -print0 | 
       xargs -0 -P $(nproc) -I{} sh -c '
-        echo "Checking {}..."; 
         if ! clang-format -style=file --dry-run -Werror "{}"; then 
           echo "❌ {} is not properly formatted" >&2; 
           exit 1; 
         fi
-      ' || (echo "Some files need formatting. Run clang-format locally to fix them." && exit 1)
+      '
     - echo "✅ All files are properly formatted!"
-  # Add artifacts for diagnostic purposes
-  artifacts:
-    when: on_failure
-    expire_in: 1 week
-    paths:
-      - format-check-results.txt
-  # Only run on merge requests targeting master branch and on master branch
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
     - if: $CI_COMMIT_BRANCH == "master"
+
+# TODO find newer image
+#build-warnings-check:
+#  stage: check
+#  before_script:
+#    - apt-get update && apt-get install -y ninja-build git libdrm-dev libgbm-dev libegl1-mesa-dev libc++-dev libc++abi-dev
+#  script:
+#    - |
+#      cmake -B ${CMAKE_BUILD_DIR} -S . -GNinja \
+#        -DCMAKE_CXX_COMPILER=clang++ \
+#        -DCMAKE_C_COMPILER=clang \
+#        -DCMAKE_CXX_FLAGS="-O0 -Wall -Wextra -Wpedantic -Werror -stdlib=libc++" \
+#        -DPLATFORM=DRM
+#    - cmake --build ${CMAKE_BUILD_DIR}
+#    - echo "✅ Build completed with no warnings!"
+#  artifacts:
+#    paths:
+#      - ${CMAKE_BUILD_DIR}/
+#    expire_in: 3 hours
+#    when: on_success
+#  rules:
+#    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+#    - if: $CI_COMMIT_BRANCH == "master"
