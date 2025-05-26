@@ -1,4 +1,4 @@
-image: silkeh/clang:20-bookworm
+image: alpine:latest
 
 variables:
   CMAKE_BUILD_DIR: "build"
@@ -14,39 +14,68 @@ stages:
 
 format-check:
   stage: check
+  before_script:
+    - apk update
+    - apk add --no-cache clang clang-extra-tools
   script:
     - |
-      find src include -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) -print0 | 
-      xargs -0 -P $(nproc) -I{} sh -c '
-        if ! clang-format -style=file --dry-run -Werror "{}"; then 
-          echo "❌ {} is not properly formatted" >&2; 
-          exit 1; 
+      echo "🔍 Checking code formatting..."
+      failed=0
+      
+      find src include -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) | while read -r file; do
+        # Create a temporary file with the formatted version
+        formatted_output=$(clang-format -style=file "$file")
+        
+        # Compare with original
+        if ! echo "$formatted_output" | diff -u --color=always "$file" - > /dev/null 2>&1; then
+          echo -e "\n❌ $file needs formatting:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "$formatted_output" | diff -u --color=always --label="current" --label="expected" "$file" - || true
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          failed=1
         fi
-      '
-    - echo "✅ All files are properly formatted!"
+      done
+      
+      if [ $failed -eq 1 ]; then
+        echo -e "\n💡 To fix formatting issues, run:"
+        echo "    find src include -type f \\( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \\) -exec clang-format -i {} +"
+        exit 1
+      else
+        echo "✅ All files are properly formatted!"
+      fi
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
     - if: $CI_COMMIT_BRANCH == "master"
 
-# TODO find newer image
-#build-warnings-check:
-#  stage: check
-#  before_script:
-#    - apt-get update && apt-get install -y ninja-build git libdrm-dev libgbm-dev libegl1-mesa-dev libc++-dev libc++abi-dev
-#  script:
-#    - |
-#      cmake -B ${CMAKE_BUILD_DIR} -S . -GNinja \
-#        -DCMAKE_CXX_COMPILER=clang++ \
-#        -DCMAKE_C_COMPILER=clang \
-#        -DCMAKE_CXX_FLAGS="-O0 -Wall -Wextra -Wpedantic -Werror -stdlib=libc++" \
-#        -DPLATFORM=DRM
-#    - cmake --build ${CMAKE_BUILD_DIR}
-#    - echo "✅ Build completed with no warnings!"
-#  artifacts:
-#    paths:
-#      - ${CMAKE_BUILD_DIR}/
-#    expire_in: 3 hours
-#    when: on_success
-#  rules:
-#    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
-#    - if: $CI_COMMIT_BRANCH == "master"
+build-warnings-check:
+  stage: check
+  before_script:
+    - apk update
+    - |
+      apk add --no-cache \
+        clang \
+        clang-dev \
+        cmake \
+        ninja \
+        git \
+        mesa-dev \
+        mesa-gbm \
+        mesa-egl \
+        libstdc++-dev
+  script:
+    - |
+      cmake -B ${CMAKE_BUILD_DIR} -S . -GNinja \
+        -DCMAKE_CXX_COMPILER=clang++ \
+        -DCMAKE_C_COMPILER=clang \
+        -DCMAKE_CXX_FLAGS="-O0 -Wall -Wextra -Wpedantic -Werror" \
+        -DPLATFORM=DRM
+    - cmake --build ${CMAKE_BUILD_DIR}
+    - echo "✅ Build completed with no warnings or errors!"
+  artifacts:
+    paths:
+      - ${CMAKE_BUILD_DIR}/
+    expire_in: 3 hours
+    when: on_success
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+    - if: $CI_COMMIT_BRANCH == "master"
