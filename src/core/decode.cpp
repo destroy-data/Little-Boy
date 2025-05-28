@@ -5,154 +5,158 @@
 
 CoreCpu::Operation_t CoreCpu::decode() {
     // first check instructions without different operand variants
-    switch( mem.read( PC ) ) {
+    const auto opcode = mem.read( PC++ );
+    switch( opcode ) {
     //block 0
     case 0x0:
-        return { OperationType_t::NOP };
+        return { opcode, OperationType_t::NOP };
     case 0x10:
-        return { OperationType_t::STOP };
+        return { opcode, OperationType_t::STOP };
     case 0x08:
-        return { OperationType_t::LD, OperandType_t::pIMM16, {}, OperandType_t::R16, Operand_t::sp };
+        return { opcode, OperationType_t::LD, OperandType_t::pIMM16, {}, OperandType_t::R16, Operand_t::sp };
     case 0x07:
-        return { OperationType_t::RLCA };
+        return { opcode, OperationType_t::RLCA };
     case 0x0F:
-        return { OperationType_t::RRCA };
+        return { opcode, OperationType_t::RRCA };
     case 0x17:
-        return { OperationType_t::RLA };
+        return { opcode, OperationType_t::RLA };
     case 0x1F:
-        return { OperationType_t::RRA };
+        return { opcode, OperationType_t::RRA };
     case 0x27:
-        return { OperationType_t::DAA };
+        return { opcode, OperationType_t::DAA };
     case 0x2F:
-        return { OperationType_t::CPL };
+        return { opcode, OperationType_t::CPL };
     case 0x37:
-        return { OperationType_t::SCF };
+        return { opcode, OperationType_t::SCF };
     case 0x3F:
-        return { OperationType_t::CCF };
+        return { opcode, OperationType_t::CCF };
     case 0x18:
-        return { OperationType_t::JR, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::JR, OperandType_t::IMM8 };
     //block 1
     case 0x76:
-        return { OperationType_t::HALT };
+        return { opcode, OperationType_t::HALT };
     //block 3
     //arithmetic
     case 0xC6:
-        return { OperationType_t::ADD, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::ADD, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xCE:
-        return { OperationType_t::ADC, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::ADC, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xD6:
-        return { OperationType_t::SUB, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::SUB, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xDE:
-        return { OperationType_t::SBC, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::SBC, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xE6:
-        return { OperationType_t::AND, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::AND, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xEE:
-        return { OperationType_t::XOR, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::XOR, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xF6:
-        return { OperationType_t::OR, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::OR, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xFE:
-        return { OperationType_t::CP, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::CP, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xE8:
-        return { OperationType_t::ADD, OperandType_t::R16, Operand_t::sp, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::ADD, OperandType_t::R16, Operand_t::sp, OperandType_t::IMM8 };
     //control flow
     case 0xC9:
-        return { OperationType_t::RET };
+        return { opcode, OperationType_t::RET };
     case 0xD9:
-        return { OperationType_t::RETI };
+        return { opcode, OperationType_t::RETI };
     case 0xC3:
-        return { OperationType_t::JP, OperandType_t::IMM16 };
+        return { opcode, OperationType_t::JP, OperandType_t::IMM16 };
     case 0xE9:
-        return { OperationType_t::JP, OperandType_t::R16, Operand_t::hl };
+        return { opcode, OperationType_t::JP, OperandType_t::R16, Operand_t::hl };
     case 0xCD:
-        return { OperationType_t::CALL, OperandType_t::IMM16 };
+        return { opcode, OperationType_t::CALL, OperandType_t::IMM16 };
     //the rest
     case 0xCB:
-        PC++;
-        return decodeCB();
+        return decodeCB( opcode );
     // SOURCES_DISAGREE
     // rgbds.gbdev.io/docs/v0.9.1/gbz80.7 says that there are n16 operands used
     // gbdev.io/pandocs/CPU_Instruction_Set.html says that n8 is used
     // gekkio.fi/files/gb-docs/gbctr.pdf also says that n8 is used
     // I'll go with n8
     case 0xE2:
-        return { OperationType_t::LDH, OperandType_t::FF00_PLUS_R8, Operand_t::c, OperandType_t::R8,
-                 Operand_t::a };
+        return { opcode,       OperationType_t::LDH, OperandType_t::FF00_PLUS_R8,
+                 Operand_t::c, OperandType_t::R8,    Operand_t::a };
     case 0xE0:
-        return { OperationType_t::LDH, OperandType_t::IMM8, {}, OperandType_t::R8, Operand_t::a };
+        return { opcode, OperationType_t::LDH, OperandType_t::IMM8, {}, OperandType_t::R8, Operand_t::a };
     case 0xEA:
-        return { OperationType_t::LD, OperandType_t::pIMM16, {}, OperandType_t::R8, Operand_t::a };
+        return { opcode, OperationType_t::LD, OperandType_t::pIMM16, {}, OperandType_t::R8, Operand_t::a };
     case 0xF2:
-        return { OperationType_t::LDH, OperandType_t::R8, Operand_t::a, OperandType_t::FF00_PLUS_R8,
-                 Operand_t::c };
+        return { opcode,       OperationType_t::LDH,        OperandType_t::R8,
+                 Operand_t::a, OperandType_t::FF00_PLUS_R8, Operand_t::c };
     case 0xF0:
-        return { OperationType_t::LDH, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::LDH, OperandType_t::R8, Operand_t::a, OperandType_t::IMM8 };
     case 0xFA:
-        return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::pIMM16 };
+        return { opcode, OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::pIMM16 };
     case 0xF8:
-        return { OperationType_t::LD, OperandType_t::R16, Operand_t::hl, OperandType_t::SP_PLUS_IMM8 };
+        return { opcode, OperationType_t::LD, OperandType_t::R16, Operand_t::hl, OperandType_t::SP_PLUS_IMM8 };
     case 0xF9:
-        return { OperationType_t::LD, OperandType_t::R16, Operand_t::sp, OperandType_t::R16, Operand_t::hl };
+        return { opcode,        OperationType_t::LD, OperandType_t::R16,
+                 Operand_t::sp, OperandType_t::R16,  Operand_t::hl };
     case 0xF3:
-        return { OperationType_t::DI };
+        return { opcode, OperationType_t::DI };
     case 0xFB:
-        return { OperationType_t::EI };
+        return { opcode, OperationType_t::EI };
     }
 
-    switch( 0x3 & ( mem.read( PC ) >> 6 ) ) { // leave only 2 most significant bits
+    switch( 0x3 & ( opcode >> 6 ) ) { // leave only 2 most significant bits
     case 0x0:
-        return decodeBlock0();
+        return decodeBlock0( opcode );
     case 0x1: {
-        const auto dest = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
-        const auto src = static_cast<Operand_t>( 0x7 & mem.read( PC ) );
+        const auto dest = static_cast<Operand_t>( 0x7 & ( opcode >> 3 ) );
+        const auto src = static_cast<Operand_t>( 0x7 & opcode );
 
-        return { OperationType_t::LD, getR8orPHLType( dest ), dest, getR8orPHLType( src ), src };
+        return { opcode, OperationType_t::LD, getR8orPHLType( dest ), dest, getR8orPHLType( src ), src };
     }
     case 0x2:
-        return decodeBlock2();
+        return decodeBlock2( opcode );
     case 0x3:
-        return decodeBlock3();
+        return decodeBlock3( opcode );
     }
-    return { OperationType_t::INVALID };
+    return { opcode, OperationType_t::INVALID };
 }
 
-CoreCpu::Operation_t CoreCpu::decodeBlock0() {
+CoreCpu::Operation_t CoreCpu::decodeBlock0( const uint8_t opcode ) {
     //count from 0
-    const auto operandR8 = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
-    const auto operandR16 = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 4 ) );
-    switch( 0x7 & mem.read( PC ) ) {
+    const auto operandR8 = static_cast<Operand_t>( 0x7 & ( opcode >> 3 ) );
+    const auto operandR16 = static_cast<Operand_t>( 0x3 & ( opcode >> 4 ) );
+    switch( 0x7 & opcode ) {
     case 0x0:
-        return { OperationType_t::JR, OperandType_t::COND,
-                 static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 3 ) ), OperandType_t::IMM8 };
+        return { opcode, OperationType_t::JR, OperandType_t::COND,
+                 static_cast<Operand_t>( 0x3 & ( opcode >> 3 ) ), OperandType_t::IMM8 };
     case 0x4:
-        return { OperationType_t::INC, getR8orPHLType( operandR8 ), operandR8 };
+        return { opcode, OperationType_t::INC, getR8orPHLType( operandR8 ), operandR8 };
     case 0x5:
-        return { OperationType_t::DEC, getR8orPHLType( operandR8 ), operandR8 };
+        return { opcode, OperationType_t::DEC, getR8orPHLType( operandR8 ), operandR8 };
     case 0x6:
-        return { OperationType_t::LD, getR8orPHLType( operandR8 ), operandR8, OperandType_t::IMM8 };
+        return { opcode, OperationType_t::LD, getR8orPHLType( operandR8 ), operandR8, OperandType_t::IMM8 };
     }
 
-    switch( 0xF & mem.read( PC ) ) {
+    switch( 0xF & opcode ) {
     case 0x1:
-        return { OperationType_t::LD, OperandType_t::R16, operandR16, OperandType_t::IMM16 };
+        return { opcode, OperationType_t::LD, OperandType_t::R16, operandR16, OperandType_t::IMM16 };
     case 0x2:
-        return { OperationType_t::LD, OperandType_t::R16MEM, operandR16, OperandType_t::R8, Operand_t::a };
+        return { opcode,     OperationType_t::LD, OperandType_t::R16MEM,
+                 operandR16, OperandType_t::R8,   Operand_t::a };
     case 0x3:
-        return { OperationType_t::INC, OperandType_t::R16, operandR16 };
+        return { opcode, OperationType_t::INC, OperandType_t::R16, operandR16 };
     case 0x9:
-        return { OperationType_t::ADD, OperandType_t::R16, Operand_t::hl, OperandType_t::R16, operandR16 };
+        return { opcode,        OperationType_t::ADD, OperandType_t::R16,
+                 Operand_t::hl, OperandType_t::R16,   operandR16 };
     case 0xA:
-        return { OperationType_t::LD, OperandType_t::R8, Operand_t::a, OperandType_t::R16MEM, operandR16 };
+        return { opcode,       OperationType_t::LD,   OperandType_t::R8,
+                 Operand_t::a, OperandType_t::R16MEM, operandR16 };
     case 0xB:
-        return { OperationType_t::DEC, OperandType_t::R16, operandR16 };
+        return { opcode, OperationType_t::DEC, OperandType_t::R16, operandR16 };
     }
-    return Operation_t { OperationType_t::INVALID };
+    return Operation_t { opcode, OperationType_t::INVALID };
 }
 
-CoreCpu::Operation_t CoreCpu::decodeBlock2() {
-    const auto r8 = static_cast<Operand_t>( 0x7 & mem.read( PC ) );
+CoreCpu::Operation_t CoreCpu::decodeBlock2( const uint8_t opcode ) {
+    const auto r8 = static_cast<Operand_t>( 0x7 & opcode );
     const auto r8Type = getR8orPHLType( r8 );
     auto opType = OperationType_t::INVALID;
-    switch( 0x7 & ( mem.read( PC ) >> 3 ) ) {
+    switch( 0x7 & ( opcode >> 3 ) ) {
     case 0x0:
         opType = OperationType_t::ADD;
         break;
@@ -177,64 +181,66 @@ CoreCpu::Operation_t CoreCpu::decodeBlock2() {
     case 0x7:
         opType = OperationType_t::CP;
     }
-    return { opType, OperandType_t::R8, Operand_t::a, r8Type, r8 };
+    return { opcode, opType, OperandType_t::R8, Operand_t::a, r8Type, r8 };
 }
 
 
-CoreCpu::Operation_t CoreCpu::decodeBlock3() {
-    const auto condition = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 3 ) );
-    const auto r16stk = static_cast<Operand_t>( 0x3 & ( mem.read( PC ) >> 4 ) );
-    switch( 0x7 & mem.read( PC ) ) {
+CoreCpu::Operation_t CoreCpu::decodeBlock3( const uint8_t opcode ) {
+    const auto condition = static_cast<Operand_t>( 0x3 & ( opcode >> 3 ) );
+    const auto r16stk = static_cast<Operand_t>( 0x3 & ( opcode >> 4 ) );
+    switch( 0x7 & opcode ) {
     case 0x0:
-        return { OperationType_t::RET, OperandType_t::COND, condition };
+        return { opcode, OperationType_t::RET, OperandType_t::COND, condition };
     case 0x2:
-        return { OperationType_t::JP, OperandType_t::COND, condition, OperandType_t::IMM16 };
+        return { opcode, OperationType_t::JP, OperandType_t::COND, condition, OperandType_t::IMM16 };
     case 0x4:
-        return { OperationType_t::CALL, OperandType_t::COND, condition, OperandType_t::IMM16 };
+        return { opcode, OperationType_t::CALL, OperandType_t::COND, condition, OperandType_t::IMM16 };
     case 0x7:
-        return { OperationType_t::RST, OperandType_t::TGT3,
-                 static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) ) };
+        return { opcode, OperationType_t::RST, OperandType_t::TGT3,
+                 static_cast<Operand_t>( 0x7 & ( opcode >> 3 ) ) };
     case 0x1:
-        return { OperationType_t::POP, OperandType_t::R16STK, r16stk };
+        return { opcode, OperationType_t::POP, OperandType_t::R16STK, r16stk };
     case 0x5:
-        return { OperationType_t::PUSH, OperandType_t::R16STK, r16stk };
+        return { opcode, OperationType_t::PUSH, OperandType_t::R16STK, r16stk };
     }
-    return { OperationType_t::INVALID };
+    return { opcode, OperationType_t::INVALID };
 }
 
-CoreCpu::Operation_t CoreCpu::decodeCB() {
-    const auto r8 = static_cast<Operand_t>( mem.read( PC ) & 0x7 );
+CoreCpu::Operation_t CoreCpu::decodeCB( const uint8_t opcodeFirstByte ) {
+    const auto opcodeSecondByte = mem.read( PC++ );
+    const auto opcode = static_cast<uint16_t>( opcodeFirstByte | opcodeSecondByte << 8 );
+    const auto r8 = static_cast<Operand_t>( opcodeSecondByte & 0x7 );
     const auto r8Type = getR8orPHLType( r8 );
-    const auto b3index = static_cast<Operand_t>( 0x7 & ( mem.read( PC ) >> 3 ) );
-    switch( 0x3 & ( mem.read( PC ) >> 6 ) ) {
+    const auto b3index = static_cast<Operand_t>( 0x7 & ( opcodeSecondByte >> 3 ) );
+    switch( 0x3 & ( opcodeSecondByte >> 6 ) ) {
     case 0x0:
-        switch( 0x7 & mem.read( PC ) ) {
+        switch( 0x7 & opcodeSecondByte ) {
         case 0x0:
-            return { OperationType_t::RLC, r8Type, r8 };
+            return { opcode, OperationType_t::RLC, r8Type, r8 };
         case 0x1:
-            return { OperationType_t::RRC, r8Type, r8 };
+            return { opcode, OperationType_t::RRC, r8Type, r8 };
         case 0x2:
-            return { OperationType_t::RL, r8Type, r8 };
+            return { opcode, OperationType_t::RL, r8Type, r8 };
         case 0x3:
-            return { OperationType_t::RR, r8Type, r8 };
+            return { opcode, OperationType_t::RR, r8Type, r8 };
         case 0x4:
-            return { OperationType_t::SLA, r8Type, r8 };
+            return { opcode, OperationType_t::SLA, r8Type, r8 };
         case 0x5:
-            return { OperationType_t::SRA, r8Type, r8 };
+            return { opcode, OperationType_t::SRA, r8Type, r8 };
         case 0x6:
-            return { OperationType_t::SWAP, r8Type, r8 };
+            return { opcode, OperationType_t::SWAP, r8Type, r8 };
         case 0x7:
-            return { OperationType_t::SRL, r8Type, r8 };
+            return { opcode, OperationType_t::SRL, r8Type, r8 };
         default:
             std::unreachable();
         }
 
     case 0x1:
-        return { OperationType_t::BIT, OperandType_t::BIT_INDEX, b3index, r8Type, r8 };
+        return { opcode, OperationType_t::BIT, OperandType_t::BIT_INDEX, b3index, r8Type, r8 };
     case 0x2:
-        return { OperationType_t::RES, OperandType_t::BIT_INDEX, b3index, r8Type, r8 };
+        return { opcode, OperationType_t::RES, OperandType_t::BIT_INDEX, b3index, r8Type, r8 };
     case 0x3:
-        return { OperationType_t::SET, OperandType_t::BIT_INDEX, b3index, r8Type, r8 };
+        return { opcode, OperationType_t::SET, OperandType_t::BIT_INDEX, b3index, r8Type, r8 };
     default:
         std::unreachable();
     }

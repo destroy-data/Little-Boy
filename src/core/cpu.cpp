@@ -420,7 +420,8 @@ void CoreCpu::ldh( const Operation_t& op ) {
     }
 }
 
-void CoreCpu::execute( const Operation_t& op ) {
+unsigned CoreCpu::execute( const Operation_t& op ) {
+    bool branchTaken = false;
     switch( op.operationType ) {
         using OT = OperationType_t;
         using opdt = OperandType_t;
@@ -634,10 +635,12 @@ void CoreCpu::execute( const Operation_t& op ) {
                 invalidOperandType( op.operandType2 );
             }
             const auto condition = std::get<Operand_t>( op.operand1 );
-            if( !isConditionMet( condition ) )
-                return;
+            if( isConditionMet( condition ) )
+                branchTaken = true;
+            else
+                break;
         }
-        pushToStack( PC + 3 );
+        pushToStack( PC );
         PC = read<opdt::IMM16>( withCondition ? op.operand2 : op.operand1 );
     } break;
     case OT::JP: {
@@ -653,25 +656,26 @@ void CoreCpu::execute( const Operation_t& op ) {
                 invalidOperandType( op.operandType2 );
             const auto condition = std::get<Operand_t>( op.operand1 );
             const auto address = read<opdt::IMM16>( op.operand2 );
-            if( isConditionMet( condition ) )
+            if( isConditionMet( condition ) ) {
                 PC = address;
+                branchTaken = true;
+            }
         } break;
         default:
             invalidOperandType( op.operandType1 );
         }
     } break;
     case OT::JR: {
-        // When reading IMM8, PC is incremented by 1 and points to just read byte,
-        // so when making jump relative to the byte immediately after this instruction
-        // we need to add another 1 to PC before applying offset
         if( op.operandType1 == opdt::IMM8 ) {
             const auto offset = static_cast<int8_t>( read<opdt::IMM8>( op.operand1 ) );
-            PC = static_cast<uint16_t>( PC + 1 + offset );
+            PC = static_cast<uint16_t>( PC + offset );
         } else if( op.operandType1 == opdt::COND && op.operandType2 == opdt::IMM8 ) {
             const auto condition = std::get<Operand_t>( op.operand1 );
             const auto offset = static_cast<int8_t>( read<opdt::IMM8>( op.operand2 ) );
-            if( isConditionMet( condition ) )
-                PC = static_cast<uint16_t>( PC + 1 + offset );
+            if( isConditionMet( condition ) ) {
+                PC = static_cast<uint16_t>( PC + offset );
+                branchTaken = true;
+            }
         } else
             invalidOperandType( op.operandType1 );
 
@@ -681,8 +685,10 @@ void CoreCpu::execute( const Operation_t& op ) {
             PC = popFromStack();
         else if( op.operandType1 == opdt::COND ) {
             const auto condition = std::get<Operand_t>( op.operand1 );
-            if( isConditionMet( condition ) )
+            if( isConditionMet( condition ) ) {
                 PC = popFromStack();
+                branchTaken = true;
+            }
         } else {
             invalidOperandType( op.operandType1 );
         }
@@ -694,7 +700,7 @@ void CoreCpu::execute( const Operation_t& op ) {
     case OT::RST:
         if( op.operandType1 == opdt::TGT3 ) {
             const uint16_t jumpTo = std::get<uint8_t>( op.operand1 ) * 8;
-            pushToStack( PC + 1 );
+            pushToStack( PC );
             PC = jumpTo;
         } else
             invalidOperandType( op.operandType1 );
@@ -775,32 +781,45 @@ void CoreCpu::execute( const Operation_t& op ) {
         logStacktrace();
         std::abort();
     }
+
+    return getCycles( op.opcode, branchTaken );
 }
 
-void CoreCpu::handleInterrupts() {
+unsigned CoreCpu::handleInterrupts() {
+    if( !interruptMasterEnabled )
+        return 0;
     const auto interruptEnable = mem.read( addr::interruptEnableRegister );
     const auto interruptFlag = mem.read( addr::interruptFlag );
-    if( interruptEnable & 1 && interruptFlag & 1 ) { //VBlank
+    if( interruptEnable & 0x1 && interruptFlag & 0x1 ) { //VBlank
         pushToStack( PC );
         PC = 0x40;
+        return 20;
     }
     if( interruptEnable & ( 1 << 1 ) && interruptFlag & ( 1 << 1 ) ) { //LCD
         pushToStack( PC );
         PC = 0x48;
+        return 20;
     }
     if( interruptEnable & ( 1 << 2 ) && interruptFlag & ( 1 << 2 ) ) { //Timer
         pushToStack( PC );
         PC = 0x50;
+        return 20;
     }
     if( interruptEnable & ( 1 << 3 ) && interruptFlag & ( 1 << 3 ) ) { //Serial
         pushToStack( PC );
         PC = 0x58;
+        return 20;
     }
     if( interruptEnable & ( 1 << 4 ) && interruptFlag & ( 1 << 4 ) ) { //Joypad
         pushToStack( PC );
         PC = 0x60;
+        return 20;
     }
+    return 0;
 };
 
-void CoreCpu::tick() {
+unsigned CoreCpu::tick() {
+    auto cycles = execute( decode() );
+    cycles += handleInterrupts();
+    return cycles;
 }

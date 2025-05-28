@@ -1,4 +1,5 @@
 #pragma once
+#include "core/cycles.hpp"
 #include "core/logging.hpp"
 #include "memory.hpp"
 #include <array>
@@ -9,7 +10,7 @@ template<typename T>
 concept uint8or16_t = std::same_as<T, uint8_t> || std::same_as<T, uint16_t>;
 
 class CoreCpu {
-protected:
+public:
     using Enum_t = uint8_t;
     enum class OperationType_t : Enum_t {
         INVALID,
@@ -102,19 +103,22 @@ protected:
         condC
     };
 
+protected:
     using OperandVar_t = std::variant<std::monostate, Operand_t, uint8_t>;
     //In case of IMM8 and IMM16, don't save the next byte(s)
     //They will be fetched in execution phase
     struct Operation_t {
+        uint16_t opcode;
         OperationType_t operationType;
         OperandType_t operandType1;
         OperandVar_t operand1;
         OperandType_t operandType2;
         OperandVar_t operand2;
-        Operation_t( OperationType_t operationType_, OperandType_t operandType1_ = {},
+        Operation_t( uint16_t opcode_, OperationType_t operationType_, OperandType_t operandType1_ = {},
                      OperandVar_t operand1_ = {}, OperandType_t operandType2_ = {},
                      OperandVar_t operand2_ = {} )
-            : operationType( operationType_ )
+            : opcode( opcode_ )
+            , operationType( operationType_ )
             , operandType1( operandType1_ )
             , operand1( operand1_ )
             , operandType2( operandType2_ )
@@ -128,6 +132,7 @@ protected:
     bool interruptMasterEnabled = false;
     bool halted = false;
 
+public:
     static consteval size_t getOperandVarType( CoreCpu::OperandType_t operandType );
     template<OperandType_t type>
     uint8or16_t auto read( const OperandVar_t operand );
@@ -142,8 +147,8 @@ protected:
     template<OperationType_t optype>
     void bitShift( Operation_t op );
 
-    void execute( const Operation_t& op );
-    void handleInterrupts();
+    unsigned execute( const Operation_t& op );
+    unsigned handleInterrupts();
     void ld( const Operation_t& op );
     void ldh( const Operation_t& op );
     void pushToStack( uint16_t value );
@@ -152,10 +157,10 @@ protected:
 
     Operation_t decode();
     //helpers
-    Operation_t decodeBlock0();
-    Operation_t decodeBlock2();
-    Operation_t decodeBlock3();
-    Operation_t decodeCB();
+    Operation_t decodeBlock0( const uint8_t opcode );
+    Operation_t decodeBlock2( const uint8_t opcode );
+    Operation_t decodeBlock3( const uint8_t opcode );
+    Operation_t decodeCB( const uint8_t opcodeFirstByte );
     // clang-format off
     OperandType_t getR8orPHLType( Operand_t operand ) { return operand == Operand_t::phl ? OperandType_t::pHL : OperandType_t::R8; }
     bool getZFlag() { return registers[7] &( 1 << 7 ); } // Zero flag
@@ -175,6 +180,13 @@ protected:
         setHFlag( H );
         setCFlag( C );
     }
+    static inline unsigned getCycles( uint16_t opcode, bool branchTaken ) {
+
+        if( opcode <= 0xFF )
+            return branchTaken ? cycles::opcodeCyclesBranched[opcode] : cycles::opcodeCycles[opcode];
+        else
+            return cycles::opcodeCyclesCb[opcode & 0xFF];
+    }
 
     virtual void handleJoypad() = 0;
 
@@ -183,5 +195,5 @@ public:
         logDebug( ErrorCode::NoError, "test" );
     };
     virtual ~CoreCpu() = default;
-    void tick();
+    unsigned tick();
 };

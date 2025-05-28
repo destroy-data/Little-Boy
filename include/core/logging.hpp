@@ -20,6 +20,7 @@ enum CoreError : int {
     CPUHardLocked = 410,
     StackOverflow = 420,
     StackUnderflow = 421,
+    CpuTimingImplementationError = 430,
 
     // Cartridge errors (600-799)
     CartridgeNotFound = 600,
