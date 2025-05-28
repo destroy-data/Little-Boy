@@ -17,7 +17,7 @@ void setupBackgroundChessboardPatternInVram( uint8_t vram[] ) {
     const auto chessboardSize = 4; // 4x4 tiles per square
     for( int y = 0; y < 32; y++ ) {
         for( int x = 0; x < 32; x++ ) {
-            unsigned mapOffset = 0x1800 + y * 32 + x;
+            unsigned mapOffset = static_cast<unsigned>( 0x1800 + y * 32 + x );
 
             // Determine if this tile is in a black square
             // Using integer division to create the chessboard pattern

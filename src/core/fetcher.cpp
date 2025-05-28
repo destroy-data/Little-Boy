@@ -111,13 +111,12 @@ void CorePpu::BackgroundFetcher::reset() {
 
 //--------------------------------------------------
 void CorePpu::SpriteFetcher::tick() {
-    const uint8_t lcdc = mem.read( addr::lcdControl );
-    const bool bgWinEnabled = lcdc & 0x1;
-    const bool objEnabled = lcdc & ( 1 << 1 );
+    //const uint8_t lcdc = mem.read( addr::lcdControl );
+    //const bool objEnabled = lcdc & ( 1 << 1 );
 
-    const uint8_t scrollX = mem.read( addr::bgScrollX );
-    const uint8_t scrollY = mem.read( addr::bgScrollY );
-    const uint8_t ly = mem.read( addr::lcdY );
+    //const uint8_t scrollX = mem.read( addr::bgScrollX );
+    //const uint8_t scrollY = mem.read( addr::bgScrollY );
+    //const uint8_t ly = mem.read( addr::lcdY );
     //TODO handle transitioning to window mid-tile
     switch( state ) {
         using enum FetcherState_t;
