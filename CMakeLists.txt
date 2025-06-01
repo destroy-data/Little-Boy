@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 project(gameboy C CXX)
 
-option(BUILD_TESTS "Build the test suite" ON)
 function(add_strict_warnings target)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(${target} PRIVATE
@@ -26,6 +25,8 @@ function(add_strict_warnings target)
     endif()
 endfunction()
 
+option(BUILD_TESTS "Build the test suite" ON)
+
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -36,18 +37,33 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-set(MODULES
-    core
-    raylib
-    std_logging
-    cartridge_impls
-)
+set(VALID_TARGETS "raylib" "microcontroller" )
+string(REPLACE ";" ", " FORMATTED_TARGETS "${VALID_TARGETS}")
+set(EMULATOR_TARGET "DEFINE_ME_SENPAI" CACHE STRING "Choose emulator target type")
+set_property(CACHE EMULATOR_TARGET PROPERTY STRINGS ${VALID_TARGETS} )
+
+if(EMULATOR_TARGET STREQUAL "DEFINE_ME_SENPAI")
+    message(FATAL_ERROR
+        "Specify emulator target!\n"
+        "Valid targets: ${FORMATTED_TARGETS}.\n"
+        "Use -D EMULATOR_TARGET=<target>"
+    )
+elseif(NOT EMULATOR_TARGET IN_LIST VALID_TARGETS)
+    message(FATAL_ERROR
+        "Invalid emulator target!\n"
+        "Valid targets: ${FORMATTED_TARGETS}\n"
+        "Use -D EMULATOR_TARGET=<target>"
+    )
+endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
-
-foreach(MODULE ${MODULES})
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/${MODULE})
-endforeach()
+add_subdirectory(${CMAKE_SOURCE_DIR}/src/core)
+if(EMULATOR_TARGET STREQUAL "raylib")
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/std_logging)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/cartridge_impls)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/raylib)
+elseif(EMULATOR_TARGET STREQUAL "microcontroller")
+endif()
 
 if(BUILD_TESTS)
     enable_testing()
