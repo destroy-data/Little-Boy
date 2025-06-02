@@ -14,15 +14,15 @@ include(CTest)
 include(Catch)
 include_directories(${CMAKE_SOURCE_DIR}/test)
 
-#One test module per prod module
-foreach(MODULE ${MODULES})
-    set(MODULE_PATH "${CMAKE_SOURCE_DIR}/test/${MODULE}")
-    if(EXISTS "${MODULE_PATH}")
-        add_subdirectory(${MODULE_PATH})
-    else()
-        message(STATUS "Test directory for '${MODULE}' module not found, skipping.")
-    endif()
-endforeach()
+add_subdirectory(${CMAKE_SOURCE_DIR}/test/core)
+if(EMULATOR_TARGET STREQUAL "raylib")
+    # add_subdirectory(${CMAKE_SOURCE_DIR}/test/cartridge_impls)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/test/raylib)
+elseif(EMULATOR_TARGET STREQUAL "terminal")
+    # TODO
+elseif(EMULATOR_TARGET STREQUAL "cortex-m")
+    # TODO
+endif()
 
 add_custom_target( automatic_test
     COMMAND ${CMAKE_CTEST_COMMAND} -LE "interactive"
