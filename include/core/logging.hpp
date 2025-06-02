@@ -61,7 +61,8 @@ enum class ErrorSeverity : uint8_t {
 };
 
 void log( const int errorCode, const ErrorSeverity severity, const std::string& message,
-          const std::string& file, const int line );
+          const std::string_view filePath, const int line );
+
 void logStacktrace();
 
 #define logDebug( code, message ) log( code, ErrorSeverity::Debug, message, __FILE__, __LINE__ )

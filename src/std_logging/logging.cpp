@@ -59,8 +59,21 @@ constexpr auto bgBrightWhite = "\033[107m";
 
 using namespace ansi;
 
+constexpr std::string_view source_locations[] = { "include/", "src/", "test/" };
+
+std::string_view getRelevantPartOfPath( const std::string_view filePath ) {
+    for( const auto loc: source_locations ) {
+        const auto pos = filePath.rfind( loc );
+        if( pos != std::string::npos ) {
+            return filePath.substr( pos );
+        }
+    }
+    // fallback
+    return filePath;
+}
+
 void log( const int errorCode, const ErrorSeverity severity, const std::string& message,
-          const std::string& file, const int line ) {
+          const std::string_view filePath, const int line ) {
     std::string_view severityStr;
     std::string_view format;
     std::string_view color;
@@ -91,23 +104,20 @@ void log( const int errorCode, const ErrorSeverity severity, const std::string& 
         break;
     }
 
-    const std::filesystem::path filePath( file );
-    const std::string filename = filePath.filename().string();
     std::print( "{}{}{:<9}#{} code {:04d}: {} ({}:{})\n", format, color, severityStr, reset, errorCode,
-                message, filename, line );
+                message, getRelevantPartOfPath( filePath ), line );
 }
 
 void logStacktrace() {
     std::println( "{}{}STACKTRACE{}", bold, brightYellow, reset );
     const auto stacktrace = std::stacktrace::current();
     for( size_t i = 0; const auto& entry: stacktrace ) {
-        auto entryStr = std::to_string( entry );
-        const auto pathPos = entryStr.find( '/' );
-        const auto relevantPartOfPathPos = entryStr.find( "gameboy" ) + 8;
-        entryStr.erase( pathPos, relevantPartOfPathPos - pathPos );
+        const std::string filePath = entry.source_file();
+        const std::string description = entry.description();
+        std::println( "{}{:4d}#{} {} at {}:{}", green, i++, reset, description,
+                      getRelevantPartOfPath( filePath ), entry.source_line() );
 
-        std::println( "{}{:4d}#{} {}", green, i++, reset, entryStr );
-        if( entry.description() == "main" )
+        if( description == "main" )
             break;
     }
 }
