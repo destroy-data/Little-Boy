@@ -17,14 +17,30 @@ FetchContent_Declare(
     GIT_PROGRESS TRUE
 )
 
+FetchContent_Declare(
+    tinyfiledialogs
+    URL "https://sourceforge.net/projects/tinyfiledialogs/files/tinyfiledialogs-current.zip/download"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+FetchContent_MakeAvailable(tinyfiledialogs)
 FetchContent_MakeAvailable(raylib)
+
+add_library(tinyfiledialogs STATIC
+    ${tinyfiledialogs_SOURCE_DIR}/tinyfiledialogs.c
+    ${tinyfiledialogs_SOURCE_DIR}/tinyfiledialogs.h
+)
+target_include_directories(tinyfiledialogs PUBLIC ${tinyfiledialogs_SOURCE_DIR})
+
 target_link_libraries(gb_raylib PUBLIC
     raylib
     gb_core
     cartridge_impls
+    tinyfiledialogs
 )
 
-add_executable(gb_raylib_executable ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${gb_raylib})
+add_executable(gb_raylib_executable ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+target_link_libraries(gb_raylib_executable PRIVATE gb_raylib)
 set_target_properties(gb_raylib_executable PROPERTIES
     OUTPUT_NAME_RELEASE "little-boy"
 )
