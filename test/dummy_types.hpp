@@ -34,4 +34,4 @@ public:
     }
 };
 
-using DummyEmulator = Emulator<DummyCartridge, Memory, DummyCpu, DummyPpu>;
+using DummyEmulator_t = Emulator<DummyCpu, DummyPpu>;

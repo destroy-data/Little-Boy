@@ -1,9 +1,10 @@
 #include "core/memory.hpp"
+#include "core/cartridge.hpp"
 #include <cstdint>
 
 uint8_t Memory::read( const uint16_t index ) const {
     if( inRom00( index ) or inRom0N( index ) or inExternalRam( index ) )
-        return cartridge.read( index );
+        return cartridge->read( index );
     if( inVideoRam( index ) ) {
         if( vramLock )
             return 0xFF;
@@ -34,7 +35,7 @@ uint8_t Memory::read( const uint16_t index ) const {
 
 void Memory::write( const uint16_t index, uint8_t value ) {
     if( inRom00( index ) or inRom0N( index ) or inExternalRam( index ) )
-        cartridge.write( index, value );
+        cartridge->write( index, value );
     else if( inVideoRam( index ) )
         videoRam[index - addr::videoRam] = value;
     else if( inWorkRam00( index ) )
@@ -63,9 +64,11 @@ void Memory::write( const uint16_t index, uint8_t value ) {
     else if( index == addr::interruptEnableRegister )
         interruptEnableRegister = value;
 }
+
 void Memory::setVramLock( bool locked ) {
     vramLock = locked;
 }
+
 void Memory::setOamLock( bool locked ) {
     oamLock = locked;
 }

@@ -18,7 +18,8 @@ public:
 };
 
 TEST_CASE( "oam_scan", "[oam]" ) {
-    Emulator<DummyCartridge, Memory, DummyCpu, TestPpu> emu;
+    std::unique_ptr<DummyCartridge> cartridge;
+    Emulator<DummyCpu, TestPpu> emu( std::move( cartridge ) );
     emu.memory.write( addr::lcdControl, 0x0 );
     createTestSprite( emu.memory.oam, 0, 1, 1, 0, 0 );
 
@@ -41,7 +42,8 @@ TEST_CASE( "oam_scan", "[oam]" ) {
 }
 
 TEST_CASE( "headless_rendering", "[background][chessboard]" ) {
-    Emulator<DummyCartridge, Memory, DummyCpu, TestPpu> emu;
+    std::unique_ptr<DummyCartridge> cartridge;
+    Emulator<DummyCpu, TestPpu> emu( std::move( cartridge ) );
     setupLcdRegisters( emu.memory );
     setupBackgroundChessboardPatternInVram( emu.memory.videoRam );
     setupTestSprites( emu.memory );
