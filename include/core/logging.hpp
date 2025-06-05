@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <format>
 #include <string>
 
 namespace ErrorCode {
@@ -7,32 +8,32 @@ namespace ErrorCode {
 // The namespace is used as an extendable enum, front end can add new codes to it the same way
 enum CoreError : int {
     // gb errors (0-199)
-    NoError = 0,
-    GenericError = 1,
+    NoError        = 0,
+    GenericError   = 1,
     NotImplemented = 2,
 
     // Memory errors (200-399)
 
     // CPU errors (400-599)
-    InvalidOperationType = 400,
-    InvalidOperandType = 401,
-    InvalidOperand = 402,
-    CPUHardLocked = 410,
-    StackOverflow = 420,
-    StackUnderflow = 421,
+    InvalidOperationType         = 400,
+    InvalidOperandType           = 401,
+    InvalidOperand               = 402,
+    CPUHardLocked                = 410,
+    StackOverflow                = 420,
+    StackUnderflow               = 421,
     CpuTimingImplementationError = 430,
 
     // Cartridge errors (600-799)
-    CartridgeNotFound = 600,
-    InvalidCartridge = 601,
-    UnsupportedCartridgeType = 602,
+    CartridgeNotFound         = 600,
+    InvalidCartridge          = 601,
+    UnsupportedCartridgeType  = 602,
     RomHeaderChecksumMismatch = 610,
-    RomGlobalCheksumMismatch = 611,
-    BankSwitchingError = 620,
-    SaveDataError = 630,
+    RomGlobalCheksumMismatch  = 611,
+    BankSwitchingError        = 620,
+    SaveDataError             = 630,
 
     // PPU errors (800-999)
-    PPURenderingError = 800,
+    PPURenderingError   = 800,
     InvalidSpriteAccess = 801,
     VRAMAccessViolation = 802,
 
@@ -74,3 +75,9 @@ void logStacktrace();
 #define logError( code, message ) log( code, ErrorSeverity::Error, message, __FILE__, __LINE__ )
 
 #define logFatal( code, message ) log( code, ErrorSeverity::Fatal, message, __FILE__, __LINE__ )
+
+template<std::integral T>
+inline std::string toHex( T number ) {
+    const auto padding = sizeof( T ) * 2;
+    return std::format( "0x{:0{}X}", number, padding );
+}
