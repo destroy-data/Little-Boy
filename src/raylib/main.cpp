@@ -33,22 +33,22 @@ int main() {
 
 
     CoreCartridge::CartridgeType type = static_cast<CoreCartridge::CartridgeType>( romData[0x147] );
-    auto cartridge = CoreCartridge::create( type, std::move( romData ) );
+    auto cartridge                    = CoreCartridge::create( type, std::move( romData ) );
 
-    logDebug( 0, std::format( "Read cartridge type byte: 0x{:02X}", cartridge->read( addr::cartridgeType ) ) );
-    logDebug( 0, std::format( "Read ROM size byte: 0x{:02X}", cartridge->read( addr::romSize ) ) );
-    logDebug( 0, std::format( "Read RAM size byte: 0x{:02X}", cartridge->read( addr::ramSize ) ) );
+
+    logDebug( std::format( "Read cartridge type byte: 0x{:02X}", cartridge->read( addr::cartridgeType ) ) );
+    logDebug( std::format( "Read ROM size byte: 0x{:02X}", cartridge->read( addr::romSize ) ) );
+    logDebug( std::format( "Read RAM size byte: 0x{:02X}", cartridge->read( addr::ramSize ) ) );
 
     for( uint16_t logoAddress = addr::logoStart; logoAddress <= addr::logoEnd; ++logoAddress ) {
-        logDebug( 0, std::format( "Read logo byte at address 0x{:04X}: 0x{:02X}", logoAddress,
-                                  cartridge->read( logoAddress ) ) );
+        logDebug( std::format( "Read logo byte at address 0x{:04X}: 0x{:02X}", logoAddress,
+                               cartridge->read( logoAddress ) ) );
     }
 
-    logDebug( 0, std::format( "Try to read from ROM bank 1. Read from address 0x{:04X}: 0x{:02X}", 0x4000,
-                              cartridge->read( 0x4000 ) ) );
+    logDebug( std::format( "Try to read from ROM bank 1. Read from address 0x{:04X}: 0x{:02X}", 0x4000,
+                           cartridge->read( 0x4000 ) ) );
 
-    logDebug( 0,
-              std::format( "Try to read from RAM (which does not exist). Read from address 0x{:04X}: 0x{:02X}",
+    logDebug( std::format( "Try to read from RAM (which does not exist). Read from address 0x{:04X}: 0x{:02X}",
                            0xA000, cartridge->read( 0xA000 ) ) );
 
     return 0;

@@ -65,11 +65,10 @@ void CoreCartridge::initRom( const RomSize size ) {
     for( unsigned i = 0; i < romBankCount; ++i ) {
         auto offset = i * romBankSize;
         romBanks.emplace_back( rom.data() + offset, romBankSize );
-        logDebug( 0, std::format( "Initialized ROM bank {} at offset 0x{:04X} of size 0x{:04X}", i, offset,
-                                  romBankSize ) );
+        logDebug( std::format( "Initialized ROM bank {} at offset 0x{:04X} of size 0x{:04X}", i, offset,
+                               romBankSize ) );
     }
-    logInfo( 0,
-             std::format( "Initialized {} ROM banks of size 0x{:04X} bytes", romBanks.size(), romBankSize ) );
+    logInfo( std::format( "Initialized {} ROM banks of size 0x{:04X} bytes", romBanks.size(), romBankSize ) );
 }
 
 bool CoreCartridge::isValidRamSize( const RamSize size ) {
@@ -123,14 +122,13 @@ void CoreCartridge::initRam( const CoreCartridge::RamSize size ) {
     }
 
     ramBanks = std::vector<std::vector<uint8_t>>( ramBankCount, std::vector<uint8_t>( ramBankSize, 0 ) );
-    logInfo( 0,
-             std::format( "Initialized {} RAM banks of size 0x{:04X} bytes", ramBanks.size(), ramBankSize ) );
+    logInfo( std::format( "Initialized {} RAM banks of size 0x{:04X} bytes", ramBanks.size(), ramBankSize ) );
 }
 
 CoreCartridge::CoreCartridge( std::vector<uint8_t>&& rom_ ) : rom( std::move( rom_ ) ) {
-    logDebug( 0, "CoreCartridge constructor" );
-    logDebug( 0, std::format( "Read ROM size byte: 0x{:02X} bytes", rom[0x148] ) );
-    logDebug( 0, std::format( "Read RAM size byte: 0x{:02X} bytes", rom[0x149] ) );
+    logDebug( "CoreCartridge constructor" );
+    logDebug( std::format( "Read ROM size byte: 0x{:02X} bytes", rom[0x148] ) );
+    logDebug( std::format( "Read RAM size byte: 0x{:02X} bytes", rom[0x149] ) );
 
     initRom( static_cast<CoreCartridge::RomSize>( rom[0x148] ) );
     initRam( static_cast<CoreCartridge::RamSize>( rom[0x149] ) );

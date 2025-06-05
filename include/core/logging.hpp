@@ -66,9 +66,9 @@ void log( const int errorCode, const ErrorSeverity severity, const std::string& 
 
 void logStacktrace();
 
-#define logDebug( code, message ) log( code, ErrorSeverity::Debug, message, __FILE__, __LINE__ )
+#define logDebug( message ) log( ErrorCode::NoError, ErrorSeverity::Debug, message, __FILE__, __LINE__ )
 
-#define logInfo( code, message ) log( code, ErrorSeverity::Info, message, __FILE__, __LINE__ )
+#define logInfo( message ) log( ErrorCode::NoError, ErrorSeverity::Info, message, __FILE__, __LINE__ )
 
 #define logWarning( code, message ) log( code, ErrorSeverity::Warning, message, __FILE__, __LINE__ )
 

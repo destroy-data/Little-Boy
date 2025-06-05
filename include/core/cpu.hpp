@@ -130,7 +130,7 @@ protected:
     uint16_t SP, PC;
     Memory& mem;
     bool interruptMasterEnabled = false;
-    bool halted = false;
+    bool halted                 = false;
 
 public:
     static consteval size_t getOperandVarType( CoreCpu::OperandType_t operandType );
@@ -191,9 +191,7 @@ public:
     virtual void handleJoypad() = 0;
 
 public:
-    CoreCpu( Memory& mem_ ) : mem( mem_ ) {
-        logDebug( ErrorCode::NoError, "test" );
-    };
+    CoreCpu( Memory& mem_ ) : mem( mem_ ) {};
     virtual ~CoreCpu() = default;
     unsigned tick();
 };
