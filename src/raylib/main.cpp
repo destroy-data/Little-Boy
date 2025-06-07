@@ -1,12 +1,15 @@
-#include "core/cartridge.hpp"
+#include "core/emulator.hpp"
 #include "core/logging.hpp"
+#include "raylib/raylib_parts.hpp"
 #include "tinyfiledialogs.h"
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <print>
+#include <memory>
 #include <raylib.h>
 #include <vector>
+
+using Emulator_t = Emulator<RaylibCpu, RaylibPpu>;
 
 int main() {
     // clang-format off
@@ -33,17 +36,12 @@ int main() {
 
 
     CoreCartridge::CartridgeType type = static_cast<CoreCartridge::CartridgeType>( romData[0x147] );
-    auto cartridge                    = CoreCartridge::create( type, std::move( romData ) );
+    std::unique_ptr<CoreCartridge> cartridge { CoreCartridge::create( type, std::move( romData ) ) };
 
 
     logDebug( std::format( "Read cartridge type byte: 0x{:02X}", cartridge->read( addr::cartridgeType ) ) );
     logDebug( std::format( "Read ROM size byte: 0x{:02X}", cartridge->read( addr::romSize ) ) );
     logDebug( std::format( "Read RAM size byte: 0x{:02X}", cartridge->read( addr::ramSize ) ) );
-
-    for( uint16_t logoAddress = addr::logoStart; logoAddress <= addr::logoEnd; ++logoAddress ) {
-        logDebug( std::format( "Read logo byte at address 0x{:04X}: 0x{:02X}", logoAddress,
-                               cartridge->read( logoAddress ) ) );
-    }
 
     logDebug( std::format( "Try to read from ROM bank 1. Read from address 0x{:04X}: 0x{:02X}", 0x4000,
                            cartridge->read( 0x4000 ) ) );
@@ -51,5 +49,40 @@ int main() {
     logDebug( std::format( "Try to read from RAM (which does not exist). Read from address 0x{:04X}: 0x{:02X}",
                            0xA000, cartridge->read( 0xA000 ) ) );
 
+    const int scaleFactor  = 7;
+    const int screenWidth  = CorePpu::displayWidth * scaleFactor;
+    const int screenHeight = CorePpu::displayHeight * scaleFactor;
+
+    InitWindow( screenWidth, screenHeight, "Little boy - Gameboy emulator" );
+    SetTargetFPS( 60 );
+
+    Texture2D screenTexture =
+            LoadTextureFromImage( GenImageColor( CorePpu::displayWidth, CorePpu::displayHeight, BLACK ) );
+
+    Emulator_t emu( std::move( cartridge ) );
+    while( !WindowShouldClose() ) {
+        emu.tick();
+        UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
+
+        BeginDrawing();
+        ClearBackground( DARKGRAY );
+
+        DrawTexturePro(
+                screenTexture, Rectangle { 0, 0, (float)CorePpu::displayWidth, (float)CorePpu::displayHeight },
+                Rectangle { 0, 0, (float)screenWidth, (float)screenHeight }, Vector2 { 0, 0 }, 0.0f, WHITE );
+
+        Vector2 mousePosition = GetMousePosition();
+        std::string mousePositionText =
+                "X: " + std::to_string( static_cast<int>( mousePosition.x / scaleFactor ) ) +
+                ", Y: " + std::to_string( static_cast<int>( mousePosition.y / scaleFactor ) );
+        int textWidth = MeasureText( mousePositionText.c_str(), 20 );
+        DrawText( mousePositionText.c_str(), screenWidth - textWidth - 10, 10, 20, RED );
+        DrawFPS( 5, 5 );
+
+        EndDrawing();
+    }
+
+    UnloadTexture( screenTexture );
+    CloseWindow();
     return 0;
 }
