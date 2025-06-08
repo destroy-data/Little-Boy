@@ -1,3 +1,4 @@
+#include "core/cartridge.hpp"
 #include "core/emulator.hpp"
 #include "core/logging.hpp"
 #include "raylib/raylib_parts.hpp"
@@ -35,19 +36,18 @@ int main() {
     romFile.close();
 
 
-    CoreCartridge::CartridgeType type = static_cast<CoreCartridge::CartridgeType>( romData[0x147] );
+    CoreCartridge::CartridgeType type = static_cast<CoreCartridge::CartridgeType>( romData[addr::romSize] );
     std::unique_ptr<CoreCartridge> cartridge { CoreCartridge::create( type, std::move( romData ) ) };
 
+    logDebug( std::format( "Read cartridge type byte: {}", toHex( cartridge->read( addr::cartridgeType ) ) ) );
+    logDebug( std::format( "Read ROM size byte: {}", toHex( cartridge->read( addr::romSize ) ) ) );
+    logDebug( std::format( "Read RAM size byte: {}", toHex( cartridge->read( addr::ramSize ) ) ) );
 
-    logDebug( std::format( "Read cartridge type byte: 0x{:02X}", cartridge->read( addr::cartridgeType ) ) );
-    logDebug( std::format( "Read ROM size byte: 0x{:02X}", cartridge->read( addr::romSize ) ) );
-    logDebug( std::format( "Read RAM size byte: 0x{:02X}", cartridge->read( addr::ramSize ) ) );
+    logDebug( std::format( "Try to read from ROM bank 1. Read from address {}: {}",
+                           toHex( uint16_t { 0x4000 } ), toHex( cartridge->read( 0x4000 ) ) ) );
 
-    logDebug( std::format( "Try to read from ROM bank 1. Read from address 0x{:04X}: 0x{:02X}", 0x4000,
-                           cartridge->read( 0x4000 ) ) );
-
-    logDebug( std::format( "Try to read from RAM (which does not exist). Read from address 0x{:04X}: 0x{:02X}",
-                           0xA000, cartridge->read( 0xA000 ) ) );
+    logDebug( std::format( "Try to read from RAM (which does not exist). Read from address {}: {}",
+                           toHex( uint16_t { 0xA000 } ), toHex( cartridge->read( 0xA000 ) ) ) );
 
     const int scaleFactor  = 7;
     const int screenWidth  = CorePpu::displayWidth * scaleFactor;

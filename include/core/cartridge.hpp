@@ -33,6 +33,8 @@ protected:
     unsigned romBankCount = 0;
     unsigned ramBankCount = 0;
 
+    constexpr static uint8_t invalidReadValue = 0xFF; // Value returned on invalid read
+
 public:
     static std::unique_ptr<CoreCartridge> create( CartridgeType type, std::vector<uint8_t>&& rom );
 
@@ -74,14 +76,12 @@ enum class CoreCartridge::CartridgeType : uint8_t {
     MBC5RuR,  // MBC5 with Rumble and RAM
     MBC5RuRB, // MBC5 with Rumble, RAM and Battery
 
-    // clang-format off
     MBC6           = 0x20,
     MBC7SensorRuRB = 0x22, // MBC7 with Sensor, Rumble, RAM and Battery
     PocketCamera   = 0xFC,
     BandaiTama5    = 0xFD,
     HuC3           = 0xFE,
-    HuC1RB         = 0xFF  // HuC1 with RAM and Battery
-    // clang-format on
+    HuC1RB         = 0xFF, // HuC1 with RAM and Battery
 };
 
 // Note:
@@ -99,21 +99,19 @@ enum class CoreCartridge::RomSize : uint8_t {
     _8MiB,
     _1_1MiB = 0x52, // 1.1 MiB
     _1_2MiB,        // 1.2 MiB
-    _1_5MiB         // 1.5 MiB
+    _1_5MiB,        // 1.5 MiB
 };
 
 // Note:
 // RAM consists of 8KiB banks
 // 2 KiB chip was never used in a cartridges
 enum class CoreCartridge::RamSize : uint8_t {
-    // clang-format off
     _0KiB = 0x00,
     _2KiB,
     _8KiB,
     _32KiB,
     _128KiB,
-    _64KiB
-    // clang-format on
+    _64KiB,
 };
 
 namespace addr {

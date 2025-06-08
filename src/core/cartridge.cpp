@@ -45,8 +45,8 @@ bool CoreCartridge::isValidRomSize( const RomSize size ) {
     default:
         break;
     }
-    logError( 0, std::format( "ROM size unknown. Byte: 0x{:02X}",
-                              static_cast<std::underlying_type_t<RomSize>>( size ) ) );
+    logError( 0, std::format( "ROM size unknown. Byte: {}",
+                              toHex( static_cast<std::underlying_type_t<RomSize>>( size ) ) ) );
     return false;
 }
 
@@ -65,10 +65,11 @@ void CoreCartridge::initRom( const RomSize size ) {
     for( unsigned i = 0; i < romBankCount; ++i ) {
         auto offset = i * romBankSize;
         romBanks.emplace_back( rom.data() + offset, romBankSize );
-        logDebug( std::format( "Initialized ROM bank {} at offset 0x{:04X} of size 0x{:04X}", i, offset,
-                               romBankSize ) );
+        logDebug( std::format( "Initialized ROM bank {} at offset {} of size {}", i,
+                               toHex( offset ), toHex( romBankSize ) ) );
     }
-    logInfo( std::format( "Initialized {} ROM banks of size 0x{:04X} bytes", romBanks.size(), romBankSize ) );
+    logInfo( std::format( "Initialized {} ROM banks of size {} bytes", romBanks.size(),
+                          toHex( romBankSize ) ) );
 }
 
 bool CoreCartridge::isValidRamSize( const RamSize size ) {
@@ -87,8 +88,8 @@ bool CoreCartridge::isValidRamSize( const RamSize size ) {
     default:
         break;
     }
-    logError( 0, std::format( "RAM size unknown. Byte: 0x{:02X}",
-                              static_cast<std::underlying_type_t<RamSize>>( size ) ) );
+    logError( 0, std::format( "RAM size unknown. Byte: {}",
+                              toHex( static_cast<std::underlying_type_t<RamSize>>( size ) ) ) );
     return false;
 }
 
@@ -122,16 +123,21 @@ void CoreCartridge::initRam( const CoreCartridge::RamSize size ) {
     }
 
     ramBanks = std::vector<std::vector<uint8_t>>( ramBankCount, std::vector<uint8_t>( ramBankSize, 0 ) );
-    logInfo( std::format( "Initialized {} RAM banks of size 0x{:04X} bytes", ramBanks.size(), ramBankSize ) );
+    logInfo( std::format( "Initialized {} RAM banks of size {} bytes", ramBanks.size(),
+                          toHex( ramBankSize ) ) );
 }
 
 CoreCartridge::CoreCartridge( std::vector<uint8_t>&& rom_ ) : rom( std::move( rom_ ) ) {
     logDebug( "CoreCartridge constructor" );
-    logDebug( std::format( "Read ROM size byte: 0x{:02X} bytes", rom[0x148] ) );
-    logDebug( std::format( "Read RAM size byte: 0x{:02X} bytes", rom[0x149] ) );
 
-    initRom( static_cast<CoreCartridge::RomSize>( rom[0x148] ) );
-    initRam( static_cast<CoreCartridge::RamSize>( rom[0x149] ) );
+    const auto romSizeByte = rom[addr::romSize];
+    logDebug( std::format( "Read ROM size byte: {} bytes", toHex( romSizeByte ) ) );
+    initRom( static_cast<CoreCartridge::RomSize>( romSizeByte ) );
+
+
+    const auto ramSizeByte = rom[addr::ramSize];
+    logDebug( std::format( "Read RAM size byte: {} bytes", toHex( ramSizeByte ) ) );
+    initRam( static_cast<CoreCartridge::RamSize>( ramSizeByte ) );
 };
 
 std::unique_ptr<CoreCartridge> CoreCartridge::create( CartridgeType type, std::vector<uint8_t>&& rom ) {
@@ -149,7 +155,7 @@ std::unique_ptr<CoreCartridge> CoreCartridge::create( CartridgeType type, std::v
     default:
         break;
     }
-    logError( 0, std::format( "Unknown cartridge type: 0x{:02X}",
-                              static_cast<std::underlying_type_t<CartridgeType>>( type ) ) );
+    logError( 0, std::format( "Unknown cartridge type: {}",
+                              toHex( static_cast<std::underlying_type_t<CartridgeType>>( type ) ) ) );
     return nullptr;
 }
