@@ -6,8 +6,6 @@
 NoMBCCartridge::NoMBCCartridge( std::vector<uint8_t>&& rom_ ) : CoreCartridge( std::move( rom_ ) ) {};
 
 uint8_t NoMBCCartridge::read( const uint16_t address ) {
-    logDebug( std::format( "Trying to read at address {}", toHex( address ) ) );
-
     if( romStartAddress <= address && address < ( romStartAddress + romBankSize * romBankCount ) ) {
         unsigned bankIndex  = address / romBankSize;
         uint16_t bankOffset = address % romBankSize;
