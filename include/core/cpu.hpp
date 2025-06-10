@@ -1,6 +1,5 @@
 #pragma once
 #include "core/cycles.hpp"
-#include "core/logging.hpp"
 #include "memory.hpp"
 #include <array>
 #include <cstdint>
@@ -59,6 +58,13 @@ public:
         RES,
         SET
     };
+    static constexpr std::string_view OperationTypeString[] = {
+            "INVALID", "NOP", "STOP", "HALT", "LD",   "LDH",  "INC", "DEC",  "ADD", "ADC", "SUB", "SBC",
+            "AND",     "XOR", "OR",   "CP",   "RLCA", "RRCA", "RLA", "RRA",  "DAA", "CPL", "SCF", "CCF",
+            "JR",      "JP",  "RET",  "RETI", "CALL", "RST",  "POP", "PUSH", "DI",  "EI",  "RLC", "RRC",
+            "RL",      "RR",  "SLA",  "SRA",  "SWAP", "SRL",  "BIT", "RES",  "SET",
+    };
+
     enum class OperandType_t : Enum_t {
         NONE,
         R8,
@@ -75,6 +81,11 @@ public:
         SP_PLUS_IMM8,
         FF00_PLUS_R8
     };
+    static constexpr std::string_view OperandTypeString[] = {
+            "NONE",      "R8",   "pHL",  "R16",   "R16STK", "R16MEM",       "COND",
+            "BIT_INDEX", "TGT3", "IMM8", "IMM16", "pIMM16", "SP_PLUS_IMM8", "FF00_PLUS_R8",
+    };
+
     enum class Operand_t : Enum_t {
         // values correspond to their encoding in opcodes
         // r8
@@ -128,6 +139,7 @@ protected:
 
     uint8_t registers[8]; //b,c,d,e,h,l,a,f
     uint16_t SP, PC;
+    Operation_t operation = Operation_t( 0x0, OperationType_t::NOP );
     Memory& mem;
     bool interruptMasterEnabled = false;
     bool halted                 = false;
@@ -181,7 +193,6 @@ public:
         setCFlag( C );
     }
     static inline unsigned getCycles( uint16_t opcode, bool branchTaken ) {
-
         if( opcode <= 0xFF )
             return branchTaken ? cycles::opcodeCyclesBranched[opcode] : cycles::opcodeCycles[opcode];
         else
@@ -189,9 +200,10 @@ public:
     }
 
     virtual void handleJoypad() = 0;
+    void logOperation( Operation_t op, unsigned cycles );
 
 public:
-    CoreCpu( Memory& mem_ ) : mem( mem_ ) {};
+    CoreCpu( Memory& mem_ ) : PC( 0 ), mem( mem_ ) {};
     virtual ~CoreCpu() = default;
     unsigned tick();
 };

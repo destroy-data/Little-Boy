@@ -43,12 +43,6 @@ int main() {
     logDebug( std::format( "Read ROM size byte: {}", toHex( cartridge->read( addr::romSize ) ) ) );
     logDebug( std::format( "Read RAM size byte: {}", toHex( cartridge->read( addr::ramSize ) ) ) );
 
-    logDebug( std::format( "Try to read from ROM bank 1. Read from address {}: {}",
-                           toHex( uint16_t { 0x4000 } ), toHex( cartridge->read( 0x4000 ) ) ) );
-
-    logDebug( std::format( "Try to read from RAM (which does not exist). Read from address {}: {}",
-                           toHex( uint16_t { 0xA000 } ), toHex( cartridge->read( 0xA000 ) ) ) );
-
     const int scaleFactor  = 7;
     const int screenWidth  = CorePpu::displayWidth * scaleFactor;
     const int screenHeight = CorePpu::displayHeight * scaleFactor;
@@ -60,9 +54,23 @@ int main() {
             LoadTextureFromImage( GenImageColor( CorePpu::displayWidth, CorePpu::displayHeight, BLACK ) );
 
     Emulator_t emu( std::move( cartridge ) );
+    bool emulationStopped = false;
+    bool doOneTick; // When emulation isn't stopped, the value doesn't matter
     while( !WindowShouldClose() ) {
-        emu.tick();
-        UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
+        if( IsKeyPressed( KEY_H ) ) {
+            emulationStopped = !emulationStopped;
+            emulationStopped ? logDebug( "Stopped emulation!" ) : logDebug( "Start emulation again!" );
+        }
+        if( IsKeyPressed( KEY_J ) )
+            doOneTick = true;
+        if( IsKeyPressed( KEY_U ) )
+            logSeparator();
+
+        if( !emulationStopped || doOneTick ) {
+            emu.tick();
+            UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
+            doOneTick = false;
+        }
 
         BeginDrawing();
         ClearBackground( DARKGRAY );

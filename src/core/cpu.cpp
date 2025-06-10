@@ -4,6 +4,7 @@
 #include <format>
 #include <limits>
 #include <utility>
+#include <variant>
 
 #define invalidOperandType( OPERAND )                                                                         \
     do {                                                                                                      \
@@ -35,7 +36,7 @@ consteval size_t CoreCpu::getOperandVarType( CoreCpu::OperandType_t operandType 
 template<CoreCpu::OperandType_t type, uint8or16_t T>
 void CoreCpu::write( OperandVar_t operand, T writeValue ) {
     constexpr std::size_t writeSize = sizeof( T );
-    const auto opdVal = std::get<getOperandVarType( type )>( operand );
+    const auto opdVal               = std::get<getOperandVarType( type )>( operand );
     Enum_t underlVal;
     if constexpr( std::is_same_v<std::decay_t<decltype( opdVal )>, Operand_t> ) {
         underlVal = static_cast<Enum_t>( opdVal );
@@ -46,7 +47,7 @@ void CoreCpu::write( OperandVar_t operand, T writeValue ) {
 
         if( opdVal == Operand_t::a ) {
             constexpr int aIndex = 6;
-            registers[aIndex] = writeValue;
+            registers[aIndex]    = writeValue;
         }
         registers[underlVal] = writeValue;
     }
@@ -63,7 +64,7 @@ void CoreCpu::write( OperandVar_t operand, T writeValue ) {
         if( opdVal == Operand_t::sp )
             SP = writeValue;
         else {
-            registers[underlVal * 2] = static_cast<uint8_t>( writeValue );
+            registers[underlVal * 2]     = static_cast<uint8_t>( writeValue );
             registers[underlVal * 2 + 1] = static_cast<uint8_t>( writeValue >> 8 );
         }
     }
@@ -71,7 +72,7 @@ void CoreCpu::write( OperandVar_t operand, T writeValue ) {
     else if constexpr( type == OperandType_t::R16STK ) {
         static_assert( writeSize == 2, "R16STK write: wrong value size" );
 
-        registers[underlVal * 2] = static_cast<uint8_t>( writeValue );
+        registers[underlVal * 2]     = static_cast<uint8_t>( writeValue );
         registers[underlVal * 2 + 1] = static_cast<uint8_t>( writeValue >> 8 );
     }
 
@@ -157,13 +158,13 @@ uint8or16_t auto CoreCpu::read( const OperandVar_t operand ) {
                                                     ( registers[underlVal * 2 + 1] << 8 ) ) );
         case Operand_t::hlPlus: {
             uint16_t currentHl = registers[hlIndex] | static_cast<uint16_t>( registers[hlIndex + 1] << 8 );
-            const auto retVal = mem.read( currentHl++ );
+            const auto retVal  = mem.read( currentHl++ );
             write<OperandType_t::R16>( Operand_t::hl, currentHl );
             return retVal;
         }
         case Operand_t::hlMinus: {
             uint16_t currentHl = registers[hlIndex] | static_cast<uint16_t>( registers[hlIndex + 1] << 8 );
-            const auto retVal = mem.read( currentHl-- );
+            const auto retVal  = mem.read( currentHl-- );
             write<OperandType_t::R16>( Operand_t::hl, currentHl );
             return retVal;
         }
@@ -198,8 +199,8 @@ uint8or16_t auto CoreCpu::read( const OperandVar_t operand ) {
 
 template<CoreCpu::OperandType_t type, uint8or16_t T>
 void CoreCpu::addTo( OperandVar_t operand, T value ) {
-    auto currentValue = read<type>( operand );
-    bool cFlag = ( std::numeric_limits<T>::max() - currentValue < value );
+    auto currentValue  = read<type>( operand );
+    bool cFlag         = ( std::numeric_limits<T>::max() - currentValue < value );
     bool halfCarryFlag = std::same_as<decltype( currentValue ), uint8_t>
                                  ? ( ( currentValue & 0xF ) + ( value & 0xF ) ) > 0xF
                                  : ( ( currentValue & 0xFFF ) + ( value & 0xFFF ) ) > 0xFFF;
@@ -212,7 +213,7 @@ void CoreCpu::addTo( OperandVar_t operand, T value ) {
 template<CoreCpu::OperandType_t type>
 void CoreCpu::subFrom( OperandVar_t operand, uint8_t value, bool discard ) {
     auto currentValue = read<type>( operand );
-    bool cFlag = ( value > currentValue );
+    bool cFlag        = ( value > currentValue );
     //due to integer promotion substraction operands are promoted to ints
     bool halfCarryFlag = ( ( currentValue & 0xF ) - ( value & 0xF ) ) < 0;
 
@@ -353,9 +354,9 @@ void CoreCpu::ld( const Operation_t& op ) {
         readVal = read<pIMM16>( op.operand2 );
         break;
     case SP_PLUS_IMM8: {
-        readVal = read<R16>( { Operand_t::sp } );
-        const auto imm8 = read<IMM8>( op.operand2 );
-        bool cFlag = ( std::numeric_limits<uint16_t>::max() - readVal < imm8 );
+        readVal            = read<R16>( { Operand_t::sp } );
+        const auto imm8    = read<IMM8>( op.operand2 );
+        bool cFlag         = ( std::numeric_limits<uint16_t>::max() - readVal < imm8 );
         bool halfCarryFlag = ( ( readVal & 0xFFF ) + ( imm8 & 0xFFF ) ) > 0xFFF;
 
         readVal += imm8;
@@ -423,9 +424,9 @@ void CoreCpu::ldh( const Operation_t& op ) {
 unsigned CoreCpu::execute( const Operation_t& op ) {
     bool branchTaken = false;
     switch( op.operationType ) {
-        using OT = OperationType_t;
+        using OT   = OperationType_t;
         using opdt = OperandType_t;
-        using opd = Operand_t;
+        using opd  = Operand_t;
     //Load instructions
     case OT::LD:
         ld( op );
@@ -655,9 +656,9 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
             if( op.operandType2 != opdt::IMM16 )
                 invalidOperandType( op.operandType2 );
             const auto condition = std::get<Operand_t>( op.operand1 );
-            const auto address = read<opdt::IMM16>( op.operand2 );
+            const auto address   = read<opdt::IMM16>( op.operand2 );
             if( isConditionMet( condition ) ) {
-                PC = address;
+                PC          = address;
                 branchTaken = true;
             }
         } break;
@@ -668,12 +669,12 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
     case OT::JR: {
         if( op.operandType1 == opdt::IMM8 ) {
             const auto offset = static_cast<int8_t>( read<opdt::IMM8>( op.operand1 ) );
-            PC = static_cast<uint16_t>( PC + offset );
+            PC                = static_cast<uint16_t>( PC + offset );
         } else if( op.operandType1 == opdt::COND && op.operandType2 == opdt::IMM8 ) {
             const auto condition = std::get<Operand_t>( op.operand1 );
-            const auto offset = static_cast<int8_t>( read<opdt::IMM8>( op.operand2 ) );
+            const auto offset    = static_cast<int8_t>( read<opdt::IMM8>( op.operand2 ) );
             if( isConditionMet( condition ) ) {
-                PC = static_cast<uint16_t>( PC + offset );
+                PC          = static_cast<uint16_t>( PC + offset );
                 branchTaken = true;
             }
         } else
@@ -686,7 +687,7 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
         else if( op.operandType1 == opdt::COND ) {
             const auto condition = std::get<Operand_t>( op.operand1 );
             if( isConditionMet( condition ) ) {
-                PC = popFromStack();
+                PC          = popFromStack();
                 branchTaken = true;
             }
         } else {
@@ -695,7 +696,7 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
         break;
     case OT::RETI:
         interruptMasterEnabled = true; //TODO should be set right after this instruction
-        PC = popFromStack();
+        PC                     = popFromStack();
         break;
     case OT::RST:
         if( op.operandType1 == opdt::TGT3 ) {
@@ -744,7 +745,7 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
     //Miscellaneous instructions
     case OT::DAA: {
         uint8_t adjustment = 0;
-        bool cFlag = getCFlag();
+        bool cFlag         = getCFlag();
         if( getNFlag() ) {
             if( getHFlag() )
                 adjustment += 6;
@@ -782,14 +783,16 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
         std::abort();
     }
 
-    return getCycles( op.opcode, branchTaken );
+    const unsigned cycles = getCycles( op.opcode, branchTaken );
+    logOperation( op, cycles );
+    return cycles;
 }
 
 unsigned CoreCpu::handleInterrupts() {
     if( !interruptMasterEnabled )
         return 0;
     const auto interruptEnable = mem.read( addr::interruptEnableRegister );
-    const auto interruptFlag = mem.read( addr::interruptFlag );
+    const auto interruptFlag   = mem.read( addr::interruptFlag );
     if( interruptEnable & 0x1 && interruptFlag & 0x1 ) { //VBlank
         pushToStack( PC );
         PC = 0x40;
@@ -822,4 +825,28 @@ unsigned CoreCpu::tick() {
     auto cycles = execute( decode() );
     cycles += handleInterrupts();
     return cycles;
+}
+
+void CoreCpu::logOperation( Operation_t op, unsigned cycles ) {
+    std::string opd1;
+    std::string opd2;
+    // FIXME it's temporary solution
+    if( std::holds_alternative<std::monostate>( op.operand1 ) )
+        opd1 = "NONE";
+    if( std::holds_alternative<Operand_t>( op.operand1 ) )
+        opd1 = std::to_string( (uint8_t)std::get<Operand_t>( op.operand1 ) );
+    if( std::holds_alternative<uint8_t>( op.operand1 ) )
+        opd1 = std::to_string( std::get<uint8_t>( op.operand1 ) );
+
+    if( std::holds_alternative<std::monostate>( op.operand2 ) )
+        opd2 = "NONE";
+    if( std::holds_alternative<Operand_t>( op.operand2 ) )
+        opd2 = std::to_string( (uint8_t)std::get<Operand_t>( op.operand2 ) );
+    if( std::holds_alternative<uint8_t>( op.operand2 ) )
+        opd2 = std::to_string( std::get<uint8_t>( op.operand2 ) );
+
+
+    logDebug( std::format( "OT<{}>, opdt1<{}>, opd1<{}>, opdt2<{}>, opd2<{}>: ; took {} cycles",
+                           OperationTypeString[(int)op.operationType], OperandTypeString[(int)op.operandType1],
+                           opd1, OperandTypeString[(int)op.operandType2], opd2, cycles ) );
 }

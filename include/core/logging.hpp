@@ -65,9 +65,10 @@ void log( const int errorCode, const ErrorSeverity severity, const std::string& 
           const std::string_view filePath, const int line );
 
 void logStacktrace();
+void logSeparator();
 
 #ifdef NDEBUG
-#define logDebug( message ) (void)0;
+#define logDebug( message ) (void)0
 #else
 #define logDebug( message ) log( ErrorCode::NoError, ErrorSeverity::Debug, message, __FILE__, __LINE__ )
 #endif
