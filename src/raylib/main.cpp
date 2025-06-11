@@ -6,13 +6,16 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <limits>
 #include <memory>
 #include <raylib.h>
+#include <type_traits>
 #include <vector>
 
 using Emulator_t = Emulator<RaylibCpu, RaylibPpu>;
 
 int main() {
+    setLogLevel( LogLevel::Info );
     // clang-format off
     auto romPath = tinyfd_openFileDialog(
         "Choose cartridge",    // dialog title
@@ -54,38 +57,55 @@ int main() {
             LoadTextureFromImage( GenImageColor( CorePpu::displayWidth, CorePpu::displayHeight, BLACK ) );
 
     Emulator_t emu( std::move( cartridge ) );
-    bool emulationStopped = false;
+    bool interactiveDebugMode = true;
+    bool emulationStopped     = false;
     bool doOneTick; // When emulation isn't stopped, the value doesn't matter
     while( !WindowShouldClose() ) {
-        if( IsKeyPressed( KEY_H ) ) {
-            emulationStopped = !emulationStopped;
-            emulationStopped ? logDebug( "Stopped emulation!" ) : logDebug( "Start emulation again!" );
+        if( IsKeyPressed( KEY_C ) ) {
+            interactiveDebugMode = !interactiveDebugMode;
+            emulationStopped     = false;
         }
-        if( IsKeyPressed( KEY_J ) )
-            doOneTick = true;
-        if( IsKeyPressed( KEY_U ) )
+        if( interactiveDebugMode && IsKeyPressed( KEY_H ) ) {
+            emulationStopped = !emulationStopped;
+            if( emulationStopped )
+                logDebug( "Stopped emulation!" );
+            else
+                logDebug( "Start emulation again!" );
+        }
+        if( interactiveDebugMode && IsKeyPressed( KEY_U ) )
             logSeparator();
+        if( interactiveDebugMode && IsKeyPressed( KEY_J ) )
+            doOneTick = true;
+        if( IsKeyPressed( KEY_KP_ADD ) ) {
+            setLogLevel( LogLevel( std::max( int( getLogLevel() ) - 1, 0 ) ) );
+        }
+        if( IsKeyPressed( KEY_KP_SUBTRACT ) ) {
+            setLogLevel( LogLevel(
+                    std::min( int( getLogLevel() ) + 1, int( std::numeric_limits<uint8_t>::max() ) ) ) );
+        }
 
+        BeginDrawing();
         if( !emulationStopped || doOneTick ) {
             emu.tick();
             UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
             doOneTick = false;
         }
 
-        BeginDrawing();
         ClearBackground( DARKGRAY );
-
         DrawTexturePro(
                 screenTexture, Rectangle { 0, 0, (float)CorePpu::displayWidth, (float)CorePpu::displayHeight },
                 Rectangle { 0, 0, (float)screenWidth, (float)screenHeight }, Vector2 { 0, 0 }, 0.0f, WHITE );
 
-        Vector2 mousePosition = GetMousePosition();
-        std::string mousePositionText =
-                "X: " + std::to_string( static_cast<int>( mousePosition.x / scaleFactor ) ) +
-                ", Y: " + std::to_string( static_cast<int>( mousePosition.y / scaleFactor ) );
-        int textWidth = MeasureText( mousePositionText.c_str(), 20 );
-        DrawText( mousePositionText.c_str(), screenWidth - textWidth - 10, 10, 20, RED );
-        DrawFPS( 5, 5 );
+
+        if( interactiveDebugMode ) {
+            Vector2 mousePosition = GetMousePosition();
+            std::string mousePositionText =
+                    "X: " + std::to_string( static_cast<int>( mousePosition.x / scaleFactor ) ) +
+                    ", Y: " + std::to_string( static_cast<int>( mousePosition.y / scaleFactor ) );
+            int textWidth = MeasureText( mousePositionText.c_str(), 20 );
+            DrawText( mousePositionText.c_str(), screenWidth - textWidth - 10, 10, 20, RED );
+            DrawFPS( 5, 5 );
+        }
 
         EndDrawing();
     }

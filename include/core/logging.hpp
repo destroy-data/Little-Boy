@@ -53,15 +53,30 @@ enum CoreError : int {
 };
 } // namespace ErrorCode
 
-enum class ErrorSeverity : uint8_t {
-    Debug,   // Details
-    Info,    // What happens
-    Warning, // Unexpected situation and/or ignored can cause error in the future
-    Error,   // Something went wrong
-    Fatal    // Something went very wrong, cannot continue execution
+enum class LogLevel : uint8_t {
+    Debug   = 0, // Details
+    Info    = 1, // What happens
+    Warning = 2, // Unexpected situation and/or ignored can cause error in the future
+    Error   = 3, // Something went wrong
+    Fatal   = 4, // Something went very wrong, cannot continue execution
+    Off     = 255
 };
 
-void log( const int errorCode, const ErrorSeverity severity, const std::string& message,
+inline LogLevel gLogLevel = LogLevel::Warning;
+
+inline void setLogLevel( LogLevel level ) {
+    gLogLevel = level;
+}
+
+inline LogLevel getLogLevel() {
+    return gLogLevel;
+}
+
+inline bool shouldLog( LogLevel level ) {
+    return level >= gLogLevel;
+}
+
+void log( const int errorCode, const LogLevel severity, const std::string& message,
           const std::string_view filePath, const int line );
 
 void logStacktrace();
@@ -70,16 +85,36 @@ void logSeparator();
 #ifdef NDEBUG
 #define logDebug( message ) (void)0
 #else
-#define logDebug( message ) log( ErrorCode::NoError, ErrorSeverity::Debug, message, __FILE__, __LINE__ )
+#define logDebug( message )                                                                                   \
+    do {                                                                                                      \
+        if( shouldLog( LogLevel::Debug ) )                                                                    \
+            log( ErrorCode::NoError, LogLevel::Debug, message, __FILE__, __LINE__ );                          \
+    } while( 0 )
 #endif
 
-#define logInfo( message ) log( ErrorCode::NoError, ErrorSeverity::Info, message, __FILE__, __LINE__ )
+#define logInfo( message )                                                                                    \
+    do {                                                                                                      \
+        if( shouldLog( LogLevel::Info ) )                                                                     \
+            log( ErrorCode::NoError, LogLevel::Info, message, __FILE__, __LINE__ );                           \
+    } while( 0 )
 
-#define logWarning( code, message ) log( code, ErrorSeverity::Warning, message, __FILE__, __LINE__ )
+#define logWarning( code, message )                                                                           \
+    do {                                                                                                      \
+        if( shouldLog( LogLevel::Warning ) )                                                                  \
+            log( code, LogLevel::Warning, message, __FILE__, __LINE__ );                                      \
+    } while( 0 )
 
-#define logError( code, message ) log( code, ErrorSeverity::Error, message, __FILE__, __LINE__ )
+#define logError( code, message )                                                                             \
+    do {                                                                                                      \
+        if( shouldLog( LogLevel::Error ) )                                                                    \
+            log( code, LogLevel::Error, message, __FILE__, __LINE__ );                                        \
+    } while( 0 )
 
-#define logFatal( code, message ) log( code, ErrorSeverity::Fatal, message, __FILE__, __LINE__ )
+#define logFatal( code, message )                                                                             \
+    do {                                                                                                      \
+        if( shouldLog( LogLevel::Fatal ) )                                                                    \
+            log( code, LogLevel::Fatal, message, __FILE__, __LINE__ );                                        \
+    } while( 0 )
 
 template<std::integral T>
 inline std::string toHex( T number ) {

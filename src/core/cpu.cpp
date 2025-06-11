@@ -827,7 +827,7 @@ unsigned CoreCpu::tick() {
     return cycles;
 }
 
-void CoreCpu::logOperation( Operation_t op, unsigned cycles ) {
+void CoreCpu::logOperation( Operation_t op, [[maybe_unused]] unsigned cycles ) {
     std::string opd1;
     std::string opd2;
     // FIXME it's temporary solution

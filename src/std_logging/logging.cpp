@@ -72,29 +72,29 @@ std::string_view getRelevantPartOfPath( const std::string_view filePath ) {
     return filePath;
 }
 
-void log( const int errorCode, const ErrorSeverity severity, const std::string& message,
+void log( const int errorCode, const LogLevel severity, const std::string& message,
           const std::string_view filePath, const int line ) {
     std::string_view severityStr;
     std::string_view format;
     std::string_view color;
     switch( severity ) {
-    case ErrorSeverity::Debug:
+    case LogLevel::Debug:
         severityStr = "[DEBUG]";
         color       = green;
         break;
-    case ErrorSeverity::Info:
+    case LogLevel::Info:
         severityStr = "[INFO]";
         color       = brightGreen;
         break;
-    case ErrorSeverity::Warning:
+    case LogLevel::Warning:
         severityStr = "[WARNING]";
         color       = magenta;
         break;
-    case ErrorSeverity::Error:
+    case LogLevel::Error:
         severityStr = "[ERROR]";
         color       = red;
         break;
-    case ErrorSeverity::Fatal:
+    case LogLevel::Fatal:
         severityStr = "[FATAL]";
         format      = bold;
         color       = brightYellow;
