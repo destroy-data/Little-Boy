@@ -137,8 +137,9 @@ protected:
         }
     };
 
-    uint8_t registers[8]; //b,c,d,e,h,l,a,f
-    uint16_t SP, PC;
+    // Default values of registers are for DMG; register f is initialized in constructor
+    uint8_t registers[8] { 0x0, 0x13, 0x0, 0xD8, 0x1, 0x4D, 0x1 }; //b,c,d,e,h,l,a,f
+    uint16_t SP = 0xFFFE, PC = 0x100;
     Operation_t operation = Operation_t( 0x0, OperationType_t::NOP );
     Memory& mem;
     bool interruptMasterEnabled = false;
@@ -203,7 +204,7 @@ public:
     void logOperation( Operation_t op, unsigned cycles );
 
 public:
-    CoreCpu( Memory& mem_ ) : PC( 0 ), mem( mem_ ) {};
+    CoreCpu( Memory& mem_ );
     virtual ~CoreCpu() = default;
     unsigned tick();
 };

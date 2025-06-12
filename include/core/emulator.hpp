@@ -10,10 +10,10 @@ public:
     Tppu ppu;
 
 public:
-    static constexpr unsigned tickrate      = 4194304;
-    static constexpr double oscillatoryTime = 1. / tickrate;
+    static constexpr unsigned tickrate     = 4194304;
+    static constexpr float oscillatoryTime = 1. / tickrate;
 
-    void tick() {
+    unsigned tick() {
         const bool cpuDoubleSpeed = memory.read( addr::key1 ) & ( 1 << 7 );
         auto cpuTicks             = cpu.tick();
         if( cpuDoubleSpeed )
@@ -23,6 +23,7 @@ public:
         }
 
         //apu.tick();
+        return cpuTicks;
     }
     Emulator( std::unique_ptr<CoreCartridge>&& cartridge_ )
         : cartridge( std::move( cartridge_ ) )

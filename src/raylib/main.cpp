@@ -9,10 +9,12 @@
 #include <limits>
 #include <memory>
 #include <raylib.h>
-#include <type_traits>
 #include <vector>
 
-using Emulator_t = Emulator<RaylibCpu, RaylibPpu>;
+using Emulator_t            = Emulator<RaylibCpu, RaylibPpu>;
+constexpr int targetFps     = 60;
+constexpr int ticksPerFrame = ( 1. / targetFps ) * Emulator_t::tickrate;
+
 
 int main() {
     setLogLevel( LogLevel::Info );
@@ -85,11 +87,16 @@ int main() {
         }
 
         BeginDrawing();
-        if( !emulationStopped || doOneTick ) {
+        if( !emulationStopped ) {
+            int cycles = 0;
+            while( cycles <= ticksPerFrame )
+                cycles += emu.tick();
+            UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
+        } else if( doOneTick ) {
             emu.tick();
             UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
-            doOneTick = false;
         }
+        doOneTick = false;
 
         ClearBackground( DARKGRAY );
         DrawTexturePro(

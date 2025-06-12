@@ -850,3 +850,8 @@ void CoreCpu::logOperation( Operation_t op, [[maybe_unused]] unsigned cycles ) {
                            OperationTypeString[(int)op.operationType], OperandTypeString[(int)op.operandType1],
                            opd1, OperandTypeString[(int)op.operandType2], opd2, cycles ) );
 }
+CoreCpu::CoreCpu( Memory& mem_ ) : mem( mem_ ) {
+    //set register f
+    const bool headerChecksumNonZero = mem.read( 0x147 );
+    setZNHCFlags( 1, 0, headerChecksumNonZero, headerChecksumNonZero );
+};

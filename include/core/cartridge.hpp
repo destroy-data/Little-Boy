@@ -1,4 +1,5 @@
 #pragma once
+#include "core/general_constants.hpp"
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -113,34 +114,3 @@ enum class CoreCartridge::RamSize : uint8_t {
     _128KiB,
     _64KiB,
 };
-
-namespace addr {
-constexpr uint16_t entryPointStart = 0x0100;
-constexpr uint16_t entryPointEnd   = 0x0103;
-
-constexpr uint16_t logoStart = 0x0104;
-constexpr uint16_t logoEnd   = 0x0133;
-
-constexpr uint16_t titleStart = 0x0134;
-constexpr uint16_t titleEnd   = 0x0143;
-
-constexpr uint16_t manufacturerCodeStart = 0x013F;
-constexpr uint16_t manufacturerCodeEnd   = 0x0142;
-
-constexpr uint16_t cgbFlag = 0x0143;
-
-constexpr uint16_t newLicenseeCodeStart = 0x0144;
-constexpr uint16_t newLicenseeCodeEnd   = 0x0145;
-
-constexpr uint16_t sgbFlag         = 0x0146;
-constexpr uint16_t cartridgeType   = 0x0147;
-constexpr uint16_t romSize         = 0x0148;
-constexpr uint16_t ramSize         = 0x0149;
-constexpr uint16_t destinationCode = 0x014A;
-constexpr uint16_t oldLicenseeCode = 0x014B;
-constexpr uint16_t maskRomVersion  = 0x014C;
-
-constexpr uint16_t headerChecksum      = 0x014D;
-constexpr uint16_t globalChecksumStart = 0x014E;
-constexpr uint16_t globalChecksumEnd   = 0x014F;
-} // namespace addr
