@@ -18,8 +18,8 @@ struct Memory {
     uint8_t highRam[127];
 
     //helpers
-    bool inRom00( const uint16_t index ) const {
-        return index < addr::rom0N;
+    inline bool inRom( const uint16_t index ) const {
+        return index < addr::videoRam;
     }
     bool inRom0N( const uint16_t index ) const {
         return addr::rom0N <= index and index < addr::videoRam;

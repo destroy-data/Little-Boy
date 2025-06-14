@@ -2,7 +2,7 @@
 #include <cstdint>
 
 uint8_t Memory::read( const uint16_t index ) const {
-    if( inRom00( index ) or inRom0N( index ) or inExternalRam( index ) )
+    if( inRom( index ) or inExternalRam( index ) ) [[likely]]
         return cartridge->read( index );
     if( inVideoRam( index ) ) {
         if( vramLock )
@@ -33,7 +33,7 @@ uint8_t Memory::read( const uint16_t index ) const {
 }
 
 void Memory::write( const uint16_t index, uint8_t value ) {
-    if( inRom00( index ) or inRom0N( index ) or inExternalRam( index ) )
+    if( inRom( index ) or inExternalRam( index ) )
         cartridge->write( index, value );
     else if( inVideoRam( index ) )
         videoRam[index - addr::videoRam] = value;

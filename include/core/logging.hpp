@@ -82,15 +82,20 @@ void log( const int errorCode, const LogLevel severity, const std::string& messa
 void logStacktrace();
 void logSeparator();
 
-#ifdef NDEBUG
+
+#ifdef RELEASE
+
 #define logDebug( message ) (void)0
+#define logInfo( message ) (void)0
+#define logWarning( code, message ) (void)0
+
 #else
+
 #define logDebug( message )                                                                                   \
     do {                                                                                                      \
         if( shouldLog( LogLevel::Debug ) )                                                                    \
             log( ErrorCode::NoError, LogLevel::Debug, message, __FILE__, __LINE__ );                          \
     } while( 0 )
-#endif
 
 #define logInfo( message )                                                                                    \
     do {                                                                                                      \
@@ -103,6 +108,8 @@ void logSeparator();
         if( shouldLog( LogLevel::Warning ) )                                                                  \
             log( code, LogLevel::Warning, message, __FILE__, __LINE__ );                                      \
     } while( 0 )
+
+#endif
 
 #define logError( code, message )                                                                             \
     do {                                                                                                      \
