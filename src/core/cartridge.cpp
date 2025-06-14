@@ -5,23 +5,9 @@
 #include <type_traits>
 #include <utility>
 
-namespace {
-unsigned power( unsigned base, unsigned exp ) {
-    unsigned result = 1;
-    while( exp > 0 ) {
-        if( exp % 2 ) {
-            result = result * base;
-        }
-        exp  = exp / 2;
-        base = base * base;
-    }
-    return result;
-}
-} // namespace
-
-bool CoreCartridge::isValidRomSize( const RomSize size ) {
+bool CoreCartridge::isValidRomSize( const RomSizeByte size ) {
     switch( size ) {
-        using enum RomSize;
+        using enum RomSizeByte;
     case _32KiB:
     case _64KiB:
     case _128KiB:
@@ -46,35 +32,68 @@ bool CoreCartridge::isValidRomSize( const RomSize size ) {
         break;
     }
     logError( 0, std::format( "ROM size unknown. Byte: {}",
-                              toHex( static_cast<std::underlying_type_t<RomSize>>( size ) ) ) );
+                              toHex( static_cast<std::underlying_type_t<RomSizeByte>>( size ) ) ) );
     return false;
 }
 
-// Note:
-// 2 ^ (RomSize + 1) = number of 16KiB ROM banks
-void CoreCartridge::initRom( const RomSize size ) {
-    if( !isValidRomSize( size ) ) {
+void CoreCartridge::setRomSize( const RomSizeByte size ) {
+    switch( size ) {
+        using enum RomSizeByte;
+    case _32KiB:
+        romSize = RomSize::_32KiB;
+        break;
+    case _64KiB:
+        romSize = RomSize::_64KiB;
+        break;
+    case _128KiB:
+        romSize = RomSize::_128KiB;
+        break;
+    case _256KiB:
+        romSize = RomSize::_256KiB;
+        break;
+    case _512KiB:
+        romSize = RomSize::_512KiB;
+        break;
+    case _1MiB:
+        romSize = RomSize::_1MiB;
+        break;
+    case _2MiB:
+        romSize = RomSize::_2MiB;
+        break;
+    case _4MiB:
+        romSize = RomSize::_4MiB;
+        break;
+    case _8MiB:
+        romSize = RomSize::_8MiB;
+        break;
+    default:
+        std::unreachable();
+    }
+}
+
+void CoreCartridge::initRom( const RomSizeByte size ) {
+    if( ! isValidRomSize( size ) ) {
         logError( 0, "Invalid ROM size. Failed to initialize ROM." );
         return;
     }
-    romBankCount = power( 2, static_cast<std::underlying_type_t<RomSize>>( size ) + 1 );
+    setRomSize( size );
 
     romBanks.clear();
-    romBanks.reserve( romBankCount );
+    romBanks.reserve( getRomBankCount() );
 
-    for( unsigned i = 0; i < romBankCount; ++i ) {
+    for( unsigned i = 0; i < getRomBankCount(); ++i ) {
         auto offset = i * romBankSize;
         romBanks.emplace_back( rom.data() + offset, romBankSize );
-        logDebug( std::format( "Initialized ROM bank {} at offset {} of size {}", i,
-                               toHex( offset ), toHex( romBankSize ) ) );
+        logDebug( std::format( "Initialized ROM bank {} at offset {} of size {}", i, toHex( offset ),
+                               toHex( romBankSize ) ) );
     }
     logInfo( std::format( "Initialized {} ROM banks of size {} bytes", romBanks.size(),
                           toHex( romBankSize ) ) );
 }
 
-bool CoreCartridge::isValidRamSize( const RamSize size ) {
+bool CoreCartridge::isValidRamSize( const RamSizeByte size ) {
     switch( size ) {
-        using enum RamSize;
+        using enum RamSizeByte;
     case _0KiB:
     case _8KiB:
     case _32KiB:
@@ -89,40 +108,41 @@ bool CoreCartridge::isValidRamSize( const RamSize size ) {
         break;
     }
     logError( 0, std::format( "RAM size unknown. Byte: {}",
-                              toHex( static_cast<std::underlying_type_t<RamSize>>( size ) ) ) );
+                              toHex( static_cast<std::underlying_type_t<RamSizeByte>>( size ) ) ) );
     return false;
 }
 
-void CoreCartridge::initRam( const CoreCartridge::RamSize size ) {
-    if( !isValidRamSize( size ) ) {
-        logError( 0, "Invalid RAM size. Failed to initialize RAM." );
-        return;
-    }
-
-    // Note:
-    // RAM consists of 8KiB banks
+void CoreCartridge::setRamSize( const CoreCartridge::RamSizeByte size ) {
     switch( size ) {
-        using enum RamSize;
+        using enum RamSizeByte;
     case _0KiB:
-        ramBankCount = 0;
+        ramSize = RamSize::_0KiB;
         break;
     case _8KiB:
-        ramBankCount = 1;
+        ramSize = RamSize::_8KiB;
         break;
     case _32KiB:
-        ramBankCount = 4;
+        ramSize = RamSize::_32KiB;
         break;
     case _64KiB:
-        ramBankCount = 8;
+        ramSize = RamSize::_64KiB;
         break;
     case _128KiB:
-        ramBankCount = 16;
+        ramSize = RamSize::_128KiB;
         break;
     default:
         std::unreachable();
     }
+}
 
-    ramBanks = std::vector<std::vector<uint8_t>>( ramBankCount, std::vector<uint8_t>( ramBankSize, 0 ) );
+void CoreCartridge::initRam( const CoreCartridge::RamSizeByte size ) {
+    if( ! isValidRamSize( size ) ) {
+        logError( 0, "Invalid RAM size. Failed to initialize RAM." );
+        return;
+    }
+    setRamSize( size );
+
+    ramBanks = std::vector<std::vector<uint8_t>>( getRamBankCount(), std::vector<uint8_t>( ramBankSize, 0 ) );
     logInfo( std::format( "Initialized {} RAM banks of size {} bytes", ramBanks.size(),
                           toHex( ramBankSize ) ) );
 }
@@ -132,12 +152,12 @@ CoreCartridge::CoreCartridge( std::vector<uint8_t>&& rom_ ) : rom( std::move( ro
 
     const auto romSizeByte = rom[addr::romSize];
     logDebug( std::format( "Read ROM size byte: {} bytes", toHex( romSizeByte ) ) );
-    initRom( static_cast<CoreCartridge::RomSize>( romSizeByte ) );
+    initRom( static_cast<CoreCartridge::RomSizeByte>( romSizeByte ) );
 
 
     const auto ramSizeByte = rom[addr::ramSize];
     logDebug( std::format( "Read RAM size byte: {} bytes", toHex( ramSizeByte ) ) );
-    initRam( static_cast<CoreCartridge::RamSize>( ramSizeByte ) );
+    initRam( static_cast<CoreCartridge::RamSizeByte>( ramSizeByte ) );
 };
 
 std::unique_ptr<CoreCartridge> CoreCartridge::create( CartridgeType type, std::vector<uint8_t>&& rom ) {
@@ -145,6 +165,11 @@ std::unique_ptr<CoreCartridge> CoreCartridge::create( CartridgeType type, std::v
         using enum CartridgeType;
     case NoMBC:
         return std::make_unique<NoMBCCartridge>( std::move( rom ) );
+
+    case MBC1:
+    case MBC1R:
+    case MBC1RB:
+        return std::make_unique<MBC1Cartridge>( std::move( rom ) );
 
     case RR:
         logError( 0, "Cartridge type ROM+RAM is not supported." );
@@ -158,4 +183,22 @@ std::unique_ptr<CoreCartridge> CoreCartridge::create( CartridgeType type, std::v
     logError( 0, std::format( "Unknown cartridge type: {}",
                               toHex( static_cast<std::underlying_type_t<CartridgeType>>( type ) ) ) );
     return nullptr;
+}
+
+bool CoreCartridge::checkCopyRightHeader( const uint16_t bankNumber ) const {
+    if( getRomBankCount() < bankNumber ) {
+        logWarning( 0, "Bank number out of range." );
+        return false;
+    }
+
+    const auto isLogoEqual =
+            std::equal( romBanks[bankNumber].begin() + addr::logoStart,
+                        romBanks[bankNumber].begin() + addr::logoEnd, std::begin( nintendoCopyrightHeader ) );
+    if( isLogoEqual ) {
+        logDebug( "Nintendo copyright header does not match. This is not MBC1M cartridge." );
+    } else {
+        logDebug( "Nintendo copyright header matches! This is MBC1M cartridge." );
+    }
+
+    return isLogoEqual;
 }

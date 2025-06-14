@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 class CoreCartridge {
@@ -10,37 +11,72 @@ public:
     constexpr static const char* cartridgeFilePatterns[2] = { "*.gb", "*.sgb" };
 
     enum class CartridgeType : uint8_t;
-    enum class RomSize : uint8_t;
-    enum class RamSize : uint8_t;
+
+    enum class RomSizeByte : uint8_t;
+    enum class RomSize : unsigned;
+
+    enum class RamSizeByte : uint8_t;
+    enum class RamSize : unsigned;
 
 private:
-    bool isValidRomSize( RomSize size );
-    bool isValidRamSize( RamSize size );
+    RomSize romSize { 0 };
+    bool isValidRomSize( RomSizeByte size );
+    void initRom( const RomSizeByte size );
+    void setRomSize( const RomSizeByte size );
 
-    void initRom( const RomSize size );
-    void initRam( const RamSize size );
+    RamSize ramSize { 0 };
+    bool isValidRamSize( RamSizeByte size );
+    void initRam( const RamSizeByte size );
+    void setRamSize( const RamSizeByte size );
 
 protected:
     std::vector<uint8_t> rom;
     std::vector<std::span<uint8_t>> romBanks;
     std::vector<std::vector<uint8_t>> ramBanks;
 
-    constexpr static uint16_t romBankSize     = 0x4000; // 16 KiB
-    constexpr static uint16_t romStartAddress = 0x0000; // Start address for ROM bank
+    constexpr static uint16_t romBankSize     = 0x4000;  // 16 KiB
+    constexpr static uint16_t romStartAddress = 0x0000;  // Start address for ROM bank
+    bool isInPrimaryRomRange( const uint16_t address ) { // 0x0000 <= address <= 0x3FFF
+        return romStartAddress <= address && address < ( romStartAddress + romBankSize );
+    }
+    bool isInSecondaryRomRange( const uint16_t address ) { // 0x4000 <= address <= 0x7FFF
+        return ( romStartAddress + romBankSize ) <= address && address < ( romStartAddress + 2 * romBankSize );
+    }
 
     constexpr static uint16_t ramBankSize     = 0x2000; // 8 KiB
     constexpr static uint16_t ramStartAddress = 0xA000; // Start address for RAM bank
+    bool isInRamRange( const uint16_t address ) {       // 0xA000 <= address <= 0xBFFF
+        return ramStartAddress <= address && address < ( ramStartAddress + ramBankSize );
+    }
 
-    unsigned romBankCount = 0;
-    unsigned ramBankCount = 0;
+    RomSize getRomSize() const {
+        return romSize;
+    }
+    std::underlying_type_t<RomSize> getRomBankCount() const {
+        return static_cast<std::underlying_type_t<RomSize>>( romSize );
+    }
+
+    RamSize getRamSize() const {
+        return ramSize;
+    }
+    std::underlying_type_t<RamSize> getRamBankCount() const {
+        return static_cast<std::underlying_type_t<RamSize>>( ramSize );
+    }
 
     constexpr static uint8_t invalidReadValue = 0xFF; // Value returned on invalid read
+
+    constexpr static uint8_t nintendoCopyrightHeader[] = {
+            0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
+            0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
+            0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E };
 
 public:
     static std::unique_ptr<CoreCartridge> create( CartridgeType type, std::vector<uint8_t>&& rom );
 
     CoreCartridge() = default; //= delete;
     CoreCartridge( std::vector<uint8_t>&& rom_ );
+
+    bool checkCopyRightHeader( uint16_t bankNumber ) const;
 
     virtual uint8_t read( const uint16_t address )                    = 0;
     virtual void write( const uint16_t address, const uint8_t value ) = 0;
@@ -85,10 +121,7 @@ enum class CoreCartridge::CartridgeType : uint8_t {
     HuC1RB         = 0xFF, // HuC1 with RAM and Battery
 };
 
-// Note:
-// 32KiB * (RomSize + 1) = ROM size in bytes
-// 2 ^ (RomSize + 1)     = number of 16KiB ROM banks
-enum class CoreCartridge::RomSize : uint8_t {
+enum class CoreCartridge::RomSizeByte : uint8_t {
     _32KiB = 0x00,
     _64KiB,
     _128KiB,
@@ -104,13 +137,37 @@ enum class CoreCartridge::RomSize : uint8_t {
 };
 
 // Note:
+// Each number corresponds to the number of 16KiB ROM banks
+enum class CoreCartridge::RomSize : unsigned {
+    _32KiB  = 2,
+    _64KiB  = 4,
+    _128KiB = 8,
+    _256KiB = 16,
+    _512KiB = 32,
+    _1MiB   = 64,
+    _2MiB   = 128,
+    _4MiB   = 256,
+    _8MiB   = 512,
+};
+
+// Note:
 // RAM consists of 8KiB banks
 // 2 KiB chip was never used in a cartridges
-enum class CoreCartridge::RamSize : uint8_t {
+enum class CoreCartridge::RamSizeByte : uint8_t {
     _0KiB = 0x00,
     _2KiB,
     _8KiB,
     _32KiB,
     _128KiB,
     _64KiB,
+};
+
+// Note:
+// Each number corresponds to the number of 8KiB banks
+enum class CoreCartridge::RamSize : unsigned {
+    _0KiB   = 0,
+    _8KiB   = 1,
+    _32KiB  = 4,
+    _64KiB  = 8,
+    _128KiB = 16,
 };

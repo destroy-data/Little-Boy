@@ -6,7 +6,9 @@
 NoMBCCartridge::NoMBCCartridge( std::vector<uint8_t>&& rom_ ) : CoreCartridge( std::move( rom_ ) ) {};
 
 uint8_t NoMBCCartridge::read( const uint16_t address ) {
-    if( romStartAddress <= address && address < ( romStartAddress + romBankSize * romBankCount ) ) {
+    logDebug( std::format( "Trying to read at address {}", toHex( address ) ) );
+
+    if( isInPrimaryRomRange( address ) || isInSecondaryRomRange( address ) ) {
         unsigned bankIndex  = address / romBankSize;
         uint16_t bankOffset = address % romBankSize;
 
@@ -16,12 +18,12 @@ uint8_t NoMBCCartridge::read( const uint16_t address ) {
         return returnValue;
     }
 
-    if( ramBankCount <= 0 ) {
+    if( getRamBankCount() == 0 ) {
         logWarning( 0, std::format( "No RAM banks available. Returning {}", toHex( invalidReadValue ) ) );
         return invalidReadValue;
     }
 
-    if( ramStartAddress <= address && address < ( ramStartAddress + ramBankSize ) ) {
+    if( isInRamRange( address ) ) {
         auto returnValue = ramBanks[0][address - ramStartAddress];
         logInfo( std::format( "Read value {} from RAM bank {} at address {}", toHex( returnValue ), 0,
                               toHex( address ) ) );
@@ -35,12 +37,12 @@ uint8_t NoMBCCartridge::read( const uint16_t address ) {
 void NoMBCCartridge::write( const uint16_t address, const uint8_t value ) {
     logDebug( std::format( "Trying to write value {} to address {}", toHex( value ), toHex( address ) ) );
 
-    if( ramBankCount <= 0 ) {
+    if( getRamBankCount() == 0 ) {
         logWarning( 0, "No RAM banks available. Write operation ignored." );
         return;
     }
 
-    if( address < ramStartAddress || address >= ( ramStartAddress + ramBankSize ) ) {
+    if( ! isInRamRange( address ) ) {
         logWarning( 0, std::format( "Invalid address {}", toHex( address ) ) );
         return;
     }

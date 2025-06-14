@@ -47,7 +47,7 @@ PackConstructorInitializers: CurrentLine
 PointerAlignment: Left
 ReflowComments: false
 SpaceAfterCStyleCast: false
-SpaceAfterLogicalNot: false
+SpaceAfterLogicalNot: true
 SpaceAfterTemplateKeyword: false
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeCpp11BracedList: true
