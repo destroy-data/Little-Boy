@@ -150,13 +150,15 @@ void CoreCartridge::initRam( const CoreCartridge::RamSizeByte size ) {
 CoreCartridge::CoreCartridge( std::vector<uint8_t>&& rom_ ) : rom( std::move( rom_ ) ) {
     logDebug( "CoreCartridge constructor" );
 
+    const auto cartridgeType = rom[addr::cartridgeType];
+    logDebug( std::format( "Read cartridgeType byte: {}", toHex( cartridgeType ) ) );
+
     const auto romSizeByte = rom[addr::romSize];
-    logDebug( std::format( "Read ROM size byte: {} bytes", toHex( romSizeByte ) ) );
+    logDebug( std::format( "Read ROM size byte: {}", toHex( romSizeByte ) ) );
     initRom( static_cast<CoreCartridge::RomSizeByte>( romSizeByte ) );
 
-
     const auto ramSizeByte = rom[addr::ramSize];
-    logDebug( std::format( "Read RAM size byte: {} bytes", toHex( ramSizeByte ) ) );
+    logDebug( std::format( "Read RAM size byte: {}", toHex( ramSizeByte ) ) );
     initRam( static_cast<CoreCartridge::RamSizeByte>( ramSizeByte ) );
 };
 
@@ -170,6 +172,10 @@ std::unique_ptr<CoreCartridge> CoreCartridge::create( CartridgeType type, std::v
     case MBC1R:
     case MBC1RB:
         return std::make_unique<MBC1Cartridge>( std::move( rom ) );
+
+    case MBC2:
+    case MBC2B:
+        return std::make_unique<MBC2Cartridge>( std::move( rom ) );
 
     case RR:
         logError( 0, "Cartridge type ROM+RAM is not supported." );

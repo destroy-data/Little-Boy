@@ -70,8 +70,21 @@ public:
     ~MBC1Cartridge() = default;
 };
 
-class MBC1MCartridge final : public CoreCartridge {
+class MBC2Cartridge final : public CoreCartridge {
+private:
+    // MBC2 has RAM consisting of 512 half-bytes
+    constexpr static unsigned halfByteRamSize = 512;
+    constexpr static uint8_t halfByteMask     = 0b1111;
+
+    constexpr static uint8_t ramEnableValue =
+            0x0A; // if any other value is written to RAM enable register, RAM is disabled
+
+    uint8_t selectedRomBankRegister = 1;     // 4 bit register for selecting ROM bank
+    bool ramEnabled                 = false; // RAM enabled flag
+
+public:
+    MBC2Cartridge( std::vector<uint8_t>&& rom_ );
     uint8_t read( const uint16_t address ) override;
     void write( const uint16_t address, const uint8_t value ) override;
-    ~MBC1MCartridge() = default;
+    ~MBC2Cartridge() = default;
 };

@@ -41,7 +41,7 @@ int main() {
     romFile.close();
 
 
-    CoreCartridge::CartridgeType type = static_cast<CoreCartridge::CartridgeType>( romData[addr::romSize] );
+    CoreCartridge::CartridgeType type = static_cast<CoreCartridge::CartridgeType>( romData[addr::cartridgeType] );
     std::unique_ptr<CoreCartridge> cartridge { CoreCartridge::create( type, std::move( romData ) ) };
 
     logDebug( std::format( "Read cartridge type byte: {}", toHex( cartridge->read( addr::cartridgeType ) ) ) );
