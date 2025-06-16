@@ -1,4 +1,5 @@
 #include "core/cpu.hpp"
+#include "core/general_constants.hpp"
 #include "core/logging.hpp"
 #include <cstdint>
 #include <format>
@@ -207,7 +208,7 @@ void CoreCpu::addTo( OperandVar_t operand, T value ) {
 
     currentValue += value;
     write<type>( operand, currentValue );
-    setZNHCFlags( !currentValue, false, halfCarryFlag, cFlag );
+    setZNHCFlags( ! currentValue, false, halfCarryFlag, cFlag );
 };
 
 template<CoreCpu::OperandType_t type>
@@ -218,20 +219,20 @@ void CoreCpu::subFrom( OperandVar_t operand, uint8_t value, bool discard ) {
     bool halfCarryFlag = ( ( currentValue & 0xF ) - ( value & 0xF ) ) < 0;
 
     currentValue -= value;
-    if( !discard )
+    if( ! discard )
         write<type>( operand, currentValue );
-    setZNHCFlags( !currentValue, true, halfCarryFlag, cFlag );
+    setZNHCFlags( ! currentValue, true, halfCarryFlag, cFlag );
 };
 
 bool CoreCpu::isConditionMet( Operand_t condition ) {
     using enum Operand_t;
+    if( condition == condNZ && ! getZFlag() )
+        return true;
     if( condition == condZ && getZFlag() )
         return true;
-    else if( condition == condNZ && !getZFlag() )
+    if( condition == condNC && ! getCFlag() )
         return true;
-    else if( condition == condC && getCFlag() )
-        return true;
-    else if( condition == condNC && !getCFlag() )
+    if( condition == condC && getCFlag() )
         return true;
 
     return false;
@@ -268,7 +269,7 @@ void CoreCpu::bitwise( const Operation_t& op ) {
     write<OperandType_t::R8>( { Operand_t::a }, result );
 
     constexpr bool hFlag = ( optype == OperationType_t::AND );
-    setZNHCFlags( !result, false, hFlag, false );
+    setZNHCFlags( ! result, false, hFlag, false );
 }
 
 template<CoreCpu::OperationType_t optype>
@@ -311,7 +312,7 @@ void CoreCpu::bitShift( Operation_t op ) {
     if constexpr( optype == OT::RLA || optype == OT::RRA || optype == OT::RLCA || optype == OT::RRCA )
         zFlag = false;
     else
-        zFlag = !value;
+        zFlag = ! value;
 
     write<OperandType_t::R8>( op.operand1, value );
     setZNHCFlags( zFlag, false, false, cFlag );
@@ -360,7 +361,7 @@ void CoreCpu::ld( const Operation_t& op ) {
         bool halfCarryFlag = ( ( readVal & 0xFFF ) + ( imm8 & 0xFFF ) ) > 0xFFF;
 
         readVal += imm8;
-        setZNHCFlags( !readVal, false, halfCarryFlag, cFlag );
+        setZNHCFlags( ! readVal, false, halfCarryFlag, cFlag );
     } break;
     default:
         invalidOperandType( op.operandType2 );
@@ -555,7 +556,7 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
         const auto bitIndex = std::get<uint8_t>( op.operand1 );
         const auto value =
                 op.operandType2 == opdt::pHL ? read<opdt::pHL>( op.operand2 ) : read<opdt::R8>( op.operand2 );
-        setZNHCFlags( !( value & ( 1 << bitIndex ) ), false, true, getCFlag() );
+        setZNHCFlags( ! ( value & ( 1 << bitIndex ) ), false, true, getCFlag() );
     } break;
     case OT::RES: {
         const auto bitIndex = std::get<uint8_t>( op.operand1 );
@@ -626,7 +627,7 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
             value = static_cast<uint8_t>( ( value >> 4 ) | ( value << 4 ) );
             write<opdt::R8>( op.operand1, value );
         }
-        setZNHCFlags( !value, false, false, false );
+        setZNHCFlags( ! value, false, false, false );
     } break;
     //Jumps and subroutine instructions
     case OT::CALL: {
@@ -710,7 +711,7 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
     case OT::CCF:
         setNFlag( false );
         setHFlag( false );
-        setCFlag( !getCFlag() );
+        setCFlag( ! getCFlag() );
         break;
     case OT::SCF:
         setNFlag( false );
@@ -737,7 +738,7 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
     case OT::HALT: {
         const auto interruptPending = ( mem.read( addr::interruptEnableRegister ) & 0x1F ) &
                                       ( mem.read( addr::interruptFlag ) & 0x1F );
-        if( !interruptMasterEnabled && interruptPending ) {
+        if( ! interruptMasterEnabled && interruptPending ) {
             // TODO halt bug
         } else
             halted = true;
@@ -761,7 +762,7 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
             }
             addTo<opdt::R8>( { opd::a }, adjustment );
         }
-        setZNHCFlags( !read<opdt::R8>( { opd::a } ), getNFlag(), false, cFlag );
+        setZNHCFlags( ! read<opdt::R8>( { opd::a } ), getNFlag(), false, cFlag );
     } break;
     case OT::NOP:
         break;
@@ -784,12 +785,12 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
     }
 
     const unsigned cycles = getCycles( op.opcode, branchTaken );
-    logOperation( op, cycles );
+    logDebug( std::format( "{} took {}", OperationTypeString[(int)op.operationType], cycles ) );
     return cycles;
 }
 
 unsigned CoreCpu::handleInterrupts() {
-    if( !interruptMasterEnabled )
+    if( ! interruptMasterEnabled )
         return 0;
     const auto interruptEnable = mem.read( addr::interruptEnableRegister );
     const auto interruptFlag   = mem.read( addr::interruptFlag );
@@ -849,9 +850,10 @@ void CoreCpu::logOperation( Operation_t op, [[maybe_unused]] unsigned cycles ) {
     logDebug( std::format( "OT<{}>, opdt1<{}>, opd1<{}>, opdt2<{}>, opd2<{}>: ; took {} cycles",
                            OperationTypeString[(int)op.operationType], OperandTypeString[(int)op.operandType1],
                            opd1, OperandTypeString[(int)op.operandType2], opd2, cycles ) );
+    logDebug( std::format( "CPU flags ZNHC<{:04b}>", ( registers[7] >> 4 ) ) );
 }
 CoreCpu::CoreCpu( Memory& mem_ ) : mem( mem_ ) {
     //set register f
-    const bool headerChecksumNonZero = mem.read( 0x147 );
+    const bool headerChecksumNonZero = mem.read( addr::headerChecksum );
     setZNHCFlags( 1, 0, headerChecksumNonZero, headerChecksumNonZero );
 };

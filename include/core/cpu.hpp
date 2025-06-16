@@ -11,6 +11,75 @@ concept uint8or16_t = std::same_as<T, uint8_t> || std::same_as<T, uint16_t>;
 class CoreCpu {
 public:
     using Enum_t = uint8_t;
+    enum class MicroOperationType_t : Enum_t {
+        NOP,
+        STOP,
+        LD_IMM_TO_Z,
+        LD_IMM_TO_W,
+        LD_SPL_TO_pWZ,
+        LD_SPH_TO_pWZ,
+        RLCA,
+        RRCA,
+        RLA,
+        RRA,
+        DAA,
+        CPL,
+        SCF,
+        CCF,
+        ALU_CALC_RELATIVE_JUMP,
+        IDU_LD_WZ_PLUS_1_TO_PC,
+        HALT,
+        ALU_ADD_Z_TO_A,
+        ALU_ADD_Z_AND_C_TO_A,
+        ALU_SUB_Z_FROM_A,
+        ALU_SUB_Z_AND_C_FROM_A,
+        ALU_AND_AZ,
+        ALU_XOR_AZ,
+        ALU_OR_AZ,
+        ALU_CP_AZ,
+        ALU_ADD_SPL_TO_Z,
+        ALU_ADD_SPH_TO_W,
+        ALU_SPH_PLUS_CADJ_TO_W,
+        LD_WZ_TO_SP,
+        LD_SPL_TO_Z,
+        LD_SPH_TO_W,
+        LD_WZ_TO_PC,
+        LD_WZ_TO_PC_AND_ENABLE_IME,
+        JP_TO_pHL,
+        SP_DEC,
+        LD_PCH_TO_SP,
+        LD_PCL_TO_SP,
+        LD_A_TO_FF00_PLUS_C,
+        LD_A_TO_FF00_PLUS_Z,
+        LD_A_TO_WZ,
+        LD_FF00_PLUS_C_TO_Z,
+        LD_Z_TO_R8,
+        LD_FF00_PLUS_Z_TO_Z,
+        LD_WZ_TO_Z,
+        ALU_SPL_PLUS_Z_TO_L,
+        ALU_SPH_PLUS_CADJ_TO_H,
+        LD_HL_TO_SP,
+        DI,
+        EI,
+        COND_CHECK_IMM8e,
+        INC_R8,
+        LD_pHL_TO_Z,
+        ALU_LD_Z_PLUS_1_TO_pHL,
+        ALU_LD_Z_MINUS_1_TO_pHL,
+        DEC_R8,
+        LD_Z_TO_pHL,
+        LD_WZ_TO_R16,
+        LD_R16_MEM_TO_A,
+        IDU_INC_R16,
+        ALU_ADD_LSB_R16_TO_L,
+        ALU_ADD_CMSB_R16_TO_H,
+        LD_R16_MEM_TO_Z,
+        IDU_DEC_R16,
+
+
+        INVALID,
+        EMPTY
+    };
     enum class OperationType_t : Enum_t {
         INVALID,
         NOP,
@@ -105,16 +174,18 @@ public:
         // r16stk
         af = 3,
         // r16mem
-        hlPlus = 2,
+        pBC = 0,
+        pDE,
+        hlPlus,
         hlMinus,
         // cond
         condNZ = 0,
         condZ,
         condNC,
-        condC
+        condC,
+        NONE
     };
 
-protected:
     using OperandVar_t = std::variant<std::monostate, Operand_t, uint8_t>;
     //In case of IMM8 and IMM16, don't save the next byte(s)
     //They will be fetched in execution phase
@@ -136,9 +207,22 @@ protected:
             , operand2( operand2_ ) {
         }
     };
+    struct MicroOperation_t {
+        MicroOperationType_t type;
+        Operand_t operand1;
+        Operand_t operand2;
+        MicroOperation_t( MicroOperationType_t type_ = MicroOperationType_t::EMPTY,
+                          Operand_t operand1_ = Operand_t::NONE, Operand_t operand2_ = Operand_t::NONE )
+            : type( type_ )
+            , operand1( operand1_ )
+            , operand2( operand2_ ) {
+        }
+    };
 
+protected:
     // Default values of registers are for DMG; register f is initialized in constructor
     uint8_t registers[8] { 0x0, 0x13, 0x0, 0xD8, 0x1, 0x4D, 0x1 }; //b,c,d,e,h,l,a,f
+    uint8_t Z, W;                                                  // temporary registers
     uint16_t SP = 0xFFFE, PC = 0x100;
     Operation_t operation = Operation_t( 0x0, OperationType_t::NOP );
     Memory& mem;
@@ -161,6 +245,7 @@ public:
     void bitShift( Operation_t op );
 
     unsigned execute( const Operation_t& op );
+    void execute( const MicroOperation_t mop );
     unsigned handleInterrupts();
     void ld( const Operation_t& op );
     void ldh( const Operation_t& op );
@@ -169,13 +254,15 @@ public:
     bool isConditionMet( Operand_t condition );
 
     Operation_t decode();
+    using MicroOperations_t = std::array<MicroOperation_t, 6>;
+    MicroOperations_t decode( int a );
     //helpers
-    Operation_t decodeBlock0( const uint8_t opcode );
-    Operation_t decodeBlock2( const uint8_t opcode );
-    Operation_t decodeBlock3( const uint8_t opcode );
-    Operation_t decodeCB( const uint8_t opcodeFirstByte );
+    MicroOperations_t decodeBlock0( const uint8_t opcode );
+    MicroOperations_t decodeBlock2( const uint8_t opcode );
+    MicroOperations_t decodeBlock3( const uint8_t opcode );
+    MicroOperations_t decodeCB( const uint8_t opcodeFirstByte );
     // clang-format off
-    OperandType_t getR8orPHLType( Operand_t operand ) { return operand == Operand_t::phl ? OperandType_t::pHL : OperandType_t::R8; }
+    bool isPHL( Operand_t operand ) { return operand == Operand_t::phl; }
     bool getZFlag() { return registers[7] &( 1 << 7 ); } // Zero flag
     bool getNFlag() { return registers[7] &( 1 << 6 ); } // BDC substraction flag
     bool getHFlag() { return registers[7] &( 1 << 5 ); } // BDC half carry flag
