@@ -1,5 +1,4 @@
 #include "core/logging.hpp"
-#include <filesystem>
 #include <print>
 #include <stacktrace>
 

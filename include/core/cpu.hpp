@@ -33,35 +33,35 @@ public:
         ALU_ADD_Z_AND_C_TO_A,
         ALU_SUB_Z_FROM_A,
         ALU_SUB_Z_AND_C_FROM_A,
-        ALU_AND_AZ,
-        ALU_XOR_AZ,
-        ALU_OR_AZ,
-        ALU_CP_AZ,
+        ALU_A_AND_Z,
+        ALU_A_XOR_Z,
+        ALU_A_OR_Z,
+        ALU_A_CP_Z,
         ALU_ADD_SPL_TO_Z,
         ALU_ADD_SPH_TO_W,
-        ALU_SPH_PLUS_CADJ_TO_W,
+        ALU_SPH_ADC_ADJ_TO_W,
         LD_WZ_TO_SP,
-        LD_SPL_TO_Z,
-        LD_SPH_TO_W,
+        POP_SP_TO_Z,
+        POP_SP_TO_W,
         LD_WZ_TO_PC,
-        LD_WZ_TO_PC_AND_ENABLE_IME,
-        JP_TO_pHL,
+        LD_WZ_TO_PC__ENABLE_IME,
+        JP_TO_HL,
         SP_DEC,
         LD_PCH_TO_SP,
         LD_PCL_TO_SP,
         LD_A_TO_FF00_PLUS_C,
         LD_A_TO_FF00_PLUS_Z,
-        LD_A_TO_WZ,
+        LD_A_TO_pWZ,
         LD_FF00_PLUS_C_TO_Z,
         LD_Z_TO_R8,
         LD_FF00_PLUS_Z_TO_Z,
-        LD_WZ_TO_Z,
-        ALU_SPL_PLUS_Z_TO_L,
-        ALU_SPH_PLUS_CADJ_TO_H,
+        LD_pWZ_TO_Z,
+        ALU_SPL_PLUS_Z_TO_LHL,
+        ALU_SPH_ADC_ADJ_TO_HHL,
         LD_HL_TO_SP,
         DI,
         EI,
-        COND_CHECK_IMM8e,
+        COND_CHECK__LD_IMM_TO_Z,
         INC_R8,
         LD_pHL_TO_Z,
         ALU_LD_Z_PLUS_1_TO_pHL,
@@ -75,8 +75,48 @@ public:
         ALU_ADD_CMSB_R16_TO_H,
         LD_R16_MEM_TO_Z,
         IDU_DEC_R16,
-
-
+        LD_R8_TO_R8,
+        LD_R8_TO_pHL,
+        ALU_ADD_R8_TO_A,
+        ALU_ADC_Z_TO_A,
+        ALU_ADC_R8_TO_A,
+        ALU_SUB_R8_FROM_A,
+        ALU_SBC_Z_FROM_A,
+        ALU_SBC_R8_FROM_A,
+        ALU_A_AND_R8,
+        ALU_A_XOR_R8,
+        ALU_A_OR_R8,
+        ALU_CP_A_R8,
+        CHECK_COND,
+        COND_CHECK__LD_IMM_TO_W,
+        LD_PCL_TO_SP__LD_WZ_TO_PC,
+        LD_PCL_TO_SP__LD_TGT3_TO_PC,
+        LD_WZ_TO_R16STK,
+        PUSH_MSB_R16STK_TO_SP,
+        PUSH_LSB_R16STK_TO_SP,
+        FETCH_SECOND_BYTE,
+        LD_RLC_Z_TO_pHL,
+        RLC_R8,
+        LD_RRC_Z_TO_pHL,
+        RRC_R8,
+        LD_RL_Z_TO_pHL,
+        RL_R8,
+        LD_RR_Z_TO_pHL,
+        RR_R8,
+        LD_SLA_Z_TO_pHL,
+        SLA_R8,
+        LD_SRA_Z_TO_pHL,
+        SRA_R8,
+        LD_SWAP_Z_TO_pHL,
+        SWAP_R8,
+        LD_SRL_Z_TO_pHL,
+        SRL_R8,
+        BIT_Z,
+        BIT_R8,
+        RES_pHL,
+        RES_R8,
+        SET_pHL,
+        SET_R8,
         INVALID,
         EMPTY
     };
@@ -253,14 +293,13 @@ public:
     uint16_t popFromStack();
     bool isConditionMet( Operand_t condition );
 
-    Operation_t decode();
     using MicroOperations_t = std::array<MicroOperation_t, 6>;
-    MicroOperations_t decode( int a );
+    MicroOperations_t decode();
     //helpers
     MicroOperations_t decodeBlock0( const uint8_t opcode );
     MicroOperations_t decodeBlock2( const uint8_t opcode );
     MicroOperations_t decodeBlock3( const uint8_t opcode );
-    MicroOperations_t decodeCB( const uint8_t opcodeFirstByte );
+    MicroOperations_t decodeCB();
     // clang-format off
     bool isPHL( Operand_t operand ) { return operand == Operand_t::phl; }
     bool getZFlag() { return registers[7] &( 1 << 7 ); } // Zero flag
