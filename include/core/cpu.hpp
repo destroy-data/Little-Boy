@@ -267,10 +267,22 @@ protected:
     Operation_t operation = Operation_t( 0x0, OperationType_t::NOP );
     Memory& mem;
     bool interruptMasterEnabled = false;
+    bool enableIMELater         = false;
     bool halted                 = false;
+    bool lastConditionCheck     = false;
 
 public:
     static consteval size_t getOperandVarType( CoreCpu::OperandType_t operandType );
+
+    uint8_t readR8( Operand_t opd );
+    uint16_t readR16( Operand_t opd );
+
+    void writeR8( Operand_t opd, uint8_t value );
+
+    void addToR8( Operand_t operand, uint8_t value );
+    uint8_t addU8ToU8( uint8_t value, uint8_t value2 );
+    void subFromR8( Operand_t operand, uint8_t value, bool discard = false );
+
     template<OperandType_t type>
     uint8or16_t auto read( const OperandVar_t operand );
     template<OperandType_t type, uint8or16_t T>
@@ -301,6 +313,9 @@ public:
     MicroOperations_t decodeBlock3( const uint8_t opcode );
     MicroOperations_t decodeCB();
     // clang-format off
+    uint16_t getWZ() { return static_cast<uint16_t>( ( W << 8 ) | Z ); }
+    void setWZ( uint16_t value ) { Z = value & 0xF; W = uint8_t( value >> 8 ); }
+
     bool isPHL( Operand_t operand ) { return operand == Operand_t::phl; }
     bool getZFlag() { return registers[7] &( 1 << 7 ); } // Zero flag
     bool getNFlag() { return registers[7] &( 1 << 6 ); } // BDC substraction flag

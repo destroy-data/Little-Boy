@@ -7,6 +7,64 @@
 #include <utility>
 #include <variant>
 
+// Decoding and execution have separate files
+
+uint8_t CoreCpu::addU8ToU8( uint8_t value, uint8_t value2 ) {
+    bool cFlag         = value + value2 > std::numeric_limits<uint8_t>::max();
+    bool halfCarryFlag = ( ( value & 0xF ) + ( value2 & 0xF ) ) > 0xF;
+
+    const uint8_t result = value + value2;
+    setZNHCFlags( ! result, false, halfCarryFlag, cFlag );
+    return result;
+};
+
+void CoreCpu::addToR8( Operand_t operand, uint8_t value ) {
+    auto currentValue  = readR8( operand );
+    bool cFlag         = currentValue + value > std::numeric_limits<uint8_t>::max();
+    bool halfCarryFlag = ( ( currentValue & 0xF ) + ( value & 0xF ) ) > 0xF;
+
+    currentValue += value;
+    writeR8( operand, currentValue );
+    setZNHCFlags( ! currentValue, false, halfCarryFlag, cFlag );
+};
+
+void CoreCpu::subFromR8( Operand_t operand, uint8_t value, bool discard ) {
+    auto currentValue = readR8( operand );
+    bool cFlag        = value > currentValue;
+    //due to integer promotion substraction operands are promoted to ints
+    bool halfCarryFlag = ( ( currentValue & 0xF ) - ( value & 0xF ) ) < 0;
+
+    const uint8_t newValue = currentValue - value;
+    if( ! discard )
+        writeR8( operand, newValue );
+    setZNHCFlags( ! newValue, true, halfCarryFlag, cFlag );
+};
+
+uint8_t CoreCpu::readR8( Operand_t opd ) {
+    if( opd == Operand_t::a ) {
+        const int aIndex = 6;
+        return registers[aIndex];
+    }
+    return registers[std::to_underlying( opd )];
+}
+
+void CoreCpu::writeR8( Operand_t opd, uint8_t value ) {
+    if( opd == Operand_t::a ) {
+        constexpr int aIndex = 6;
+        registers[aIndex]    = value;
+    } else
+        registers[std::to_underlying( opd )] = value;
+}
+
+uint16_t CoreCpu::readR16( Operand_t opd ) {
+    if( opd == Operand_t::sp )
+        return SP;
+    else
+        return static_cast<uint16_t>( registers[std::to_underlying( opd ) * 2] << 8 |
+                                      ( registers[std::to_underlying( opd ) * 2 + 1] ) );
+}
+
+
 #define invalidOperandType( OPERAND )                                                                         \
     do {                                                                                                      \
         logFatal( ErrorCode::InvalidOperandType, std::format( "Invalid operand " #OPERAND " with value: {0}", \
