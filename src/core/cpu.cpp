@@ -64,15 +64,16 @@ uint16_t CoreCpu::readR16( Operand_t opd ) {
                                       ( registers[std::to_underlying( opd ) * 2 + 1] ) );
 }
 
+void CoreCpu::writeR16( Operand_t opd, uint16_t value ) {
+    if( opd == Operand_t::sp )
+        SP = value;
+    else {
+        registers[std::to_underlying( opd ) * 2]     = static_cast<uint8_t>( value >> 8 );
+        registers[std::to_underlying( opd ) * 2 + 1] = static_cast<uint8_t>( value );
+    }
+}
 
-#define invalidOperandType( OPERAND )                                                                         \
-    do {                                                                                                      \
-        logFatal( ErrorCode::InvalidOperandType, std::format( "Invalid operand " #OPERAND " with value: {0}", \
-                                                              static_cast<Enum_t>( OPERAND ) ) );             \
-        logStacktrace();                                                                                      \
-        std::abort();                                                                                         \
-    } while( false )
-
+#define invalidOperandType( OPERAND ) void( 0 )
 
 consteval size_t CoreCpu::getOperandVarType( CoreCpu::OperandType_t operandType ) {
     switch( operandType ) {
@@ -797,7 +798,6 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
         const auto interruptPending = ( mem.read( addr::interruptEnableRegister ) & 0x1F ) &
                                       ( mem.read( addr::interruptFlag ) & 0x1F );
         if( ! interruptMasterEnabled && interruptPending ) {
-            // TODO halt bug
         } else
             halted = true;
     } break;
@@ -829,15 +829,14 @@ unsigned CoreCpu::execute( const Operation_t& op ) {
         break;
     //Invalid and unknown instructions
     case OT::INVALID:
-        logFatal( ErrorCode::InvalidOperationType,
-                  std::format( "Known invalid operation type made it to execute stage, value: {0}",
-                               static_cast<Enum_t>( op.operationType ) ) );
+        logFatal( 0, std::format( "Known invalid operation type made it to execute stage, value: {0}",
+                                  static_cast<Enum_t>( op.operationType ) ) );
         logStacktrace();
         std::abort();
         break;
     default:
-        logFatal( ErrorCode::InvalidOperationType, std::format( "Unknown operation type, value: {0}",
-                                                                static_cast<Enum_t>( op.operationType ) ) );
+        logFatal( 0, std::format( "Unknown operation type, value: {0}",
+                                  static_cast<Enum_t>( op.operationType ) ) );
         logStacktrace();
         std::abort();
     }
@@ -881,9 +880,7 @@ unsigned CoreCpu::handleInterrupts() {
 };
 
 unsigned CoreCpu::tick() {
-    auto cycles = execute( decode() );
-    cycles += handleInterrupts();
-    return cycles;
+    return 0;
 }
 
 void CoreCpu::logOperation( Operation_t op, [[maybe_unused]] unsigned cycles ) {

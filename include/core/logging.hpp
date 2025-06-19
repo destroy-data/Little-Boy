@@ -15,9 +15,9 @@ enum CoreError : int {
     // Memory errors (200-399)
 
     // CPU errors (400-599)
-    InvalidOperationType         = 400,
-    InvalidOperandType           = 401,
-    InvalidOperand               = 402,
+    unknownMicroCodeExecuted     = 400,
+    emptyMicroCodeExecuted       = 402,
+    InvalidOperand               = 405,
     CPUHardLocked                = 410,
     StackOverflow                = 420,
     StackUnderflow               = 421,

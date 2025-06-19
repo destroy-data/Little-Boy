@@ -7,7 +7,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     switch( mop.type ) {
         using enum MicroOperationType_t;
     case NOP:
-        return;
+        [[likely]] return;
     case STOP:
         //TODO
         return;
@@ -26,7 +26,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         break;
     case RLCA: {
         const uint8_t value = readR8( Operand_t::a );
-        const bool cFlag    = value & bit( 7 );
+        const bool cFlag    = value & ( 1 << 7 );
 
         const uint8_t newValue = std::rotl( value, 1 );
         writeR8( Operand_t::a, newValue );
@@ -42,7 +42,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     } break;
     case RLA: {
         const uint8_t value = readR8( Operand_t::a );
-        const bool cFlag    = value & bit( 7 );
+        const bool cFlag    = value & ( 1 << 7 );
 
         const uint8_t newValue = static_cast<uint8_t>( ( value << 1 ) | getCFlag() );
         writeR8( Operand_t::a, newValue );
@@ -104,14 +104,14 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case ALU_ADD_Z_TO_A:
         addToR8( Operand_t::a, Z );
         break;
-    case ALU_ADD_Z_AND_C_TO_A:
+    case ALU_ADC_Z_TO_A:
         addToR8( Operand_t::a, Z + getCFlag() );
         break;
     case ALU_SUB_Z_FROM_A:
         subFromR8( Operand_t::a, Z );
         break;
-    case ALU_SUB_Z_AND_C_FROM_A:
-        subFromR8( Operand_t::a, Z + getCFlag() );
+    case ALU_SBC_Z_FROM_A:
+        subFromR8( Operand_t::a, getCFlag() + Z );
         break;
     case ALU_A_AND_Z: {
         const uint8_t result = readR8( Operand_t::a ) & Z;
@@ -132,14 +132,14 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         subFromR8( Operand_t::a, Z, true );
         break;
     case ALU_ADD_SPL_TO_Z:
-        //TODO ADJ
         Z = addU8ToU8( lsb( SP ), Z );
         break;
-    case ALU_SPH_ADC_ADJ_TO_W:
-        // TODO
+    case ALU_SPH_ADC_ADJ_TO_W: {
+        const uint8_t adjustment = Z & ( 1 << 7 ) ? 0xFF : 0;
+        W                        = addU8ToU8( msb( SP ), getCFlag() + adjustment );
         setZFlag( 0 );
         setNFlag( 0 );
-        break;
+    } break;
     case LD_WZ_TO_SP:
         SP = getWZ();
         break;
@@ -163,7 +163,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         SP--;
         break;
     case LD_PCH_TO_SP:
-        mem.write( SP--, msb( PC ) );
+        mem.write( SP--, msb( PC ) ); // go to next byte's address
         break;
     case LD_PCL_TO_SP:
         mem.write( SP, lsb( PC ) );
@@ -190,13 +190,15 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case LD_pWZ_TO_Z:
         Z = mem.read( getWZ() );
         break;
-    case ALU_SPL_PLUS_Z_TO_LHL:
+    case ALU_SPL_PLUS_Z_TO_L:
         writeR8( Operand_t::l, addU8ToU8( lsb( SP ), Z ) );
-        //TODO ADJ
         break;
-    case ALU_SPH_ADC_ADJ_TO_HHL:
-        //TODO
-        break;
+    case ALU_SPH_ADC_ADJ_TO_H: {
+        const uint8_t adjustment = Z & ( 1 << 7 ) ? 0xFF : 0;
+        writeR8( Operand_t::h, addU8ToU8( msb( SP ), getCFlag() + adjustment ) );
+        setZFlag( 0 );
+        setNFlag( 0 );
+    } break;
     case LD_HL_TO_SP:
         SP = readR16( Operand_t::hl );
         break;
@@ -210,82 +212,141 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         lastConditionCheck = isConditionMet( mop.operand1 );
         Z                  = mem.read( PC++ );
         break;
-    case INC_R8:
-        break;
+    case INC_R8: {
+        const bool cFlag = getCFlag();
+        addToR8( mop.operand1, 1 );
+        setCFlag( cFlag );
+    } break;
     case LD_pHL_TO_Z:
+        Z = mem.read( readR16( Operand_t::hl ) );
         break;
     case ALU_LD_Z_PLUS_1_TO_pHL:
+        mem.write( readR16( Operand_t::hl ), --Z );
         break;
     case ALU_LD_Z_MINUS_1_TO_pHL:
+        mem.write( readR16( Operand_t::hl ), --Z );
         break;
-    case DEC_R8:
-        break;
+    case DEC_R8: {
+        const bool cFlag = getCFlag();
+        subFromR8( mop.operand1, 1 );
+        setCFlag( cFlag );
+    } break;
     case LD_Z_TO_pHL:
+        mem.write( readR16( Operand_t::hl ), Z );
         break;
     case LD_WZ_TO_R16:
+        writeR16( mop.operand1, getWZ() );
         break;
-    case LD_R16_MEM_TO_A:
+    case LD_A_TO_R16_MEM:
+        if( mop.operand1 == Operand_t::pBC || mop.operand1 == Operand_t::pDE )
+            mem.write( readR16( mop.operand1 ), readR8( Operand_t::a ) );
+        else {
+            uint16_t hl = readR16( Operand_t::hl );
+            mem.write( hl, readR8( Operand_t::a ) );
+            mop.operand1 == Operand_t::hlPlus ? ++hl : --hl;
+            writeR16( Operand_t::hl, hl );
+        }
         break;
-    case IDU_INC_R16:
-        break;
-    case ALU_ADD_LSB_R16_TO_L:
-        break;
-    case ALU_ADD_CMSB_R16_TO_H:
+    case IDU_INC_R16: {
+        const uint16_t value = readR16( mop.operand1 );
+        writeR16( mop.operand1, value + 1 );
+    } break;
+    case ALU_ADD_LSB_R16_TO_L: {
+        addToR8( Operand_t::l, lsb( readR16( mop.operand1 ) ) );
+    } break;
+    case ALU_ADC_MSB_R16_TO_H:
+        addToR8( Operand_t::h, getCFlag() + msb( readR16( mop.operand1 ) ) );
         break;
     case LD_R16_MEM_TO_Z:
+        if( mop.operand1 == Operand_t::pBC || mop.operand1 == Operand_t::pDE )
+            Z = mem.read( readR16( mop.operand1 ) );
+        else {
+            uint16_t hl = readR16( Operand_t::hl );
+            Z           = mem.read( hl );
+            mop.operand1 == Operand_t::hlPlus ? ++hl : --hl;
+            writeR16( Operand_t::hl, hl );
+        }
         break;
-    case IDU_DEC_R16:
-        break;
-    case LD_R8_TO_R8:
-        break;
+    case IDU_DEC_R16: {
+        const uint16_t value = readR16( mop.operand1 );
+        writeR16( mop.operand1, value - 1 );
+    } break;
+    case LD_R8_TO_R8: {
+        const uint8_t value = readR8( mop.operand2 );
+        writeR8( mop.operand1, value );
+    } break;
     case LD_R8_TO_pHL:
+        mem.write( readR16( Operand_t::hl ), readR8( mop.operand1 ) );
         break;
     case ALU_ADD_R8_TO_A:
-        break;
-    case ALU_ADC_Z_TO_A:
+        addToR8( Operand_t::a, readR8( mop.operand1 ) );
         break;
     case ALU_ADC_R8_TO_A:
+        addToR8( Operand_t::a, getCFlag() + readR8( mop.operand1 ) );
         break;
     case ALU_SUB_R8_FROM_A:
-        break;
-    case ALU_SBC_Z_FROM_A:
+        subFromR8( Operand_t::a, readR8( mop.operand1 ) );
         break;
     case ALU_SBC_R8_FROM_A:
+        subFromR8( Operand_t::a, getCFlag() + readR8( mop.operand1 ) );
         break;
-    case ALU_A_AND_R8:
-        break;
-    case ALU_A_XOR_R8:
-        break;
-    case ALU_A_OR_R8:
-        break;
+    case ALU_A_AND_R8: {
+        const uint8_t result = readR8( Operand_t::a ) & readR8( mop.operand1 );
+        writeR8( Operand_t::a, result );
+        setZNHCFlags( ! result, 0, 1, 0 );
+    } break;
+    case ALU_A_XOR_R8: {
+        const uint8_t result = readR8( Operand_t::a ) ^ readR8( mop.operand1 );
+        writeR8( Operand_t::a, result );
+        setZNHCFlags( ! result, 0, 0, 0 );
+    } break;
+    case ALU_A_OR_R8: {
+        const uint8_t result = readR8( Operand_t::a ) | readR8( mop.operand1 );
+        writeR8( Operand_t::a, result );
+        setZNHCFlags( ! result, 0, 0, 0 );
+    } break;
     case ALU_CP_A_R8:
+        subFromR8( Operand_t::a, readR8( mop.operand1 ), true );
         break;
     case CHECK_COND:
+        lastConditionCheck = isConditionMet( mop.operand1 );
         break;
     case COND_CHECK__LD_IMM_TO_W:
+        lastConditionCheck = isConditionMet( mop.operand1 );
+        W                  = mem.read( PC++ );
         break;
     case LD_PCL_TO_SP__LD_WZ_TO_PC:
+        mem.write( SP, lsb( PC ) );
+        PC = getWZ();
         break;
     case LD_PCL_TO_SP__LD_TGT3_TO_PC:
+        mem.write( SP, lsb( PC ) );
+        PC = std::to_underlying( mop.operand1 ) * 8;
         break;
     case LD_WZ_TO_R16STK:
+        registers[std::to_underlying( mop.operand1 ) * 2]     = static_cast<uint8_t>( getWZ() >> 8 );
+        registers[std::to_underlying( mop.operand1 ) * 2 + 1] = static_cast<uint8_t>( getWZ() );
         break;
-    case PUSH_MSB_R16STK_TO_SP:
-        break;
-    case PUSH_LSB_R16STK_TO_SP:
-        break;
+    case PUSH_MSB_R16STK_TO_SP: {
+        const auto r16STKMsb = registers[std::to_underlying( mop.operand1 ) * 2];
+        mem.write( SP--, r16STKMsb ); // go to next byte's address
+    } break;
+    case PUSH_LSB_R16STK_TO_SP: {
+        const auto r16STKLsb = registers[std::to_underlying( mop.operand1 ) * 2 + 1];
+        mem.write( SP, r16STKLsb );
+    } break;
     case FETCH_SECOND_BYTE:
         PC++;
         break;
     case LD_RLC_Z_TO_pHL: {
-        const bool cFlag = Z & bit( 7 );
+        const bool cFlag = Z & ( 1 << 7 );
         Z                = std::rotl( Z, 1 );
         mem.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case RLC_R8: {
         const uint8_t value    = readR8( mop.operand1 );
-        const bool cFlag       = value & bit( 7 );
+        const bool cFlag       = value & ( 1 << 7 );
         const uint8_t newValue = std::rotl( value, 1 );
         writeR8( mop.operand1, newValue );
         setZNHCFlags( ! newValue, 0, 0, cFlag );
@@ -304,14 +365,14 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         setZNHCFlags( ! newValue, 0, 0, cFlag );
     } break;
     case LD_RL_Z_TO_pHL: {
-        const bool cFlag = Z & bit( 7 );
+        const bool cFlag = Z & ( 1 << 7 );
         Z                = static_cast<uint8_t>( ( Z << 1 ) | getCFlag() );
         mem.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case RL_R8: {
         const uint8_t value    = readR8( mop.operand1 );
-        const bool cFlag       = value & bit( 7 );
+        const bool cFlag       = value & ( 1 << 7 );
         const uint8_t newValue = static_cast<uint8_t>( ( value << 1 ) | getCFlag() );
         writeR8( mop.operand1, newValue );
         setZNHCFlags( ! newValue, 0, 0, cFlag );
@@ -330,28 +391,28 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         setZNHCFlags( ! newValue, 0, 0, cFlag );
     } break;
     case LD_SLA_Z_TO_pHL: {
-        const bool cFlag = Z & bit( 7 );
-        Z                = Z << 1;
+        const bool cFlag = Z & ( 1 << 7 );
+        Z                = static_cast<uint8_t>( Z << 1 );
         mem.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case SLA_R8: {
         const uint8_t value    = readR8( mop.operand1 );
-        const bool cFlag       = value & bit( 7 );
-        const uint8_t newValue = value << 1;
+        const bool cFlag       = value & ( 1 << 7 );
+        const uint8_t newValue = static_cast<uint8_t>( value << 1 );
         writeR8( mop.operand1, newValue );
         setZNHCFlags( ! newValue, 0, 0, cFlag );
     } break;
     case LD_SRA_Z_TO_pHL: {
         const bool cFlag = Z & 0x1;
-        Z                = static_cast<uint8_t>( ( Z & bit( 7 ) ) | ( Z >> 1 ) );
+        Z                = static_cast<uint8_t>( ( Z & ( 1 << 7 ) ) | ( Z >> 1 ) );
         mem.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case SRA_R8: {
         const uint8_t value    = readR8( mop.operand1 );
         const bool cFlag       = value & 0x1;
-        const uint8_t newValue = static_cast<uint8_t>( ( value & bit( 7 ) ) | ( value >> 1 ) );
+        const uint8_t newValue = static_cast<uint8_t>( ( value & ( 1 << 7 ) ) | ( value >> 1 ) );
         writeR8( mop.operand1, newValue );
         setZNHCFlags( ! newValue, 0, 0, cFlag );
     } break;
@@ -411,14 +472,15 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         writeR8( mop.operand2, newValue );
     } break;
     case INVALID:
-        break;
+        [[unlikely]] break;
     case EMPTY:
-        logFatal( ErrorCode::emptyMicroCodeExecuted, "Empty microcode executed! ( not NOP )" );
+        [[unlikely]] logFatal( ErrorCode::emptyMicroCodeExecuted, "Empty microcode executed! ( not NOP )" );
         logStacktrace();
         std::abort();
     default:
-        logFatal( ErrorCode::InvalidOperandType,
-                  std::format( "Unknown microcode executed, value: {0}", std::to_underlying( mop.type ) ) );
+        [[unlikely]] logFatal(
+                ErrorCode::InvalidOperand,
+                std::format( "Unknown microcode executed, value: {0}", std::to_underlying( mop.type ) ) );
         logStacktrace();
         std::abort();
     }

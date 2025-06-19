@@ -32,8 +32,8 @@ void RaylibPpu::drawPixel( uint8_t colorId ) {
 //--------------------------------------------------
 void RaylibCpu::handleJoypad() {
     const auto joypadInputRegister = mem.read( addr::joypadInput );
-    const bool selectButtonsFlag   = joypadInputRegister & bit( 5 );
-    const bool selectDPad          = joypadInputRegister & ( 4 << 4 );
+    const bool selectButtonsFlag   = joypadInputRegister & ( 1 << 5 );
+    const bool selectDPad          = joypadInputRegister & ( 1 << 4 );
 
     // 0 means button pressed
     uint8_t buttonsPressed = 0x0F;

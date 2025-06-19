@@ -30,7 +30,7 @@ public:
         IDU_LD_WZ_PLUS_1_TO_PC,
         HALT,
         ALU_ADD_Z_TO_A,
-        ALU_ADD_Z_AND_C_TO_A,
+        ALU_ADC_Z_TO_A,
         ALU_SUB_Z_FROM_A,
         ALU_SUB_Z_AND_C_FROM_A,
         ALU_A_AND_Z,
@@ -56,8 +56,8 @@ public:
         LD_Z_TO_R8,
         LD_FF00_PLUS_Z_TO_Z,
         LD_pWZ_TO_Z,
-        ALU_SPL_PLUS_Z_TO_LHL,
-        ALU_SPH_ADC_ADJ_TO_HHL,
+        ALU_SPL_PLUS_Z_TO_L,
+        ALU_SPH_ADC_ADJ_TO_H,
         LD_HL_TO_SP,
         DI,
         EI,
@@ -69,16 +69,15 @@ public:
         DEC_R8,
         LD_Z_TO_pHL,
         LD_WZ_TO_R16,
-        LD_R16_MEM_TO_A,
+        LD_A_TO_R16_MEM,
         IDU_INC_R16,
         ALU_ADD_LSB_R16_TO_L,
-        ALU_ADD_CMSB_R16_TO_H,
+        ALU_ADC_MSB_R16_TO_H,
         LD_R16_MEM_TO_Z,
         IDU_DEC_R16,
         LD_R8_TO_R8,
         LD_R8_TO_pHL,
         ALU_ADD_R8_TO_A,
-        ALU_ADC_Z_TO_A,
         ALU_ADC_R8_TO_A,
         ALU_SUB_R8_FROM_A,
         ALU_SBC_Z_FROM_A,
@@ -278,9 +277,10 @@ public:
     uint16_t readR16( Operand_t opd );
 
     void writeR8( Operand_t opd, uint8_t value );
+    void writeR16( Operand_t opd, uint16_t value );
 
-    void addToR8( Operand_t operand, uint8_t value );
     uint8_t addU8ToU8( uint8_t value, uint8_t value2 );
+    void addToR8( Operand_t operand, uint8_t value );
     void subFromR8( Operand_t operand, uint8_t value, bool discard = false );
 
     template<OperandType_t type>

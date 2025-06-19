@@ -43,11 +43,11 @@ CoreCpu::MicroOperations_t CoreCpu::decode() {
     case 0xC6:
         return { { LD_IMM_TO_Z, ALU_ADD_Z_TO_A } }; // ADD IMM8
     case 0xCE:
-        return { { LD_IMM_TO_Z, ALU_ADD_Z_AND_C_TO_A } }; // ADC IMM8
+        return { { LD_IMM_TO_Z, ALU_ADC_Z_TO_A } }; // ADC IMM8
     case 0xD6:
         return { { LD_IMM_TO_Z, ALU_SUB_Z_FROM_A } }; // SUB IMM8
     case 0xDE:
-        return { { LD_IMM_TO_Z, ALU_SUB_Z_AND_C_FROM_A } }; // SBC IMM8
+        return { { LD_IMM_TO_Z, ALU_SBC_Z_FROM_A } }; // SBC IMM8
     case 0xE6:
         return { { LD_IMM_TO_Z, ALU_A_AND_Z } }; // AND IMM8
     case 0xEE:
@@ -85,7 +85,7 @@ CoreCpu::MicroOperations_t CoreCpu::decode() {
     case 0xFA:
         return { { LD_IMM_TO_Z, LD_IMM_TO_W, LD_pWZ_TO_Z, { LD_Z_TO_R8, Operand_t::a } } }; // LD A, pIMM16
     case 0xF8:
-        return { { LD_IMM_TO_Z, ALU_SPL_PLUS_Z_TO_LHL, ALU_SPH_ADC_ADJ_TO_HHL } }; // LD HL, SP+IMM8s
+        return { { LD_IMM_TO_Z, ALU_SPL_PLUS_Z_TO_L, ALU_SPH_ADC_ADJ_TO_H } }; // LD HL, SP+IMM8s
     case 0xF9:
         return { { LD_HL_TO_SP, NOP } }; // LD SP, HL
     case 0xF3:
@@ -150,11 +150,11 @@ CoreCpu::MicroOperations_t CoreCpu::decodeBlock0( const uint8_t opcode ) {
     case 0x1:
         return { { LD_IMM_TO_Z, LD_IMM_TO_W, { LD_WZ_TO_R16, r16 } } }; // LD R16, IMM16
     case 0x2:
-        return { { { LD_R16_MEM_TO_A, r16 }, NOP } }; // LD R16MEM, A
+        return { { { LD_A_TO_R16_MEM, r16 }, NOP } }; // LD R16MEM, A
     case 0x3:
         return { { { IDU_INC_R16, r16 }, NOP } }; // INC R16
     case 0x9:
-        return { { { ALU_ADD_LSB_R16_TO_L, r16 }, { ALU_ADD_CMSB_R16_TO_H, r16 } } }; // ADD HL, R16
+        return { { { ALU_ADD_LSB_R16_TO_L, r16 }, { ALU_ADC_MSB_R16_TO_H, r16 } } }; // ADD HL, R16
     case 0xA:
         return { { { LD_R16_MEM_TO_Z, r16 }, { LD_Z_TO_R8, Operand_t::a } } }; // LD A, R16MEM
     case 0xB:
