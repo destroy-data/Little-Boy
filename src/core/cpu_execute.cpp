@@ -4,6 +4,7 @@
 #include <utility>
 
 void CoreCpu::execute( MicroOperation_t mop ) {
+    logOperation( mop );
     switch( mop.type ) {
         using enum MicroOperationType_t;
     case NOP:
@@ -165,7 +166,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case LD_PCH_TO_SP:
         mem.write( SP--, msb( PC ) ); // go to next byte's address
         break;
-    case LD_PCL_TO_SP:
+    case LD_PCL_TO_SP__LD_WZ_TO_PC:
         mem.write( SP, lsb( PC ) );
         PC = getWZ();
         break;
@@ -221,7 +222,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         Z = mem.read( readR16( Operand_t::hl ) );
         break;
     case ALU_LD_Z_PLUS_1_TO_pHL:
-        mem.write( readR16( Operand_t::hl ), --Z );
+        mem.write( readR16( Operand_t::hl ), ++Z );
         break;
     case ALU_LD_Z_MINUS_1_TO_pHL:
         mem.write( readR16( Operand_t::hl ), --Z );
@@ -314,10 +315,6 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case COND_CHECK__LD_IMM_TO_W:
         lastConditionCheck = isConditionMet( mop.operand1 );
         W                  = mem.read( PC++ );
-        break;
-    case LD_PCL_TO_SP__LD_WZ_TO_PC:
-        mem.write( SP, lsb( PC ) );
-        PC = getWZ();
         break;
     case LD_PCL_TO_SP__LD_TGT3_TO_PC:
         mem.write( SP, lsb( PC ) );
@@ -473,7 +470,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     } break;
     case INVALID:
         [[unlikely]] break;
-    case EMPTY:
+    case END:
         [[unlikely]] logFatal( ErrorCode::emptyMicroCodeExecuted, "Empty microcode executed! ( not NOP )" );
         logStacktrace();
         std::abort();

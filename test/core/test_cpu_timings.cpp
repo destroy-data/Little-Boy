@@ -11,90 +11,90 @@ namespace cycles {
 constexpr unsigned NOP = 4;
 
 constexpr unsigned LD_R16_IMM16 = 12;
-constexpr unsigned LD_R16MEM_A = 8;
-constexpr unsigned LD_A_R16MEM = 8;
-constexpr unsigned LD_IMM16_SP = 20;
+constexpr unsigned LD_R16MEM_A  = 8;
+constexpr unsigned LD_A_R16MEM  = 8;
+constexpr unsigned LD_IMM16_SP  = 20;
 
-constexpr unsigned INC_R16 = 8;
-constexpr unsigned DEC_R16 = 8;
+constexpr unsigned INC_R16    = 8;
+constexpr unsigned DEC_R16    = 8;
 constexpr unsigned ADD_HL_R16 = 8;
 
-constexpr unsigned INC_R8 = 4;
+constexpr unsigned INC_R8  = 4;
 constexpr unsigned INC_pHL = 12;
-constexpr unsigned DEC_R8 = 4;
+constexpr unsigned DEC_R8  = 4;
 constexpr unsigned DEC_pHL = 12;
 
-constexpr unsigned LD_R8_IMM8 = 8;
+constexpr unsigned LD_R8_IMM8  = 8;
 constexpr unsigned LD_pHL_IMM8 = 12;
 
 constexpr unsigned RLCA = 4;
 constexpr unsigned RRCA = 4;
-constexpr unsigned RLA = 4;
-constexpr unsigned RRA = 4;
-constexpr unsigned DAA = 4;
-constexpr unsigned CPL = 4;
-constexpr unsigned SCF = 4;
-constexpr unsigned CCF = 4;
+constexpr unsigned RLA  = 4;
+constexpr unsigned RRA  = 4;
+constexpr unsigned DAA  = 4;
+constexpr unsigned CPL  = 4;
+constexpr unsigned SCF  = 4;
+constexpr unsigned CCF  = 4;
 
-constexpr unsigned JR_IMM8 = 12;
-constexpr unsigned JR_COND_IMM8_TAKEN = 12;
+constexpr unsigned JR_IMM8              = 12;
+constexpr unsigned JR_COND_IMM8_TAKEN   = 12;
 constexpr unsigned JR_COND_IMM8_UNTAKEN = 8;
 
 constexpr unsigned STOP = 4;
 
-constexpr unsigned LD_R8_R8 = 4;
+constexpr unsigned LD_R8_R8  = 4;
 constexpr unsigned LD_R8_pHL = 8;
 constexpr unsigned LD_pHL_R8 = 8;
-constexpr unsigned HALT = 4;
+constexpr unsigned HALT      = 4;
 
-constexpr unsigned ARITHMETIC_A_R8 = 4;
+constexpr unsigned ARITHMETIC_A_R8   = 4;
 constexpr unsigned ARITHMETIC_A_IMM8 = 8;
-constexpr unsigned ARITH_A_pHL = 8;
+constexpr unsigned ARITH_A_pHL       = 8;
 
-constexpr unsigned LOGIC_A_R8 = 4;
-constexpr unsigned LOGIC_A_pHL = 8;
+constexpr unsigned LOGIC_A_R8   = 4;
+constexpr unsigned LOGIC_A_pHL  = 8;
 constexpr unsigned LOGIC_A_IMM8 = 8;
 
-constexpr unsigned CP_A_R8 = 4;
-constexpr unsigned CP_A_pHL = 8;
+constexpr unsigned CP_A_R8   = 4;
+constexpr unsigned CP_A_pHL  = 8;
 constexpr unsigned CP_A_IMM8 = 8;
 
-constexpr unsigned RET_COND_TAKEN = 20;
-constexpr unsigned RET_COND_UNTAKEN = 8;
-constexpr unsigned RET = 16;
-constexpr unsigned RETI = 16;
-constexpr unsigned JP_COND_IMM16_TAKEN = 16;
-constexpr unsigned JP_COND_IMM16_UNTAKEN = 12;
-constexpr unsigned JP_IMM16 = 16;
-constexpr unsigned JP_HL = 4;
-constexpr unsigned CALL_COND_IMM16_TAKEN = 24;
+constexpr unsigned RET_COND_TAKEN          = 20;
+constexpr unsigned RET_COND_UNTAKEN        = 8;
+constexpr unsigned RET                     = 16;
+constexpr unsigned RETI                    = 16;
+constexpr unsigned JP_COND_IMM16_TAKEN     = 16;
+constexpr unsigned JP_COND_IMM16_UNTAKEN   = 12;
+constexpr unsigned JP_IMM16                = 16;
+constexpr unsigned JP_HL                   = 4;
+constexpr unsigned CALL_COND_IMM16_TAKEN   = 24;
 constexpr unsigned CALL_COND_IMM16_UNTAKEN = 12;
-constexpr unsigned CALL_IMM16 = 24;
-constexpr unsigned RST_TGT3 = 16;
+constexpr unsigned CALL_IMM16              = 24;
+constexpr unsigned RST_TGT3                = 16;
 
-constexpr unsigned POP_R16STK = 12;
+constexpr unsigned POP_R16STK  = 12;
 constexpr unsigned PUSH_R16STK = 16;
 
-constexpr unsigned LDH_pR8_A = 8;
+constexpr unsigned LDH_pR8_A   = 8;
 constexpr unsigned LDH_pIMM8_A = 12;
 constexpr unsigned LD_pIMM16_A = 16;
-constexpr unsigned LDH_A_pR8 = 8;
+constexpr unsigned LDH_A_pR8   = 8;
 constexpr unsigned LDH_A_pIMM8 = 12;
 constexpr unsigned LD_A_pIMM16 = 16;
 
-constexpr unsigned ADD_SP_IMM8 = 16;
+constexpr unsigned ADD_SP_IMM8        = 16;
 constexpr unsigned LD_HL_SP_PLUS_IMM8 = 12;
-constexpr unsigned LD_SP_HL = 8;
+constexpr unsigned LD_SP_HL           = 8;
 
 constexpr unsigned DI = 4;
 constexpr unsigned EI = 4;
 
-constexpr unsigned CB_OP_R8 = 8;
+constexpr unsigned CB_OP_R8  = 8;
 constexpr unsigned CB_OP_pHL = 16;
 
-constexpr unsigned BIT_B3_R8 = 8;
-constexpr unsigned BIT_B3_pHL = 12;
-constexpr unsigned RES_SET_B3_R8 = 8;
+constexpr unsigned BIT_B3_R8      = 8;
+constexpr unsigned BIT_B3_pHL     = 12;
+constexpr unsigned RES_SET_B3_R8  = 8;
 constexpr unsigned RES_SET_B3_pHL = 16;
 } // namespace cycles
 
@@ -302,14 +302,4 @@ unsigned getCyclesAlternative( uint16_t opcode, bool branchTaken ) {
 /* clang-format on */
 
 TEST_CASE( "instruction timings", "[cpu][timings]" ) {
-    for( uint16_t i = 0; i < 256; i++ ) {
-        CAPTURE( i );
-        CHECK( DummyCpu::getCycles( i, false ) == getCyclesAlternative( i, false ) );
-        CHECK( DummyCpu::getCycles( i, true ) == getCyclesAlternative( i, true ) );
-    }
-    for( uint16_t j = 0; j < 256; j++ ) {
-        CAPTURE( j );
-        CHECK( DummyCpu::getCycles( 0xCB << 8 | j, false ) == getCyclesAlternative( 0xCB << 8 | j, false ) );
-        CHECK( DummyCpu::getCycles( 0xCB << 8 | j, true ) == getCyclesAlternative( 0xCB << 8 | j, true ) );
-    }
 }

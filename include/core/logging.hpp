@@ -54,12 +54,13 @@ enum CoreError : int {
 } // namespace ErrorCode
 
 enum class LogLevel : uint8_t {
-    Debug   = 0, // Details
-    Info    = 1, // What happens
-    Warning = 2, // Unexpected situation and/or ignored can cause error in the future
-    Error   = 3, // Something went wrong
-    Fatal   = 4, // Something went very wrong, cannot continue execution
-    Off     = 255
+    Debug     = 0,   // Details
+    Info      = 1,   // What happens
+    Warning   = 2,   // Unexpected situation and/or ignored can cause error in the future
+    Error     = 3,   // Something went wrong
+    Fatal     = 4,   // Something went very wrong, cannot continue execution
+    LiveDebug = 254, // Logs for actions made during live-debugging
+    Off       = 255
 };
 
 inline LogLevel gLogLevel = LogLevel::Warning;
@@ -121,6 +122,12 @@ void logSeparator();
     do {                                                                                                      \
         if( shouldLog( LogLevel::Fatal ) )                                                                    \
             log( code, LogLevel::Fatal, message, __FILE__, __LINE__ );                                        \
+    } while( 0 )
+
+#define logLiveDebug( message )                                                                               \
+    do {                                                                                                      \
+        if( shouldLog( LogLevel::LiveDebug ) )                                                                \
+            log( 0, LogLevel::LiveDebug, message, __FILE__, __LINE__ );                                       \
     } while( 0 )
 
 template<std::integral T>

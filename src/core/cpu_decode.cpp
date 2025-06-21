@@ -68,7 +68,8 @@ CoreCpu::MicroOperations_t CoreCpu::decode() {
     case 0xE9:
         return { { JP_TO_HL } }; // JP pHL
     case 0xCD:
-        return { { LD_IMM_TO_Z, LD_IMM_TO_W, SP_DEC, LD_PCH_TO_SP, LD_PCL_TO_SP, NOP } }; // CALL IMM16
+        return { { LD_IMM_TO_Z, LD_IMM_TO_W, SP_DEC, LD_PCH_TO_SP, LD_PCL_TO_SP__LD_WZ_TO_PC,
+                   NOP } }; // CALL IMM16
     //the rest
     case 0xCB:
         return decodeCB();

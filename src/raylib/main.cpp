@@ -9,6 +9,7 @@
 #include <limits>
 #include <memory>
 #include <raylib.h>
+#include <utility>
 #include <vector>
 
 using Emulator_t            = Emulator<RaylibCpu, RaylibPpu>;
@@ -70,20 +71,22 @@ int main() {
         if( interactiveDebugMode && IsKeyPressed( KEY_H ) ) {
             emulationStopped = ! emulationStopped;
             if( emulationStopped )
-                logDebug( "Stopped emulation!" );
+                logLiveDebug( "Stopped emulation!" );
             else
-                logDebug( "Start emulation again!" );
+                logLiveDebug( "Start emulation again!" );
         }
         if( interactiveDebugMode && IsKeyPressed( KEY_U ) )
             logSeparator();
         if( interactiveDebugMode && IsKeyPressed( KEY_J ) )
             doOneTick = true;
         if( IsKeyPressed( KEY_KP_ADD ) ) {
-            setLogLevel( LogLevel( std::max( int( getLogLevel() ) - 1, 0 ) ) );
+            setLogLevel( LogLevel( std::max( std::to_underlying( getLogLevel() ) - 1, 0 ) ) );
+            logLiveDebug( std::format( "Log level decreased to {}", std::to_underlying( getLogLevel() ) ) );
         }
         if( IsKeyPressed( KEY_KP_SUBTRACT ) ) {
-            setLogLevel( LogLevel(
-                    std::min( int( getLogLevel() ) + 1, int( std::numeric_limits<uint8_t>::max() ) ) ) );
+            setLogLevel( LogLevel( std::min( std::to_underlying( getLogLevel() ) + 1,
+                                             int( std::numeric_limits<uint8_t>::max() ) ) ) );
+            logLiveDebug( std::format( "Log level increased to {}", std::to_underlying( getLogLevel() ) ) );
         }
 
         BeginDrawing();

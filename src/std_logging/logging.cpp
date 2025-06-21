@@ -98,6 +98,11 @@ void log( const int errorCode, const LogLevel severity, const std::string& messa
         format      = bold;
         color       = brightYellow;
         break;
+    case LogLevel::LiveDebug:
+        severityStr = "[LIVE_DEBUG]";
+        format      = bold;
+        color       = yellow;
+        break;
     default:
         severityStr = "[UNKNOWN]";
         break;
