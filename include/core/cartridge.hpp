@@ -4,6 +4,7 @@
 #include <memory>
 #include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 class CoreCartridge {
@@ -29,8 +30,9 @@ private:
     void initRam( const RamSizeByte size );
     void setRamSize( const RamSizeByte size );
 
-protected:
     std::vector<uint8_t> rom;
+
+protected:
     std::vector<std::span<uint8_t>> romBanks;
     std::vector<std::vector<uint8_t>> ramBanks;
 
@@ -53,14 +55,14 @@ protected:
         return romSize;
     }
     std::underlying_type_t<RomSize> getRomBankCount() const {
-        return static_cast<std::underlying_type_t<RomSize>>( romSize );
+        return std::to_underlying( romSize );
     }
 
     RamSize getRamSize() const {
         return ramSize;
     }
     std::underlying_type_t<RamSize> getRamBankCount() const {
-        return static_cast<std::underlying_type_t<RamSize>>( ramSize );
+        return std::to_underlying( ramSize );
     }
 
     constexpr static uint8_t invalidReadValue = 0xFF; // Value returned on invalid read

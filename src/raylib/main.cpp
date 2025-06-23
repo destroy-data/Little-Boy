@@ -30,7 +30,7 @@ int main() {
     // clang-format on
 
     std::ifstream romFile( romPath, std::ios::binary );
-    if( !romFile.good() ) {
+    if( ! romFile.good() ) {
         logFatal( 0, "Failed to open ROM file: " + std::string( romPath ) );
         return 1;
     }
@@ -40,8 +40,8 @@ int main() {
     romFile.read( reinterpret_cast<char*>( romData.data() ), dataSize );
     romFile.close();
 
-
-    CoreCartridge::CartridgeType type = static_cast<CoreCartridge::CartridgeType>( romData[addr::cartridgeType] );
+    CoreCartridge::CartridgeType type =
+            static_cast<CoreCartridge::CartridgeType>( romData[addr::cartridgeType] );
     std::unique_ptr<CoreCartridge> cartridge { CoreCartridge::create( type, std::move( romData ) ) };
 
     logDebug( std::format( "Read cartridge type byte: {}", toHex( cartridge->read( addr::cartridgeType ) ) ) );
@@ -62,13 +62,13 @@ int main() {
     bool interactiveDebugMode = true;
     bool emulationStopped     = false;
     bool doOneTick; // When emulation isn't stopped, the value doesn't matter
-    while( !WindowShouldClose() ) {
+    while( ! WindowShouldClose() ) {
         if( IsKeyPressed( KEY_C ) ) {
-            interactiveDebugMode = !interactiveDebugMode;
+            interactiveDebugMode = ! interactiveDebugMode;
             emulationStopped     = false;
         }
         if( interactiveDebugMode && IsKeyPressed( KEY_H ) ) {
-            emulationStopped = !emulationStopped;
+            emulationStopped = ! emulationStopped;
             if( emulationStopped )
                 logDebug( "Stopped emulation!" );
             else
@@ -87,7 +87,7 @@ int main() {
         }
 
         BeginDrawing();
-        if( !emulationStopped ) {
+        if( ! emulationStopped ) {
             int cycles = 0;
             while( cycles <= ticksPerFrame )
                 cycles += emu.tick();

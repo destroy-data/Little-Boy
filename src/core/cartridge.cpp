@@ -177,6 +177,15 @@ std::unique_ptr<CoreCartridge> CoreCartridge::create( CartridgeType type, std::v
     case MBC2B:
         return std::make_unique<MBC2Cartridge>( std::move( rom ) );
 
+    case MBC3TB:
+    case MBC3TRB:
+        return std::make_unique<MBC3Cartridge>( std::move( rom ), true );
+
+    case MBC3:
+    case MBC3R:
+    case MBC3RB:
+        return std::make_unique<MBC3Cartridge>( std::move( rom ) );
+
     case RR:
         logError( 0, "Cartridge type ROM+RAM is not supported." );
         break;
@@ -200,10 +209,14 @@ bool CoreCartridge::checkCopyRightHeader( const uint16_t bankNumber ) const {
     const auto isLogoEqual =
             std::equal( romBanks[bankNumber].begin() + addr::logoStart,
                         romBanks[bankNumber].begin() + addr::logoEnd, std::begin( nintendoCopyrightHeader ) );
+
+    const auto checkMBC1M = bankNumber != 0;
     if( isLogoEqual ) {
-        logDebug( "Nintendo copyright header does not match. This is not MBC1M cartridge." );
+        logDebug( std::format( "Nintendo copyright header matches! This is nintendo {}cartridge.",
+                               checkMBC1M ? "MBC1M " : "" ) );
     } else {
-        logDebug( "Nintendo copyright header matches! This is MBC1M cartridge." );
+        logDebug( std::format( "Nintendo copyright header does not match. This is not nintendo {}cartridge.",
+                               checkMBC1M ? "MBC1M " : "" ) );
     }
 
     return isLogoEqual;
