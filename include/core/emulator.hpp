@@ -9,8 +9,10 @@ public:
     Tcpu cpu;
     Tppu ppu;
 
+    Timer timer;
+
 public:
-    static constexpr unsigned tickrate     = 4194304;
+    static constexpr unsigned tickrate     = 4'194'304;
     static constexpr float oscillatoryTime = 1. / tickrate;
 
     int tick() {

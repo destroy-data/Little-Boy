@@ -5,7 +5,6 @@
 #include <format>
 #include <limits>
 #include <utility>
-#include <variant>
 
 // Decoding and execution have separate files
 

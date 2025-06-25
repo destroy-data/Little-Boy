@@ -38,23 +38,23 @@ void RaylibCpu::handleJoypad() {
     // 0 means button pressed
     uint8_t buttonsPressed = 0x0F;
     if( selectDPad ) {
-        if( IsKeyPressed( KEY_S ) )
+        if( IsKeyPressedRepeat( KEY_S ) )
             mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 3 ) );
-        if( IsKeyPressed( KEY_W ) )
+        if( IsKeyPressedRepeat( KEY_W ) )
             mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 2 ) );
-        if( IsKeyPressed( KEY_A ) )
+        if( IsKeyPressedRepeat( KEY_A ) )
             mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 1 ) );
-        if( IsKeyPressed( KEY_D ) )
+        if( IsKeyPressedRepeat( KEY_D ) )
             mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 0 ) );
     }
     if( selectButtonsFlag ) {
-        if( IsKeyPressed( KEY_Q ) ) // START - TODO: configurable
+        if( IsKeyPressedRepeat( KEY_Q ) ) // START - TODO: configurable
             mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 3 ) );
-        if( IsKeyPressed( KEY_E ) ) // SELECT - TODO configurable
+        if( IsKeyPressedRepeat( KEY_E ) ) // SELECT - TODO configurable
             mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 2 ) );
-        if( IsKeyPressed( KEY_B ) )
+        if( IsKeyPressedRepeat( KEY_B ) )
             mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 1 ) );
-        if( IsKeyPressed( KEY_G ) ) // A button - TODO configurable
+        if( IsKeyPressedRepeat( KEY_G ) ) // A button - TODO configurable
             mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 0 ) );
     }
 
