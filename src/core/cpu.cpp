@@ -67,8 +67,8 @@ void CoreCpu::writeR16( Operand_t opd, uint16_t value ) {
     if( opd == Operand_t::sp )
         SP = value;
     else {
-        registers[std::to_underlying( opd ) * 2]     = static_cast<uint8_t>( value >> 8 );
-        registers[std::to_underlying( opd ) * 2 + 1] = static_cast<uint8_t>( value );
+        registers[std::to_underlying( opd ) * 2]     = msb( value );
+        registers[std::to_underlying( opd ) * 2 + 1] = lsb( value );
     }
 }
 

@@ -1,9 +1,6 @@
 #include "core/cpu.hpp"
 #include <utility>
 
-// TODO adding signed IMM8 - check this
-// TODO check LD operations regarding SP
-
 using enum CoreCpu::MicroOperationType_t;
 // Operand order is target first, source next
 CoreCpu::MicroOperations_t CoreCpu::decode() {
@@ -12,9 +9,9 @@ CoreCpu::MicroOperations_t CoreCpu::decode() {
     switch( opcode ) {
     //block 0
     case 0x0:
-        return { { NOP } }; //NOP
+        return { { NOP } };
     case 0x10:
-        return { { STOP } }; // STOP
+        return { { STOP } };
     case 0x08:
         return { { LD_IMM_TO_Z, LD_IMM_TO_W, LD_SPL_TO_pWZ, LD_SPH_TO_pWZ, NOP } }; // LD pIMM16, SP
     case 0x07:
@@ -37,7 +34,7 @@ CoreCpu::MicroOperations_t CoreCpu::decode() {
         return { { LD_IMM_TO_Z, ALU_CALC_RELATIVE_JUMP, IDU_LD_WZ_PLUS_1_TO_PC } }; // JR IMM8
     //block 1
     case 0x76:
-        return { { HALT } }; // HALT
+        return { { HALT } };
     //block 3
     //arithmetic
     case 0xC6:

@@ -1,4 +1,5 @@
 #pragma once
+#include "core/core_utils.hpp"
 #include "core/cycles.hpp"
 #include "memory.hpp"
 #include <array>
@@ -203,7 +204,7 @@ public:
     MicroOperations_t decodeCB();
     // clang-format off
     uint16_t getWZ() { return static_cast<uint16_t>( ( W << 8 ) | Z ); }
-    void setWZ( uint16_t value ) { Z = static_cast<uint8_t>( value & 0xFF ); W = uint8_t( value >> 8 ); }
+    void setWZ( uint16_t value ) { Z = lsb(value); W = msb( value  ); }
 
     bool isPHL( Operand_t operand ) { return operand == Operand_t::phl; }
     bool getZFlag() { return registers[7] &( 1 << 7 ); } // Zero flag

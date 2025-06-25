@@ -23,7 +23,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         setWZ( getWZ() + 1 );
         break;
     case LD_SPH_TO_pWZ:
-        mem.write( getWZ(), uint8_t( SP >> 8 ) );
+        mem.write( getWZ(), msb( SP ) );
         break;
     case RLCA: {
         const uint8_t value = readR8( Operand_t::a );
@@ -45,7 +45,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         const uint8_t value = readR8( Operand_t::a );
         const bool cFlag    = value & ( 1 << 7 );
 
-        const uint8_t newValue = static_cast<uint8_t>( ( value << 1 ) | getCFlag() );
+        const uint8_t newValue = lsb( ( value << 1 ) | getCFlag() );
         writeR8( Operand_t::a, newValue );
         setZNHCFlags( 0, 0, 0, cFlag );
     } break;
@@ -53,7 +53,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         const uint8_t value = readR8( Operand_t::a );
         const bool cFlag    = value & 0x1;
 
-        const uint8_t newValue = static_cast<uint8_t>( ( getCFlag() << 7 ) | ( value >> 1 ) );
+        const uint8_t newValue = lsb( ( getCFlag() << 7 ) | ( value >> 1 ) );
         writeR8( Operand_t::a, newValue );
         setZNHCFlags( 0, 0, 0, cFlag );
     } break;
@@ -321,8 +321,8 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         PC = std::to_underlying( mop.operand1 ) * 8;
         break;
     case LD_WZ_TO_R16STK:
-        registers[std::to_underlying( mop.operand1 ) * 2]     = static_cast<uint8_t>( getWZ() >> 8 );
-        registers[std::to_underlying( mop.operand1 ) * 2 + 1] = static_cast<uint8_t>( getWZ() );
+        registers[std::to_underlying( mop.operand1 ) * 2]     = W;
+        registers[std::to_underlying( mop.operand1 ) * 2 + 1] = Z;
         break;
     case PUSH_MSB_R16STK_TO_SP: {
         const auto r16STKMsb = registers[std::to_underlying( mop.operand1 ) * 2];
@@ -363,64 +363,64 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     } break;
     case LD_RL_Z_TO_pHL: {
         const bool cFlag = Z & ( 1 << 7 );
-        Z                = static_cast<uint8_t>( ( Z << 1 ) | getCFlag() );
+        Z                = lsb( Z << 1 ) | getCFlag();
         mem.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case RL_R8: {
         const uint8_t value    = readR8( mop.operand1 );
         const bool cFlag       = value & ( 1 << 7 );
-        const uint8_t newValue = static_cast<uint8_t>( ( value << 1 ) | getCFlag() );
+        const uint8_t newValue = lsb( ( value << 1 ) | getCFlag() );
         writeR8( mop.operand1, newValue );
         setZNHCFlags( ! newValue, 0, 0, cFlag );
     } break;
     case LD_RR_Z_TO_pHL: {
         const bool cFlag = Z & 0x1;
-        Z                = static_cast<uint8_t>( ( getCFlag() << 7 ) | ( Z >> 1 ) );
+        Z                = lsb( getCFlag() << 7 | ( Z >> 1 ) );
         mem.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case RR_R8: {
         const uint8_t value    = readR8( mop.operand1 );
         const bool cFlag       = value & 0x1;
-        const uint8_t newValue = static_cast<uint8_t>( ( getCFlag() << 7 ) | ( value >> 1 ) );
+        const uint8_t newValue = lsb( getCFlag() << 7 | ( value >> 1 ) );
         writeR8( mop.operand1, newValue );
         setZNHCFlags( ! newValue, 0, 0, cFlag );
     } break;
     case LD_SLA_Z_TO_pHL: {
         const bool cFlag = Z & ( 1 << 7 );
-        Z                = static_cast<uint8_t>( Z << 1 );
+        Z                = lsb( Z << 1 );
         mem.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case SLA_R8: {
         const uint8_t value    = readR8( mop.operand1 );
         const bool cFlag       = value & ( 1 << 7 );
-        const uint8_t newValue = static_cast<uint8_t>( value << 1 );
+        const uint8_t newValue = lsb( value << 1 );
         writeR8( mop.operand1, newValue );
         setZNHCFlags( ! newValue, 0, 0, cFlag );
     } break;
     case LD_SRA_Z_TO_pHL: {
         const bool cFlag = Z & 0x1;
-        Z                = static_cast<uint8_t>( ( Z & ( 1 << 7 ) ) | ( Z >> 1 ) );
+        Z                = lsb( ( Z & ( 1 << 7 ) ) | ( Z >> 1 ) );
         mem.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case SRA_R8: {
         const uint8_t value    = readR8( mop.operand1 );
         const bool cFlag       = value & 0x1;
-        const uint8_t newValue = static_cast<uint8_t>( ( value & ( 1 << 7 ) ) | ( value >> 1 ) );
+        const uint8_t newValue = lsb( ( value & ( 1 << 7 ) ) | ( value >> 1 ) );
         writeR8( mop.operand1, newValue );
         setZNHCFlags( ! newValue, 0, 0, cFlag );
     } break;
     case LD_SWAP_Z_TO_pHL:
-        Z = static_cast<uint8_t>( ( Z << 4 ) | ( Z >> 4 ) );
+        Z = lsb( ( Z << 4 ) | ( Z >> 4 ) );
         mem.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, 0 );
         break;
     case SWAP_R8: {
         const uint8_t value    = readR8( mop.operand1 );
-        const uint8_t newValue = static_cast<uint8_t>( ( value << 4 ) | ( value >> 4 ) );
+        const uint8_t newValue = lsb( ( value << 4 ) | ( value >> 4 ) );
         writeR8( mop.operand1, newValue );
         setZNHCFlags( ! newValue, 0, 0, 0 );
     } break;

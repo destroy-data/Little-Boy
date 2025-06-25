@@ -117,6 +117,7 @@ int main() {
             DrawFPS( 5, 5 );
         }
 
+        emu.handleJoypad();
         EndDrawing();
     }
 
