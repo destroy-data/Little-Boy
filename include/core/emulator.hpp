@@ -1,6 +1,6 @@
 #pragma once
 #include "core/bus.hpp"
-#include "core/logging.hpp"
+#include "core/core_constants.hpp"
 #include "core/memory.hpp"
 
 template<typename Tcpu, typename Tppu>
@@ -49,14 +49,18 @@ public:
                  .tileIndex = memory.read( address + 2 ),
                  .flags     = memory.read( address + 3 ) };
     }
-    uint8_t readVram( uint16_t address ) const override {
+    uint8_t directMemRead( uint16_t address ) const override {
         return memory.read( address );
     }
+    virtual void directMemWrite( uint16_t address, uint8_t value ) override {
+        memory.write( address, value );
+    }
 
-    int tick() {
-        cpu.tick();
+
+    unsigned tick() {
+        unsigned ticks = cpu.tick();
         // const bool cpuDoubleSpeed = memory.read( addr::key1 ) & ( 1 << 7 );
-        for( int i = 0; i < 4; i++ ) {
+        for( unsigned i = 0; i < ticks; i++ ) {
             ppu.tick();
         }
 

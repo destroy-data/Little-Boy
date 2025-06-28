@@ -14,6 +14,8 @@ public:
     }
     void write( uint16_t, uint8_t ) {
     }
+    DummyCartridge() : CoreCartridge( std::vector<uint8_t> {} ) {
+    }
 };
 
 class DummyCpu final : public CoreCpu {

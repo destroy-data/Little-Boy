@@ -4,10 +4,6 @@
 #include <cstdint>
 
 struct Memory {
-    //To change cartridge, you have to turn off Gameboy
-    bool vramLock = 0;
-    bool oamLock  = 0;
-
     CoreCartridge* cartridge; // ROM + optional external RAM
     uint8_t videoRam[8192];
     uint8_t workRam00[4096];
@@ -18,7 +14,7 @@ struct Memory {
     uint8_t highRam[127];
 
     //helpers
-    inline bool inRom( const uint16_t index ) const {
+    bool inRom( const uint16_t index ) const {
         return index < addr::videoRam;
     }
     bool inRom0N( const uint16_t index ) const {

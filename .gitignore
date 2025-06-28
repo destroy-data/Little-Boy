@@ -5,3 +5,5 @@ test_roms/
 cmake-build-debug/
 .cache/
 .idea/
+mgbdis-*/
+pandocs/

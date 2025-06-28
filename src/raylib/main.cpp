@@ -1,3 +1,4 @@
+#include "cartridge_impls/cartridge_factory.hpp"
 #include "core/cartridge.hpp"
 #include "core/emulator.hpp"
 #include "core/logging.hpp"
@@ -41,9 +42,7 @@ int main() {
     romFile.read( reinterpret_cast<char*>( romData.data() ), dataSize );
     romFile.close();
 
-    CoreCartridge::CartridgeType type =
-            static_cast<CoreCartridge::CartridgeType>( romData[addr::cartridgeType] );
-    std::unique_ptr<CoreCartridge> cartridge { CoreCartridge::create( type, std::move( romData ) ) };
+    std::unique_ptr<CoreCartridge> cartridge { CartridgeFactory::create( std::move( romData ) ) };
 
     logDebug( std::format( "Read cartridge type byte: {}", toHex( cartridge->read( addr::cartridgeType ) ) ) );
     logDebug( std::format( "Read ROM size byte: {}", toHex( cartridge->read( addr::romSize ) ) ) );

@@ -1,5 +1,5 @@
 #include "core/cartridge.hpp"
-#include "cartridge_impls/cartridge.hpp"
+
 #include "core/core_constants.hpp"
 #include "core/logging.hpp"
 #include <format>
@@ -163,43 +163,7 @@ CoreCartridge::CoreCartridge( std::vector<uint8_t>&& rom_ ) : rom( std::move( ro
     initRam( static_cast<CoreCartridge::RamSizeByte>( ramSizeByte ) );
 };
 
-std::unique_ptr<CoreCartridge> CoreCartridge::create( CartridgeType type, std::vector<uint8_t>&& rom ) {
-    switch( type ) {
-        using enum CartridgeType;
-    case NoMBC:
-        return std::make_unique<NoMBCCartridge>( std::move( rom ) );
 
-    case MBC1:
-    case MBC1R:
-    case MBC1RB:
-        return std::make_unique<MBC1Cartridge>( std::move( rom ) );
-
-    case MBC2:
-    case MBC2B:
-        return std::make_unique<MBC2Cartridge>( std::move( rom ) );
-
-    case MBC3TB:
-    case MBC3TRB:
-        return std::make_unique<MBC3Cartridge>( std::move( rom ), true );
-
-    case MBC3:
-    case MBC3R:
-    case MBC3RB:
-        return std::make_unique<MBC3Cartridge>( std::move( rom ) );
-
-    case RR:
-        logError( 0, "Cartridge type ROM+RAM is not supported." );
-        break;
-    case RRB:
-        logError( 0, "Cartridge type ROM+RAM+BATTERY is not supported." );
-        break;
-    default:
-        break;
-    }
-    logError( 0, std::format( "Unknown cartridge type: {}",
-                              toHex( static_cast<std::underlying_type_t<CartridgeType>>( type ) ) ) );
-    return nullptr;
-}
 
 bool CoreCartridge::checkCopyRightHeader( const uint16_t bankNumber ) const {
     if( getRomBankCount() < bankNumber ) {

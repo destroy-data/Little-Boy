@@ -11,5 +11,6 @@ public:
     virtual void setOamLock( bool locked )                                   = 0;
     virtual void setVramLock( bool locked )                                  = 0;
     virtual SpriteAttribute getSpriteAttribute( uint8_t sprite_index ) const = 0;
-    virtual uint8_t readVram( uint16_t address ) const                       = 0;
+    virtual uint8_t directMemRead( uint16_t address ) const                  = 0;
+    virtual void directMemWrite( uint16_t address, uint8_t value )           = 0;
 };

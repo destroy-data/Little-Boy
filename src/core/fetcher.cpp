@@ -33,7 +33,7 @@ void BackgroundFetcher::tick() {
                 tileY = ( ( scrollY + ly ) / 8 ) % 32;
             }
             const auto address = uint16_t( ( useSecondMap ? 0x9C00 : 0x9800 ) + tileY * 32 + currentTileX );
-            tileId             = bus.readVram( address );
+            tileId             = bus.directMemRead( address );
             logDebug( std::format( "Read tileID <{}> from address <{}>", tileId, toHex( address ) ) );
             state               = FETCH_DATA_LOW;
             ticksInCurrentState = 0;
@@ -58,7 +58,7 @@ void BackgroundFetcher::tick() {
                 row = ( ly - winY ) % 8;
             else
                 row = ( ly + scrollY ) % 8;
-            tileDataLow         = bus.readVram( static_cast<uint16_t>( tileAddress + row * 2 ) );
+            tileDataLow         = bus.directMemRead( static_cast<uint16_t>( tileAddress + row * 2 ) );
             state               = FETCH_DATA_HIGH;
             ticksInCurrentState = 0;
         }
@@ -82,7 +82,7 @@ void BackgroundFetcher::tick() {
                 row = ( ly - winY ) % 8;
             else
                 row = ( ly + scrollY ) % 8;
-            tileDataHigh        = bus.readVram( static_cast<uint16_t>( tileAddress + row * 2 + 1 ) );
+            tileDataHigh        = bus.directMemRead( static_cast<uint16_t>( tileAddress + row * 2 + 1 ) );
             state               = PUSH;
             ticksInCurrentState = 0;
         }

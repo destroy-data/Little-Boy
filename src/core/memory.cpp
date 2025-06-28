@@ -4,11 +4,8 @@
 uint8_t Memory::read( const uint16_t index ) const {
     if( inRom( index ) or inExternalRam( index ) ) [[likely]]
         return cartridge->read( index );
-    if( inVideoRam( index ) ) {
-        if( vramLock )
-            return 0xFF;
+    if( inVideoRam( index ) )
         return videoRam[index - addr::videoRam];
-    }
     if( inWorkRam00( index ) )
         return workRam00[index - addr::workRam00];
     if( inWorkRam0N( index ) )
@@ -17,12 +14,9 @@ uint8_t Memory::read( const uint16_t index ) const {
         return workRam00[index - addr::echoRam00];
     if( inEchoRam0N( index ) ) //echo RAM 0N is smaller than work RAM 0N
         return workRam0N[index - addr::echoRam0N];
-    if( inObjectAttributeMemory( index ) ) {
-        if( oamLock )
-            return 0xFF;
+    if( inObjectAttributeMemory( index ) )
         return oam[index - addr::objectAttributeMemory];
-    }
-    // TODO else if (index < NOT_USABLE + X)
+    // todo else if (index < NOT_USABLE + X)
     if( inIoRegisters( index ) )
         return ioRegisters[index - addr::ioRegisters];
     if( inHighRam( index ) )
@@ -64,13 +58,6 @@ void Memory::write( const uint16_t index, uint8_t value ) {
         interruptEnableRegister = value;
 }
 
-void Memory::setVramLock( bool locked ) {
-    vramLock = locked;
-}
-
-void Memory::setOamLock( bool locked ) {
-    oamLock = locked;
-}
 
 Memory::Memory( CoreCartridge* cartridge_ ) : cartridge( cartridge_ ) {
     // DMG
