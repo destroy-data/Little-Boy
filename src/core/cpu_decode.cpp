@@ -5,7 +5,7 @@ using enum CoreCpu::MicroOperationType_t;
 // Operand order is target first, source next
 CoreCpu::MicroOperations_t CoreCpu::decode() {
     // first check instructions without different operand variants
-    const auto opcode = mem.read( PC++ );
+    const auto opcode = bus.read( PC++ );
     switch( opcode ) {
     //block 0
     case 0x0:
@@ -246,7 +246,7 @@ CoreCpu::MicroOperations_t CoreCpu::decodeBlock3( const uint8_t opcode ) {
 
 
 CoreCpu::MicroOperations_t CoreCpu::decodeCB() {
-    const auto opcodeSecondByte = mem.read( PC );
+    const auto opcodeSecondByte = bus.read( PC );
     const auto r8               = static_cast<Operand_t>( opcodeSecondByte & 0x7 );
     const auto b3index          = static_cast<Operand_t>( 0x7 & ( opcodeSecondByte >> 3 ) );
     switch( 0x3 & ( opcodeSecondByte >> 6 ) ) {

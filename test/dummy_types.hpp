@@ -4,9 +4,11 @@
 #include "core/ppu.hpp"
 #include <cstdint>
 
-class DummyCartridge : public CoreCartridge {
+class DummyCartridge final : public CoreCartridge {
     friend class Tester;
     using CoreCartridge::CoreCartridge;
+
+public:
     uint8_t read( uint16_t ) {
         return 0xFF;
     }
@@ -14,23 +16,23 @@ class DummyCartridge : public CoreCartridge {
     }
 };
 
-class DummyCpu : public CoreCpu {
+class DummyCpu final : public CoreCpu {
     friend class Tester;
-    using CoreCpu::CoreCpu;
-    void handleJoypad() {
-    }
 
 public:
-    DummyCpu( Memory& mem_ ) : CoreCpu( mem_ ) {};
+    void handleJoypad() override {
+    }
+    DummyCpu( IBus& bus_ ) : CoreCpu( bus_ ) {};
 };
 
 class DummyPpu : public CorePpu {
     friend class Tester;
+
+public:
     void drawPixel( uint8_t ) {
     }
 
-public:
-    DummyPpu( Memory& mem_ ) : CorePpu( mem_ ) {
+    DummyPpu( IBus& bus_ ) : CorePpu( bus_ ) {
     }
 };
 

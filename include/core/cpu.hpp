@@ -1,9 +1,10 @@
 #pragma once
+#include "core/bus.hpp"
 #include "core/core_utils.hpp"
 #include "core/cycles.hpp"
-#include "memory.hpp"
 #include <array>
 #include <cstdint>
+#include <string_view>
 #include <variant>
 
 template<typename T>
@@ -173,7 +174,7 @@ protected:
     uint8_t registers[8] { 0x0, 0x13, 0x0, 0xD8, 0x1, 0x4D, 0x1 }; //b,c,d,e,h,l,a,f
     uint8_t Z, W;                                                  // temporary registers
     uint16_t SP = 0xFFFE, PC = 0x100;
-    Memory& mem;
+    IBus& bus;
     bool interruptMasterEnabled = false;
     bool enableIMELater         = false;
     bool halted                 = false;
@@ -224,11 +225,11 @@ public:
         setCFlag( C );
     }
 
-    virtual void handleJoypad() = 0;
     void logOperation( MicroOperation_t mop );
 
 public:
-    CoreCpu( Memory& mem_ );
+    virtual void handleJoypad() = 0;
+    CoreCpu( IBus& bus_ );
     virtual ~CoreCpu() = default;
     void tick();
 };

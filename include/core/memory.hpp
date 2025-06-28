@@ -1,6 +1,6 @@
 #pragma once
 #include "core/cartridge.hpp"
-#include "core/general_constants.hpp"
+#include "core/core_constants.hpp"
 #include <cstdint>
 
 struct Memory {

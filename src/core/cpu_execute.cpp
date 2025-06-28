@@ -13,17 +13,17 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         //TODO
         return;
     case LD_IMM_TO_Z:
-        Z = mem.read( PC++ );
+        Z = bus.read( PC++ );
         break;
     case LD_IMM_TO_W:
-        W = mem.read( PC++ );
+        W = bus.read( PC++ );
         break;
     case LD_SPL_TO_pWZ:
-        mem.write( getWZ(), lsb( SP ) );
+        bus.write( getWZ(), lsb( SP ) );
         setWZ( getWZ() + 1 );
         break;
     case LD_SPH_TO_pWZ:
-        mem.write( getWZ(), msb( SP ) );
+        bus.write( getWZ(), msb( SP ) );
         break;
     case RLCA: {
         const uint8_t value = readR8( Operand_t::a );
@@ -145,10 +145,10 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         SP = getWZ();
         break;
     case POP_SP_TO_Z:
-        Z = mem.read( SP++ );
+        Z = bus.read( SP++ );
         break;
     case POP_SP_TO_W:
-        W = mem.read( SP++ );
+        W = bus.read( SP++ );
         break;
     case LD_WZ_TO_PC:
         PC = getWZ();
@@ -164,32 +164,32 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         SP--;
         break;
     case LD_PCH_TO_SP:
-        mem.write( SP--, msb( PC ) ); // go to next byte's address
+        bus.write( SP--, msb( PC ) ); // go to next byte's address
         break;
     case LD_PCL_TO_SP__LD_WZ_TO_PC:
-        mem.write( SP, lsb( PC ) );
+        bus.write( SP, lsb( PC ) );
         PC = getWZ();
         break;
     case LD_A_TO_FF00_PLUS_C:
-        mem.write( 0xFF00 | readR8( Operand_t::c ), readR8( Operand_t::a ) );
+        bus.write( 0xFF00 | readR8( Operand_t::c ), readR8( Operand_t::a ) );
         break;
     case LD_A_TO_FF00_PLUS_Z:
-        mem.write( 0xFF00 | Z, readR8( Operand_t::a ) );
+        bus.write( 0xFF00 | Z, readR8( Operand_t::a ) );
         break;
     case LD_A_TO_pWZ:
-        mem.write( getWZ(), readR8( Operand_t::a ) );
+        bus.write( getWZ(), readR8( Operand_t::a ) );
         break;
     case LD_FF00_PLUS_C_TO_Z:
-        Z = mem.read( 0xFF00 | readR8( Operand_t::c ) );
+        Z = bus.read( 0xFF00 | readR8( Operand_t::c ) );
         break;
     case LD_Z_TO_R8:
         writeR8( mop.operand1, Z );
         break;
     case LD_FF00_PLUS_Z_TO_Z:
-        Z = mem.read( 0xFF00 + Z );
+        Z = bus.read( 0xFF00 + Z );
         break;
     case LD_pWZ_TO_Z:
-        Z = mem.read( getWZ() );
+        Z = bus.read( getWZ() );
         break;
     case ALU_SPL_PLUS_Z_TO_L:
         writeR8( Operand_t::l, addU8ToU8( lsb( SP ), Z ) );
@@ -211,7 +211,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         break;
     case COND_CHECK__LD_IMM_TO_Z:
         lastConditionCheck = isConditionMet( mop.operand1 );
-        Z                  = mem.read( PC++ );
+        Z                  = bus.read( PC++ );
         break;
     case INC_R8: {
         const bool cFlag = getCFlag();
@@ -219,13 +219,13 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         setCFlag( cFlag );
     } break;
     case LD_pHL_TO_Z:
-        Z = mem.read( readR16( Operand_t::hl ) );
+        Z = bus.read( readR16( Operand_t::hl ) );
         break;
     case ALU_LD_Z_PLUS_1_TO_pHL:
-        mem.write( readR16( Operand_t::hl ), ++Z );
+        bus.write( readR16( Operand_t::hl ), ++Z );
         break;
     case ALU_LD_Z_MINUS_1_TO_pHL:
-        mem.write( readR16( Operand_t::hl ), --Z );
+        bus.write( readR16( Operand_t::hl ), --Z );
         break;
     case DEC_R8: {
         const bool cFlag = getCFlag();
@@ -233,17 +233,17 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         setCFlag( cFlag );
     } break;
     case LD_Z_TO_pHL:
-        mem.write( readR16( Operand_t::hl ), Z );
+        bus.write( readR16( Operand_t::hl ), Z );
         break;
     case LD_WZ_TO_R16:
         writeR16( mop.operand1, getWZ() );
         break;
     case LD_A_TO_R16_MEM:
         if( mop.operand1 == Operand_t::pBC || mop.operand1 == Operand_t::pDE )
-            mem.write( readR16( mop.operand1 ), readR8( Operand_t::a ) );
+            bus.write( readR16( mop.operand1 ), readR8( Operand_t::a ) );
         else {
             uint16_t hl = readR16( Operand_t::hl );
-            mem.write( hl, readR8( Operand_t::a ) );
+            bus.write( hl, readR8( Operand_t::a ) );
             mop.operand1 == Operand_t::hlPlus ? ++hl : --hl;
             writeR16( Operand_t::hl, hl );
         }
@@ -260,10 +260,10 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         break;
     case LD_R16_MEM_TO_Z:
         if( mop.operand1 == Operand_t::pBC || mop.operand1 == Operand_t::pDE )
-            Z = mem.read( readR16( mop.operand1 ) );
+            Z = bus.read( readR16( mop.operand1 ) );
         else {
             uint16_t hl = readR16( Operand_t::hl );
-            Z           = mem.read( hl );
+            Z           = bus.read( hl );
             mop.operand1 == Operand_t::hlPlus ? ++hl : --hl;
             writeR16( Operand_t::hl, hl );
         }
@@ -277,7 +277,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         writeR8( mop.operand1, value );
     } break;
     case LD_R8_TO_pHL:
-        mem.write( readR16( Operand_t::hl ), readR8( mop.operand1 ) );
+        bus.write( readR16( Operand_t::hl ), readR8( mop.operand1 ) );
         break;
     case ALU_ADD_R8_TO_A:
         addToR8( Operand_t::a, readR8( mop.operand1 ) );
@@ -314,10 +314,10 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         break;
     case COND_CHECK__LD_IMM_TO_W:
         lastConditionCheck = isConditionMet( mop.operand1 );
-        W                  = mem.read( PC++ );
+        W                  = bus.read( PC++ );
         break;
     case LD_PCL_TO_SP__LD_TGT3_TO_PC:
-        mem.write( SP, lsb( PC ) );
+        bus.write( SP, lsb( PC ) );
         PC = std::to_underlying( mop.operand1 ) * 8;
         break;
     case LD_WZ_TO_R16STK:
@@ -326,11 +326,11 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         break;
     case PUSH_MSB_R16STK_TO_SP: {
         const auto r16STKMsb = registers[std::to_underlying( mop.operand1 ) * 2];
-        mem.write( SP--, r16STKMsb ); // go to next byte's address
+        bus.write( SP--, r16STKMsb ); // go to next byte's address
     } break;
     case PUSH_LSB_R16STK_TO_SP: {
         const auto r16STKLsb = registers[std::to_underlying( mop.operand1 ) * 2 + 1];
-        mem.write( SP, r16STKLsb );
+        bus.write( SP, r16STKLsb );
     } break;
     case FETCH_SECOND_BYTE:
         PC++;
@@ -338,7 +338,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case LD_RLC_Z_TO_pHL: {
         const bool cFlag = Z & ( 1 << 7 );
         Z                = std::rotl( Z, 1 );
-        mem.write( readR16( Operand_t::hl ), Z );
+        bus.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case RLC_R8: {
@@ -351,7 +351,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case LD_RRC_Z_TO_pHL: {
         const bool cFlag = Z & 0x1;
         Z                = std::rotr( Z, 1 );
-        mem.write( readR16( Operand_t::hl ), Z );
+        bus.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case RRC_R8: {
@@ -364,7 +364,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case LD_RL_Z_TO_pHL: {
         const bool cFlag = Z & ( 1 << 7 );
         Z                = lsb( Z << 1 ) | getCFlag();
-        mem.write( readR16( Operand_t::hl ), Z );
+        bus.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case RL_R8: {
@@ -377,7 +377,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case LD_RR_Z_TO_pHL: {
         const bool cFlag = Z & 0x1;
         Z                = lsb( getCFlag() << 7 | ( Z >> 1 ) );
-        mem.write( readR16( Operand_t::hl ), Z );
+        bus.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case RR_R8: {
@@ -390,7 +390,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case LD_SLA_Z_TO_pHL: {
         const bool cFlag = Z & ( 1 << 7 );
         Z                = lsb( Z << 1 );
-        mem.write( readR16( Operand_t::hl ), Z );
+        bus.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case SLA_R8: {
@@ -403,7 +403,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case LD_SRA_Z_TO_pHL: {
         const bool cFlag = Z & 0x1;
         Z                = lsb( ( Z & ( 1 << 7 ) ) | ( Z >> 1 ) );
-        mem.write( readR16( Operand_t::hl ), Z );
+        bus.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case SRA_R8: {
@@ -415,7 +415,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     } break;
     case LD_SWAP_Z_TO_pHL:
         Z = lsb( ( Z << 4 ) | ( Z >> 4 ) );
-        mem.write( readR16( Operand_t::hl ), Z );
+        bus.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, 0 );
         break;
     case SWAP_R8: {
@@ -427,7 +427,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     case LD_SRL_Z_TO_pHL: {
         const bool cFlag = Z & 0x1;
         Z                = Z >> 1;
-        mem.write( readR16( Operand_t::hl ), Z );
+        bus.write( readR16( Operand_t::hl ), Z );
         setZNHCFlags( ! Z, 0, 0, cFlag );
     } break;
     case SRL_R8: {
@@ -448,9 +448,9 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     } break;
     case RES_pHL: {
         const uint16_t addr    = readR16( Operand_t::hl );
-        const uint8_t value    = mem.read( addr );
+        const uint8_t value    = bus.read( addr );
         const uint8_t newValue = value & static_cast<uint8_t>( ~( 1 << std::to_underlying( mop.operand1 ) ) );
-        mem.write( addr, newValue );
+        bus.write( addr, newValue );
     } break;
     case RES_R8: {
         const uint8_t value    = readR8( mop.operand2 );
@@ -459,9 +459,9 @@ void CoreCpu::execute( MicroOperation_t mop ) {
     } break;
     case SET_pHL: {
         const uint16_t addr    = readR16( Operand_t::hl );
-        const uint8_t value    = mem.read( addr );
+        const uint8_t value    = bus.read( addr );
         const uint8_t newValue = value | static_cast<uint8_t>( 1 << std::to_underlying( mop.operand1 ) );
-        mem.write( addr, newValue );
+        bus.write( addr, newValue );
     } break;
     case SET_R8: {
         const uint8_t value    = readR8( mop.operand2 );

@@ -6,13 +6,11 @@
 class RaylibPpu final : public CorePpu {
 private:
     Color* screenBuffer;
-
-protected:
     void drawPixel( uint8_t colorId ) override;
 
 public:
     Color* getScreenBuffer();
-    RaylibPpu( Memory& mem_ );
+    RaylibPpu( IBus& bus_ );
     ~RaylibPpu() override;
 };
 
@@ -21,6 +19,6 @@ public:
 class RaylibCpu final : public CoreCpu {
 public:
     void handleJoypad() override;
-    RaylibCpu( Memory& mem_ ) : CoreCpu( mem_ ) {};
+    RaylibCpu( IBus& bus_ ) : CoreCpu( bus_ ) {};
     ~RaylibCpu() override = default;
 };

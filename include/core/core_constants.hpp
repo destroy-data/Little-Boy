@@ -16,6 +16,12 @@ constexpr uint16_t notUsable               = 0xFEA0;
 constexpr uint16_t ioRegisters             = 0xFF00;
 constexpr uint16_t highRam                 = 0xFF80;
 constexpr uint16_t interruptEnableRegister = 0xFFFF;
+// PPU
+constexpr uint16_t tileDataBlock0 = 0x8000;
+constexpr uint16_t tileDataBlock1 = 0x8800;
+constexpr uint16_t tileDataBlock2 = 0x9000;
+constexpr uint16_t tileMap1       = 0x9800;
+constexpr uint16_t tileMap2       = 0x9C00;
 // IO ranges
 constexpr uint16_t joypadInput            = 0xFF00;
 constexpr uint16_t serialTransfer         = 0xFF01;
@@ -91,3 +97,15 @@ constexpr uint16_t headerChecksum      = 0x014D;
 constexpr uint16_t globalChecksumStart = 0x014E;
 constexpr uint16_t globalChecksumEnd   = 0x014F;
 } // namespace addr
+
+namespace size {
+constexpr uint16_t oam      = 160;
+constexpr uint16_t tile     = 16;
+constexpr uint16_t videoRam = 8192;
+} // namespace size
+
+// other
+namespace constant {
+static constexpr unsigned tickrate     = 4'194'304;
+static constexpr float oscillatoryTime = 1. / tickrate;
+} // namespace constant

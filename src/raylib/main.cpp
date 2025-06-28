@@ -14,7 +14,7 @@
 
 using Emulator_t            = Emulator<RaylibCpu, RaylibPpu>;
 constexpr int targetFps     = 60;
-constexpr int ticksPerFrame = ( 1. / targetFps ) * Emulator_t::tickrate;
+constexpr int ticksPerFrame = ( 1. / targetFps ) * constant::tickrate;
 
 
 int main() {

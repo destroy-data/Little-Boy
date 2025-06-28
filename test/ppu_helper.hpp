@@ -1,12 +1,12 @@
-#include "core/memory.hpp"
+#include "core/bus.hpp"
 #include <cstdint>
 
-void setupBackgroundChessboardPatternInVram( uint8_t vram[] );
+void setupBackgroundChessboardPatternInVram( IBus& bus );
 
-void setupTestSprites( Memory& mem );
+void setupTestSprites( IBus& bus );
 
-void createTestSprite( uint8_t oam[], int index, uint8_t x, uint8_t y, uint8_t tileId, uint8_t attributes );
+void createTestSprite( IBus& bus, int index, uint8_t x, uint8_t y, uint8_t tileId, uint8_t attributes );
 
-void setupSpriteTiles( uint8_t vram[] );
+void setupSpriteTiles( IBus& bus );
 
-void setupLcdRegisters( Memory& mem );
+void setupLcdRegisters( IBus& bus );

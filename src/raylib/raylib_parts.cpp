@@ -1,9 +1,9 @@
 #include "raylib/raylib_parts.hpp"
-#include "core/memory.hpp"
+#include "core/core_constants.hpp"
 #include <core/logging.hpp>
 #include <cstring>
 
-RaylibPpu::RaylibPpu( Memory& mem_ ) : CorePpu( mem_ ) {
+RaylibPpu::RaylibPpu( IBus& bus_ ) : CorePpu( bus_ ) {
     screenBuffer = static_cast<Color*>( MemAlloc( sizeof( Color ) * displayWidth * displayHeight ) );
     std::memset( screenBuffer, 0, sizeof( Color ) * displayWidth * displayHeight );
 }
@@ -20,7 +20,7 @@ Color* RaylibPpu::getScreenBuffer() {
 }
 
 void RaylibPpu::drawPixel( uint8_t colorId ) {
-    const uint8_t ly = mem.read( addr::lcdY );
+    const uint8_t ly = bus.read( addr::lcdY );
     if( ly < displayHeight && state.renderedX < displayWidth ) {
         const Color pixelColor = { dmgColorMap[colorId][0], dmgColorMap[colorId][1], dmgColorMap[colorId][2],
                                    255 };
@@ -31,7 +31,7 @@ void RaylibPpu::drawPixel( uint8_t colorId ) {
 
 //--------------------------------------------------
 void RaylibCpu::handleJoypad() {
-    const auto joypadInputRegister = mem.read( addr::joypadInput );
+    const auto joypadInputRegister = bus.read( addr::joypadInput );
     const bool selectButtonsFlag   = joypadInputRegister & ( 1 << 5 );
     const bool selectDPad          = joypadInputRegister & ( 1 << 4 );
 
@@ -39,25 +39,24 @@ void RaylibCpu::handleJoypad() {
     uint8_t buttonsPressed = 0x0F;
     if( selectDPad ) {
         if( IsKeyPressedRepeat( KEY_S ) )
-            mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 3 ) );
+            bus.write( addr::joypadInput, joypadInputRegister & ~( 1 << 3 ) );
         if( IsKeyPressedRepeat( KEY_W ) )
-            mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 2 ) );
+            bus.write( addr::joypadInput, joypadInputRegister & ~( 1 << 2 ) );
         if( IsKeyPressedRepeat( KEY_A ) )
-            mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 1 ) );
+            bus.write( addr::joypadInput, joypadInputRegister & ~( 1 << 1 ) );
         if( IsKeyPressedRepeat( KEY_D ) )
-            mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 0 ) );
+            bus.write( addr::joypadInput, joypadInputRegister & ~( 1 << 0 ) );
     }
     if( selectButtonsFlag ) {
         if( IsKeyPressedRepeat( KEY_Q ) ) // START - TODO: configurable
-            mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 3 ) );
+            bus.write( addr::joypadInput, joypadInputRegister & ~( 1 << 3 ) );
         if( IsKeyPressedRepeat( KEY_E ) ) // SELECT - TODO configurable
-            mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 2 ) );
+            bus.write( addr::joypadInput, joypadInputRegister & ~( 1 << 2 ) );
         if( IsKeyPressedRepeat( KEY_B ) )
-            mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 1 ) );
+            bus.write( addr::joypadInput, joypadInputRegister & ~( 1 << 1 ) );
         if( IsKeyPressedRepeat( KEY_G ) ) // A button - TODO configurable
-            mem.write( addr::joypadInput, joypadInputRegister & ~( 1 << 0 ) );
+            bus.write( addr::joypadInput, joypadInputRegister & ~( 1 << 0 ) );
     }
 
-    logDebug( std::format( "Joypad input: {}", buttonsPressed ) );
-    mem.write( addr::joypadInput, ( joypadInputRegister & 0xF0 ) | buttonsPressed );
+    bus.write( addr::joypadInput, ( joypadInputRegister & 0xF0 ) | buttonsPressed );
 }

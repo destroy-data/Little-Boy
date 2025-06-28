@@ -1,5 +1,6 @@
 #include "core/cartridge.hpp"
 #include "cartridge_impls/cartridge.hpp"
+#include "core/core_constants.hpp"
 #include "core/logging.hpp"
 #include <format>
 #include <type_traits>

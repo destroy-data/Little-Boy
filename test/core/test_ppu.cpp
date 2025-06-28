@@ -12,8 +12,9 @@ class TestPpu : public CorePpu {
 
 public:
     std::vector<uint8_t> drawBuff;
-    TestPpu( Memory& mem_ ) : CorePpu( mem_ ) {
-        std::memset( mem.oam, 0, 160 );
+    TestPpu( IBus& bus_ ) : CorePpu( bus_ ) {
+        for( unsigned i = 0; i < size::oam; i++ )
+            bus.write( static_cast<uint16_t>( size::oam + i ), 0 );
     }
 };
 
@@ -21,7 +22,7 @@ TEST_CASE( "oam_scan", "[oam]" ) {
     std::unique_ptr<DummyCartridge> cartridge;
     Emulator<DummyCpu, TestPpu> emu( std::move( cartridge ) );
     emu.memory.write( addr::lcdControl, 0x0 );
-    createTestSprite( emu.memory.oam, 0, 1, 1, 0, 0 );
+    createTestSprite( emu, 0, 1, 1, 0, 0 );
 
     emu.memory.write( addr::lcdY, 0 );
     emu.ppu.oamScan();
@@ -44,9 +45,9 @@ TEST_CASE( "oam_scan", "[oam]" ) {
 TEST_CASE( "headless_rendering", "[background][chessboard]" ) {
     std::unique_ptr<DummyCartridge> cartridge;
     Emulator<DummyCpu, TestPpu> emu( std::move( cartridge ) );
-    setupLcdRegisters( emu.memory );
-    setupBackgroundChessboardPatternInVram( emu.memory.videoRam );
-    setupTestSprites( emu.memory );
+    setupLcdRegisters( emu );
+    setupBackgroundChessboardPatternInVram( emu );
+    setupTestSprites( emu );
 
     for( int i = 0; i < CorePpu::displayHeight; i++ ) {
         for( int j = 0; j < CorePpu::scanlineDuration; j++ ) {

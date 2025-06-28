@@ -1,5 +1,5 @@
 #include "core/cpu.hpp"
-#include "core/general_constants.hpp"
+#include "core/core_constants.hpp"
 #include "core/logging.hpp"
 #include <cstdint>
 #include <format>
@@ -113,28 +113,28 @@ void CoreCpu::tick() {
 bool CoreCpu::handleInterrupts() {
     if( ! interruptMasterEnabled )
         return false;
-    const auto interruptEnable = mem.read( addr::interruptEnableRegister );
-    const auto interruptFlag   = mem.read( addr::interruptFlag );
+    const auto interruptEnable = bus.read( addr::interruptEnableRegister );
+    const auto interruptFlag   = bus.read( addr::interruptFlag );
     bool executeInterrupt      = false;
     if( interruptEnable & 0x1 && interruptFlag & 0x1 ) { //VBlank
         setWZ( 0x40 );
-        mem.write( addr::interruptFlag, interruptFlag & ~0x1 );
+        bus.write( addr::interruptFlag, interruptFlag & ~0x1 );
         executeInterrupt = true;
     } else if( interruptEnable & ( 1 << 1 ) && interruptFlag & ( 1 << 1 ) ) { //LCD
         setWZ( 0x48 );
-        mem.write( addr::interruptFlag, interruptFlag & ~( 1 << 1 ) );
+        bus.write( addr::interruptFlag, interruptFlag & ~( 1 << 1 ) );
         executeInterrupt = true;
     } else if( interruptEnable & ( 1 << 2 ) && interruptFlag & ( 1 << 2 ) ) { //Timer
         setWZ( 0x50 );
-        mem.write( addr::interruptFlag, interruptFlag & ~( 1 << 2 ) );
+        bus.write( addr::interruptFlag, interruptFlag & ~( 1 << 2 ) );
         executeInterrupt = true;
     } else if( interruptEnable & ( 1 << 3 ) && interruptFlag & ( 1 << 3 ) ) { //Serial
         setWZ( 0x58 );
-        mem.write( addr::interruptFlag, interruptFlag & ~( 1 << 3 ) );
+        bus.write( addr::interruptFlag, interruptFlag & ~( 1 << 3 ) );
         executeInterrupt = true;
     } else if( interruptEnable & ( 1 << 4 ) && interruptFlag & ( 1 << 4 ) ) { //Joypad
         setWZ( 0x60 );
-        mem.write( addr::interruptFlag, interruptFlag & ~( 1 << 4 ) );
+        bus.write( addr::interruptFlag, interruptFlag & ~( 1 << 4 ) );
         executeInterrupt = true;
     }
 
@@ -157,8 +157,8 @@ void CoreCpu::logOperation( MicroOperation_t mop ) {
     logDebug( std::format( "CPU flags ZNHC<{:04b}>", ( registers[7] >> 4 ) ) );
 }
 
-CoreCpu::CoreCpu( Memory& mem_ ) : mem( mem_ ) {
+CoreCpu::CoreCpu( IBus& bus_ ) : bus( bus_ ) {
     //set register f
-    const bool headerChecksumNonZero = mem.read( addr::headerChecksum );
+    const bool headerChecksumNonZero = bus.read( addr::headerChecksum );
     setZNHCFlags( 1, 0, headerChecksumNonZero, headerChecksumNonZero );
 };

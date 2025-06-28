@@ -1,5 +1,4 @@
 #pragma once
-#include "core/general_constants.hpp"
 #include <cstdint>
 #include <memory>
 #include <span>

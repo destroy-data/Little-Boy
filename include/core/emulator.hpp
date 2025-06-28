@@ -1,17 +1,57 @@
 #pragma once
+#include "core/bus.hpp"
+#include "core/logging.hpp"
 #include "core/memory.hpp"
 
 template<typename Tcpu, typename Tppu>
-class Emulator {
+class Emulator final : public IBus {
+    bool vramLocked = false;
+    bool oamLocked  = false;
+
+    bool inVideoRam( const uint16_t index ) const {
+        return addr::videoRam <= index and index < addr::externalRam;
+    }
+    bool inObjectAttributeMemory( const uint16_t index ) const {
+        return addr::objectAttributeMemory <= index and index < addr::notUsable;
+    }
+
 public:
     std::unique_ptr<CoreCartridge> cartridge;
     Memory memory;
     Tcpu cpu;
     Tppu ppu;
 
-public:
-    static constexpr unsigned tickrate     = 4'194'304;
-    static constexpr float oscillatoryTime = 1. / tickrate;
+    // IBus interface
+    uint8_t read( uint16_t address ) const override {
+        if( ( inVideoRam( address ) && vramLocked ) || ( inObjectAttributeMemory( address ) && oamLocked ) ) {
+            [[unlikely]] return 0xFF;
+        }
+        return memory.read( address );
+    }
+    void write( uint16_t address, uint8_t value ) override {
+        if( ( inVideoRam( address ) && vramLocked ) || ( inObjectAttributeMemory( address ) && oamLocked ) ) {
+            return;
+        }
+        memory.write( address, value );
+    }
+
+    void setOamLock( bool locked ) override {
+        oamLocked = locked;
+    }
+    void setVramLock( bool locked ) override {
+        vramLocked = locked;
+    }
+
+    SpriteAttribute getSpriteAttribute( uint8_t sprite_index ) const override {
+        const uint16_t address = static_cast<uint16_t>( addr::objectAttributeMemory + sprite_index * 4 );
+        return { .y         = memory.read( address ),
+                 .x         = memory.read( address + 1 ),
+                 .tileIndex = memory.read( address + 2 ),
+                 .flags     = memory.read( address + 3 ) };
+    }
+    uint8_t readVram( uint16_t address ) const override {
+        return memory.read( address );
+    }
 
     int tick() {
         cpu.tick();
@@ -29,7 +69,7 @@ public:
     Emulator( std::unique_ptr<CoreCartridge>&& cartridge_ )
         : cartridge( std::move( cartridge_ ) )
         , memory( cartridge.get() )
-        , cpu( memory )
-        , ppu( memory ) {
+        , cpu( *this )
+        , ppu( *this ) {
     }
 };

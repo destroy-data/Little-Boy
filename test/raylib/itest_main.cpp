@@ -1,42 +1,14 @@
-#include "core/memory.hpp"
+#include "core/logging.hpp"
 #include "core/ppu.hpp"
 #include "dummy_types.hpp"
 #include "ppu_helper.hpp"
 #include "raylib.h"
+#include "raylib/raylib_parts.hpp"
 #include <cstdint>
 #include <cstring>
 
-class RaylibPpu final : public CorePpu {
-private:
-    Color* screenBuffer;
-
-public:
-    RaylibPpu( Memory& mem_ ) : CorePpu( mem_ ) {
-        screenBuffer = static_cast<Color*>( MemAlloc( sizeof( Color ) * displayWidth * displayHeight ) );
-        std::memset( screenBuffer, 0, sizeof( Color ) * displayWidth * displayHeight );
-    }
-
-    ~RaylibPpu() override {
-        if( screenBuffer ) {
-            MemFree( screenBuffer );
-            screenBuffer = nullptr;
-        }
-    }
-
-    Color* getScreenBuffer() {
-        return screenBuffer;
-    }
-
-protected:
-    void drawPixel( uint8_t colorId ) override {
-        const uint8_t ly = mem.read( addr::lcdY );
-        if( ly < displayHeight && state.renderedX < displayWidth ) {
-            const Color pixelColor = { dmgColorMap[colorId][0], dmgColorMap[colorId][1],
-                                       dmgColorMap[colorId][2], 255 };
-            screenBuffer[ly * displayWidth + state.renderedX] = pixelColor;
-        }
-    }
-};
+constexpr int targetFps     = 60;
+constexpr int ticksPerFrame = int( ( 1. / targetFps ) * constant::tickrate );
 
 using RaylibEmulator = Emulator<DummyCpu, RaylibPpu>;
 
@@ -54,33 +26,65 @@ int main() {
     Texture2D screenTexture =
             LoadTextureFromImage( GenImageColor( CorePpu::displayWidth, CorePpu::displayHeight, BLACK ) );
 
-    setupBackgroundChessboardPatternInVram( emu.memory.videoRam );
-    setupLcdRegisters( emu.memory );
+    setupBackgroundChessboardPatternInVram( emu );
+    setupLcdRegisters( emu );
 
-    while( !WindowShouldClose() ) {
-        for( int ly = 0; ly < CorePpu::displayHeight; ly++ ) {
-            for( int i = 0; i < CorePpu::scanlineDuration; i++ ) {
-                emu.ppu.tick();
-            }
+    bool interactiveDebugMode = true;
+    bool emulationStopped     = false;
+    bool doOneTick; // When emulation isn't stopped, the value doesn't matter
+    while( ! WindowShouldClose() ) {
+        if( IsKeyPressed( KEY_C ) ) {
+            interactiveDebugMode = ! interactiveDebugMode;
+            emulationStopped     = false;
+        }
+        if( interactiveDebugMode && IsKeyPressed( KEY_H ) ) {
+            emulationStopped = ! emulationStopped;
+            if( emulationStopped )
+                logLiveDebug( "Stopped emulation!" );
+            else
+                logLiveDebug( "Start emulation again!" );
+        }
+        if( interactiveDebugMode && IsKeyPressed( KEY_U ) )
+            logSeparator();
+        if( interactiveDebugMode && IsKeyPressed( KEY_J ) )
+            doOneTick = true;
+        if( IsKeyPressed( KEY_KP_ADD ) ) {
+            setLogLevel( LogLevel( std::max( std::to_underlying( getLogLevel() ) - 1, 0 ) ) );
+            logLiveDebug( std::format( "Log level decreased to {}", std::to_underlying( getLogLevel() ) ) );
+        }
+        if( IsKeyPressed( KEY_KP_SUBTRACT ) ) {
+            setLogLevel( LogLevel( std::min( std::to_underlying( getLogLevel() ) + 1,
+                                             int( std::numeric_limits<uint8_t>::max() ) ) ) );
+            logLiveDebug( std::format( "Log level increased to {}", std::to_underlying( getLogLevel() ) ) );
         }
 
-        UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
-
         BeginDrawing();
-        ClearBackground( DARKGRAY );
+        if( ! emulationStopped ) {
+            for( int i = 0; i <= ticksPerFrame; i++ )
+                emu.ppu.tick();
+        } else if( doOneTick ) {
+            emu.ppu.tick();
+        }
+        doOneTick = false;
 
+        ClearBackground( DARKGRAY );
+        UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
         DrawTexturePro(
                 screenTexture, Rectangle { 0, 0, (float)CorePpu::displayWidth, (float)CorePpu::displayHeight },
                 Rectangle { 0, 0, (float)screenWidth, (float)screenHeight }, Vector2 { 0, 0 }, 0.0f, WHITE );
 
-        Vector2 mousePosition = GetMousePosition();
-        std::string mousePositionText =
-                "X: " + std::to_string( static_cast<int>( mousePosition.x / scaleFactor ) ) +
-                ", Y: " + std::to_string( static_cast<int>( mousePosition.y / scaleFactor ) );
-        int textWidth = MeasureText( mousePositionText.c_str(), 20 );
-        DrawText( mousePositionText.c_str(), screenWidth - textWidth - 10, 10, 20, RED );
-        DrawFPS( 5, 5 );
 
+        if( interactiveDebugMode ) {
+            Vector2 mousePosition = GetMousePosition();
+            std::string mousePositionText =
+                    "X: " + std::to_string( static_cast<int>( mousePosition.x / scaleFactor ) ) +
+                    ", Y: " + std::to_string( static_cast<int>( mousePosition.y / scaleFactor ) );
+            int textWidth = MeasureText( mousePositionText.c_str(), 20 );
+            DrawText( mousePositionText.c_str(), screenWidth - textWidth - 10, 10, 20, RED );
+            DrawFPS( 5, 5 );
+        }
+
+        emu.handleJoypad();
         EndDrawing();
     }
 
