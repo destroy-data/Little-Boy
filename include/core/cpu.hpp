@@ -4,7 +4,6 @@
 #include "core/cycles.hpp"
 #include <array>
 #include <cstdint>
-#include <string_view>
 #include <variant>
 
 template<typename T>
@@ -131,7 +130,8 @@ public:
         h,
         l,
         phl,
-        a,
+        a = 7, // sixth in registers array but encoded by 7 in opcodes
+        f = a, // f is seventh in registers array and never encoded by opcode
         // r16
         bc = 0,
         de,
@@ -195,7 +195,7 @@ public:
 
     void execute( MicroOperation_t mop );
     bool handleInterrupts();
-    bool isConditionMet( Operand_t condition );
+    bool isConditionMet( Operand_t condition ) const;
 
     MicroOperations_t decode();
     //helpers
@@ -208,10 +208,10 @@ public:
     void setWZ( uint16_t value ) { Z = lsb(value); W = msb( value  ); }
 
     bool isPHL( Operand_t operand ) { return operand == Operand_t::phl; }
-    bool getZFlag() { return registers[7] &( 1 << 7 ); } // Zero flag
-    bool getNFlag() { return registers[7] &( 1 << 6 ); } // BDC substraction flag
-    bool getHFlag() { return registers[7] &( 1 << 5 ); } // BDC half carry flag
-    bool getCFlag() { return registers[7] &( 1 << 4 ); } // Carry flag
+    bool getZFlag() const { return registers[7] &( 1 << 7 ); } // Zero flag
+    bool getNFlag() const { return registers[7] &( 1 << 6 ); } // BDC substraction flag
+    bool getHFlag() const { return registers[7] &( 1 << 5 ); } // BDC half carry flag
+    bool getCFlag() const { return registers[7] &( 1 << 4 ); } // Carry flag
 
     void setZFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 7 ) : registers[7] & ~( 1 << 7 )); }
     void setNFlag( bool val ) { registers[7] = static_cast<uint8_t>(val ? registers[7] | ( 1 << 6 ) : registers[7] & ~( 1 << 6 )); }

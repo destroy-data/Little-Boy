@@ -150,7 +150,6 @@ void CoreCartridge::initRam( const CoreCartridge::RamSizeByte size ) {
 
 CoreCartridge::CoreCartridge( std::vector<uint8_t>&& rom_ ) : rom( std::move( rom_ ) ) {
     logDebug( "CoreCartridge constructor" );
-
     logDebug( std::format( "Read cartridgeType byte: {}", toHex( rom[addr::cartridgeType] ) ) );
 
     const auto romSizeByte = rom[addr::romSize];

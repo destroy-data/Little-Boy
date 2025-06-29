@@ -3,6 +3,7 @@
 #include "ppu_helper.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 class TestPpu : public CorePpu {
@@ -18,9 +19,9 @@ public:
     }
 };
 
-TEST_CASE( "oam_scan", "[oam]" ) {
-    std::unique_ptr<DummyCartridge> cartridge;
-    Emulator<DummyCpu, TestPpu> emu( std::move( cartridge ) );
+TEST_CASE( "OAM scan", "[oam]" ) {
+    // FIXME sometimes passes, sometimes not
+    Emulator<DummyCpu, TestPpu> emu( std::make_unique<DummyCartridge>() );
     emu.memory.write( addr::lcdControl, 0x0 );
     createTestSprite( emu, 0, 1, 1, 0, 0 );
 
@@ -42,9 +43,8 @@ TEST_CASE( "oam_scan", "[oam]" ) {
     REQUIRE( emu.ppu.state.objCount == 1 );
 }
 
-TEST_CASE( "headless_rendering", "[background][chessboard]" ) {
-    std::unique_ptr<DummyCartridge> cartridge;
-    Emulator<DummyCpu, TestPpu> emu( std::move( cartridge ) );
+TEST_CASE( "Headless rendering", "[background][chessboard]" ) {
+    Emulator<DummyCpu, TestPpu> emu( std::make_unique<DummyCartridge>() );
     setupLcdRegisters( emu );
     setupBackgroundChessboardPatternInVram( emu );
     setupTestSprites( emu );

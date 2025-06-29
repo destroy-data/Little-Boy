@@ -130,6 +130,7 @@ void CoreCpu::execute( MicroOperation_t mop ) {
         setZNHCFlags( ! result, 0, 0, 0 );
     } break;
     case ALU_A_CP_Z:
+        logDebug( std::format( "Compare register A value <{}> with Z value {}", readR8( Operand_t::a ), Z ) );
         subFromR8( Operand_t::a, Z, true );
         break;
     case ALU_ADD_SPL_TO_Z:

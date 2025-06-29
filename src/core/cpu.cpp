@@ -73,27 +73,30 @@ void CoreCpu::writeR16( Operand_t opd, uint16_t value ) {
 }
 
 
-bool CoreCpu::isConditionMet( Operand_t condition ) {
+bool CoreCpu::isConditionMet( Operand_t condition ) const {
+    bool conditionMet = false;
     using enum Operand_t;
     if( condition == condNZ && ! getZFlag() )
-        return true;
+        conditionMet = true;
     if( condition == condZ && getZFlag() )
-        return true;
+        conditionMet = true;
     if( condition == condNC && ! getCFlag() )
-        return true;
+        conditionMet = true;
     if( condition == condC && getCFlag() )
-        return true;
+        conditionMet = true;
 
-    return false;
+    logDebug( std::format( "Condition <{}> returns {}", std::to_underlying( condition ), conditionMet ) );
+    return conditionMet;
 }
 
 //--------------------------------------------------
 unsigned CoreCpu::tick() {
-    const MicroOperationType_t currentMopType = mopQueue[atMicroOperationNr].type;
+    MicroOperationType_t currentMopType = mopQueue[atMicroOperationNr].type;
     if( currentMopType == MicroOperationType_t::END && ! handleInterrupts() ) {
         logDebug( std::format( "PC: {} - Decoding next instruction", toHex( PC ) ) );
         mopQueue           = decode();
         atMicroOperationNr = 0;
+        currentMopType     = mopQueue[0].type;
     }
 
     execute( mopQueue[atMicroOperationNr] );
@@ -102,6 +105,7 @@ unsigned CoreCpu::tick() {
                                   currentMopType == MicroOperationType_t::COND_CHECK__LD_IMM_TO_Z ) ) {
         mopQueue[atMicroOperationNr + 1] = { MicroOperationType_t::NOP };
         mopQueue[atMicroOperationNr + 2] = { MicroOperationType_t::END };
+        logDebug( "branch not taken" );
     }
     if( enableIMELater && atMicroOperationNr == 0 ) { // DI takes one cycle, so we are just after next one
         interruptMasterEnabled = true;

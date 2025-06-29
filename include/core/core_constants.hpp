@@ -98,6 +98,20 @@ constexpr uint16_t globalChecksumStart = 0x014E;
 constexpr uint16_t globalChecksumEnd   = 0x014F;
 } // namespace addr
 
+namespace bitMask {
+// Cpu flags
+constexpr int zeroFlag        = ( 1 << 7 );
+constexpr int subtractionFlag = ( 1 << 6 );
+constexpr int halfCarryFlag   = ( 1 << 5 );
+constexpr int carryFlag       = ( 1 << 4 );
+// Interrupt enable bit and interrupt flag bit
+constexpr int vBlankInterrupt = 1;
+constexpr int lcdInterrupt    = ( 1 << 1 );
+constexpr int timerInterrupt  = ( 1 << 2 );
+constexpr int serialInterrupt = ( 1 << 3 );
+constexpr int joypadInterrupt = ( 1 << 4 );
+} // namespace bitMask
+
 namespace size {
 constexpr uint16_t oam      = 160;
 constexpr uint16_t tile     = 16;
@@ -106,6 +120,7 @@ constexpr uint16_t videoRam = 8192;
 
 // other
 namespace constant {
-static constexpr unsigned tickrate     = 4'194'304;
-static constexpr float oscillatoryTime = 1. / tickrate;
+constexpr unsigned tickrate        = 4'194'304;
+constexpr double oscillatoryTime   = 1. / tickrate;
+constexpr uint8_t invalidReadValue = 0xFF;
 } // namespace constant
