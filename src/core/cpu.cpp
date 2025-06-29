@@ -157,6 +157,7 @@ CoreCpu::CoreCpu( IBus& bus_ ) : bus( bus_ ) {
 };
 
 
+#ifdef DEBUG
 constexpr std::string_view MicroOperationTypeString[] = {
         "NOP",
         "STOP",
@@ -264,13 +265,16 @@ constexpr std::string_view MicroOperationTypeString[] = {
         "INVALID",
         "END",
 };
+#endif
 
 
-void CoreCpu::logOperation( MicroOperation_t mop ) {
+void CoreCpu::logOperation( [[maybe_unused]] MicroOperation_t mop ) {
+#ifdef DEBUG
     std::string opd1;
     std::string opd2;
     // FIXME it's temporary solution
     logDebug( std::format( "MOT<{}>, opd1<{}>, opd2<{}>", MicroOperationTypeString[Enum_t( mop.type )],
                            Enum_t( mop.operand1 ), Enum_t( mop.operand2 ) ) );
     logDebug( std::format( "CPU flags ZNHC<{:04b}>", ( registers[7] >> 4 ) ) );
+#endif
 }

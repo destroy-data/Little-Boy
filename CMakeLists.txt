@@ -30,7 +30,9 @@ function(add_strict_warnings target)
 endfunction()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_definitions(your_target PRIVATE RELEASE)
+    add_compile_definitions(RELEASE)
+else()
+    add_compile_definitions(DEBUG)
 endif()
 
 include(options.cmake)

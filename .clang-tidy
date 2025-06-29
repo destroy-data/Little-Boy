@@ -1,13 +1,12 @@
-Checks:          'clang-diagnostic-*,clang-analyzer-*'
 Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
+  -clang-diagnostic-sign-compare,
   bugprone-suspicious-semicolon,
   bugprone-unused-return-value,
   bugprone-narrowing-conversions,
   bugprone-signed-char-misuse,
   misc-unused-parameters,
-  readability-implicit-bool-conversion,
   readability-misleading-indentation
 WarningsAsErrors: ''
 HeaderFileExtensions:

@@ -151,8 +151,7 @@ void CoreCartridge::initRam( const CoreCartridge::RamSizeByte size ) {
 CoreCartridge::CoreCartridge( std::vector<uint8_t>&& rom_ ) : rom( std::move( rom_ ) ) {
     logDebug( "CoreCartridge constructor" );
 
-    const auto cartridgeType = rom[addr::cartridgeType];
-    logDebug( std::format( "Read cartridgeType byte: {}", toHex( cartridgeType ) ) );
+    logDebug( std::format( "Read cartridgeType byte: {}", toHex( rom[addr::cartridgeType] ) ) );
 
     const auto romSizeByte = rom[addr::romSize];
     logDebug( std::format( "Read ROM size byte: {}", toHex( romSizeByte ) ) );
@@ -162,7 +161,6 @@ CoreCartridge::CoreCartridge( std::vector<uint8_t>&& rom_ ) : rom( std::move( ro
     logDebug( std::format( "Read RAM size byte: {}", toHex( ramSizeByte ) ) );
     initRam( static_cast<CoreCartridge::RamSizeByte>( ramSizeByte ) );
 };
-
 
 
 bool CoreCartridge::checkCopyRightHeader( const uint16_t bankNumber ) const {
@@ -175,7 +173,7 @@ bool CoreCartridge::checkCopyRightHeader( const uint16_t bankNumber ) const {
             std::equal( romBanks[bankNumber].begin() + addr::logoStart,
                         romBanks[bankNumber].begin() + addr::logoEnd, std::begin( nintendoCopyrightHeader ) );
 
-    const auto checkMBC1M = bankNumber != 0;
+    [[maybe_unused]] const auto checkMBC1M = bankNumber != 0;
     if( isLogoEqual ) {
         logDebug( std::format( "Nintendo copyright header matches! This is nintendo {}cartridge.",
                                checkMBC1M ? "MBC1M " : "" ) );
