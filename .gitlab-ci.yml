@@ -1,4 +1,6 @@
-image: alpine:latest
+image:
+  name: registry.gitlab.com/destroy-data/little-boy:0.1
+  pull_policy: if-not-present
 
 variables:
   CMAKE_BUILD_DIR: "build"
@@ -15,8 +17,6 @@ stages:
 format-check:
   stage: check
   before_script:
-    - apk update
-    - apk add --no-cache clang clang-extra-tools
   script:
     - |
       echo "🔍 Checking code formatting..."
@@ -49,19 +49,6 @@ format-check:
 
 build-warnings-check:
   stage: check
-  before_script:
-    - apk update
-    - |
-      apk add --no-cache \
-        clang \
-        clang-dev \
-        cmake \
-        ninja \
-        git \
-        mesa-dev \
-        mesa-gbm \
-        mesa-egl \
-        libstdc++-dev
   script:
     - |
       cmake -B ${CMAKE_BUILD_DIR} -S . -GNinja \
