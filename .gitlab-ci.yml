@@ -27,10 +27,10 @@ format-check:
         formatted_output=$(clang-format -style=file "$file")
         
         # Compare with original
-        if ! echo "$formatted_output" | diff -u --color=always "$file" - > /dev/null 2>&1; then
+        if ! echo "$formatted_output" | diff -u "$file" - > /dev/null 2>&1; then
           echo -e "\n❌ $file needs formatting:"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "$formatted_output" | diff -u --color=always --label="current" --label="expected" "$file" - || true
+          echo "$formatted_output" | diff -u --label="current" --label="expected" "$file" - || true
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           failed=1
         fi

@@ -8,7 +8,7 @@
 
 // Decoding and execution have separate files
 
-uint8_t CoreCpu::addU8ToU8( uint8_t value, uint8_t value2 ) {
+uint8_t Cpu::addU8ToU8( uint8_t value, uint8_t value2 ) {
     bool cFlag         = value + value2 > std::numeric_limits<uint8_t>::max();
     bool halfCarryFlag = ( ( value & 0xF ) + ( value2 & 0xF ) ) > 0xF;
 
@@ -17,7 +17,7 @@ uint8_t CoreCpu::addU8ToU8( uint8_t value, uint8_t value2 ) {
     return result;
 };
 
-void CoreCpu::addToR8( Operand_t operand, uint8_t value ) {
+void Cpu::addToR8( Operand_t operand, uint8_t value ) {
     auto currentValue  = readR8( operand );
     bool cFlag         = currentValue + value > std::numeric_limits<uint8_t>::max();
     bool halfCarryFlag = ( ( currentValue & 0xF ) + ( value & 0xF ) ) > 0xF;
@@ -27,7 +27,7 @@ void CoreCpu::addToR8( Operand_t operand, uint8_t value ) {
     setZNHCFlags( ! currentValue, false, halfCarryFlag, cFlag );
 };
 
-void CoreCpu::subFromR8( Operand_t operand, uint8_t value, bool discard ) {
+void Cpu::subFromR8( Operand_t operand, uint8_t value, bool discard ) {
     auto currentValue = readR8( operand );
     bool cFlag        = value > currentValue;
     //due to integer promotion substraction operands are promoted to ints
@@ -39,7 +39,7 @@ void CoreCpu::subFromR8( Operand_t operand, uint8_t value, bool discard ) {
     setZNHCFlags( ! newValue, true, halfCarryFlag, cFlag );
 };
 
-uint8_t CoreCpu::readR8( Operand_t opd ) {
+uint8_t Cpu::readR8( Operand_t opd ) {
     if( opd == Operand_t::a ) {
         const int aIndex = 6;
         return registers[aIndex];
@@ -47,7 +47,7 @@ uint8_t CoreCpu::readR8( Operand_t opd ) {
     return registers[std::to_underlying( opd )];
 }
 
-void CoreCpu::writeR8( Operand_t opd, uint8_t value ) {
+void Cpu::writeR8( Operand_t opd, uint8_t value ) {
     if( opd == Operand_t::a ) {
         constexpr int aIndex = 6;
         registers[aIndex]    = value;
@@ -55,7 +55,7 @@ void CoreCpu::writeR8( Operand_t opd, uint8_t value ) {
         registers[std::to_underlying( opd )] = value;
 }
 
-uint16_t CoreCpu::readR16( Operand_t opd ) {
+uint16_t Cpu::readR16( Operand_t opd ) {
     if( opd == Operand_t::sp )
         return SP;
     else
@@ -63,7 +63,7 @@ uint16_t CoreCpu::readR16( Operand_t opd ) {
                                       ( registers[std::to_underlying( opd ) * 2 + 1] ) );
 }
 
-void CoreCpu::writeR16( Operand_t opd, uint16_t value ) {
+void Cpu::writeR16( Operand_t opd, uint16_t value ) {
     if( opd == Operand_t::sp )
         SP = value;
     else {
@@ -73,7 +73,7 @@ void CoreCpu::writeR16( Operand_t opd, uint16_t value ) {
 }
 
 
-bool CoreCpu::isConditionMet( Operand_t condition ) const {
+bool Cpu::isConditionMet( Operand_t condition ) const {
     bool conditionMet = false;
     using enum Operand_t;
     if( condition == condNZ && ! getZFlag() )
@@ -90,7 +90,7 @@ bool CoreCpu::isConditionMet( Operand_t condition ) const {
 }
 
 //--------------------------------------------------
-unsigned CoreCpu::tick() {
+unsigned Cpu::tick() {
     MicroOperationType_t currentMopType = mopQueue[atMicroOperationNr].type;
     if( currentMopType == MicroOperationType_t::END && ! handleInterrupts() ) {
         logDebug( std::format( "PC: {} - Decoding next instruction", toHex( PC ) ) );
@@ -115,7 +115,7 @@ unsigned CoreCpu::tick() {
     return 4; // One M-cycle
 }
 
-bool CoreCpu::handleInterrupts() {
+bool Cpu::handleInterrupts() {
     if( ! interruptMasterEnabled )
         return false;
     const auto interruptEnable = bus.read( addr::interruptEnableRegister );
@@ -154,7 +154,7 @@ bool CoreCpu::handleInterrupts() {
 };
 
 
-CoreCpu::CoreCpu( IBus& bus_ ) : bus( bus_ ) {
+Cpu::Cpu( IBus& bus_ ) : bus( bus_ ) {
     //set register f
     const bool headerChecksumNonZero = bus.read( addr::headerChecksum );
     setZNHCFlags( 1, 0, headerChecksumNonZero, headerChecksumNonZero );
@@ -272,7 +272,7 @@ constexpr std::string_view MicroOperationTypeString[] = {
 #endif
 
 
-void CoreCpu::logOperation( [[maybe_unused]] MicroOperation_t mop ) {
+void Cpu::logOperation( [[maybe_unused]] MicroOperation_t mop ) {
 #ifdef DEBUG
     std::string opd1;
     std::string opd2;

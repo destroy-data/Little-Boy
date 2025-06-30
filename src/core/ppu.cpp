@@ -60,8 +60,7 @@ CorePpu::PpuMode CorePpu::tick() {
                 bus.setOamLock( false );
 
                 // Request V-Blank interrupt
-                bus.write( addr::interruptFlag,
-                           static_cast<uint8_t>( bus.read( addr::interruptFlag ) | 0x01u ) );
+                bus.write( addr::interruptFlag, bus.read( addr::interruptFlag ) | bitMask::vBlankInterrupt );
             } else {
                 status = ( status & ~0x3 ) | static_cast<uint8_t>( OAM_SEARCH );
                 bus.write( addr::lcdStatus, status );

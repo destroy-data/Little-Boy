@@ -2,7 +2,8 @@
 #include "core/cartridge.hpp"
 #include "core/emulator.hpp"
 #include "core/logging.hpp"
-#include "raylib/raylib_parts.hpp"
+#include "raylib/raylib_handle_joypad.hpp"
+#include "raylib/raylib_ppu.hpp"
 #include "tinyfiledialogs.h"
 #include <filesystem>
 #include <format>
@@ -13,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-using Emulator_t            = Emulator<RaylibCpu, RaylibPpu>;
+using Emulator_t            = Emulator<RaylibPpu>;
 constexpr int targetFps     = 60;
 constexpr int ticksPerFrame = ( 1. / targetFps ) * constant::tickrate;
 
@@ -58,7 +59,7 @@ int main() {
     Texture2D screenTexture =
             LoadTextureFromImage( GenImageColor( CorePpu::displayWidth, CorePpu::displayHeight, BLACK ) );
 
-    Emulator_t emu( std::move( cartridge ) );
+    Emulator_t emu( std::move( cartridge ), raylibHandleJoypad );
     bool interactiveDebugMode = true;
     bool emulationStopped     = false;
     bool doOneTick; // When emulation isn't stopped, the value doesn't matter
@@ -115,8 +116,6 @@ int main() {
             DrawText( mousePositionText.c_str(), screenWidth - textWidth - 10, 10, 20, RED );
             DrawFPS( 5, 5 );
         }
-
-        emu.handleJoypad();
         EndDrawing();
     }
 

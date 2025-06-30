@@ -3,7 +3,7 @@
 #include "core/logging.hpp"
 #include <utility>
 
-void CoreCpu::execute( MicroOperation_t mop ) {
+void Cpu::execute( MicroOperation_t mop ) {
     logOperation( mop );
     switch( mop.type ) {
         using enum MicroOperationType_t;

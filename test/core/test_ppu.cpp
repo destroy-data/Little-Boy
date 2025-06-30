@@ -19,9 +19,12 @@ public:
     }
 };
 
+void handleJoypad( [[maybe_unused]] IBus& bus ) {
+}
+
 TEST_CASE( "OAM scan", "[oam]" ) {
     // FIXME sometimes passes, sometimes not
-    Emulator<DummyCpu, TestPpu> emu( std::make_unique<DummyCartridge>() );
+    Emulator<TestPpu> emu( std::make_unique<DummyCartridge>(), handleJoypad );
     emu.memory.write( addr::lcdControl, 0x0 );
     createTestSprite( emu, 0, 1, 1, 0, 0 );
 
@@ -44,7 +47,7 @@ TEST_CASE( "OAM scan", "[oam]" ) {
 }
 
 TEST_CASE( "Headless rendering", "[background][chessboard]" ) {
-    Emulator<DummyCpu, TestPpu> emu( std::make_unique<DummyCartridge>() );
+    Emulator<TestPpu> emu( std::make_unique<DummyCartridge>(), handleJoypad );
     setupLcdRegisters( emu );
     setupBackgroundChessboardPatternInVram( emu );
     setupTestSprites( emu );

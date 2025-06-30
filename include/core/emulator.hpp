@@ -1,11 +1,15 @@
 #pragma once
 #include "core/bus.hpp"
 #include "core/core_constants.hpp"
+#include "core/cpu.hpp"
 #include "core/memory.hpp"
 #include "core/timer.hpp"
+#include <memory>
 
-template<typename Tcpu, typename Tppu>
+template<typename Tppu>
 class Emulator final : public IBus {
+    using JoypadHandler_t = void( IBus& );
+
     bool vramLocked = false;
     bool oamLocked  = false;
 
@@ -23,8 +27,9 @@ public:
     std::unique_ptr<CoreCartridge> cartridge;
     Timer timer { *this };
     Memory memory;
-    Tcpu cpu;
+    Cpu cpu;
     Tppu ppu;
+    JoypadHandler_t& joypadHandler;
 
     // IBus interface
     uint8_t read( uint16_t address ) const override {
@@ -73,17 +78,14 @@ public:
             ppu.tick();
             timer.tick();
         }
-
         //apu.tick();
         return 4;
     }
-    void handleJoypad() {
-        cpu.handleJoypad();
-    }
-    Emulator( std::unique_ptr<CoreCartridge>&& cartridge_ )
+    Emulator( std::unique_ptr<CoreCartridge>&& cartridge_, JoypadHandler_t& joypadHandler_ )
         : cartridge( std::move( cartridge_ ) )
         , memory( cartridge.get() )
         , cpu( *this )
-        , ppu( *this ) {
+        , ppu( *this )
+        , joypadHandler( joypadHandler_ ) {
     }
 };

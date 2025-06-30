@@ -1,5 +1,4 @@
 #pragma once
-#include "core/cpu.hpp"
 #include "core/ppu.hpp"
 #include <raylib.h>
 
@@ -12,13 +11,4 @@ public:
     Color* getScreenBuffer();
     RaylibPpu( IBus& bus_ );
     ~RaylibPpu() override;
-};
-
-
-//--------------------------------------------------
-class RaylibCpu final : public CoreCpu {
-public:
-    void handleJoypad() override;
-    RaylibCpu( IBus& bus_ ) : CoreCpu( bus_ ) {};
-    ~RaylibCpu() override = default;
 };

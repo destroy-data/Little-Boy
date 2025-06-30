@@ -18,16 +18,13 @@ public:
     }
 };
 
-class DummyCpu final : public CoreCpu {
+class DummyCpu final : public Cpu {
     friend class Tester;
 
 public:
-    using CoreCpu::mopQueue;
-    using CoreCpu::PC;
-    using CoreCpu::registers;
-    void handleJoypad() override {
-    }
-    DummyCpu( IBus& bus_ ) : CoreCpu( bus_ ) {};
+    using Cpu::mopQueue;
+    using Cpu::PC;
+    using Cpu::registers;
 };
 
 class DummyPpu : public CorePpu {
@@ -65,4 +62,4 @@ public:
     }
 };
 
-using DummyEmulator_t = Emulator<DummyCpu, DummyPpu>;
+using DummyEmulator_t = Emulator<DummyPpu>;

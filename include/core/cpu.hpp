@@ -9,7 +9,7 @@
 template<typename T>
 concept uint8or16_t = std::same_as<T, uint8_t> || std::same_as<T, uint16_t>;
 
-class CoreCpu {
+class Cpu {
 public:
     using Enum_t = uint8_t;
     enum class MicroOperationType_t : Enum_t {
@@ -228,8 +228,7 @@ public:
     void logOperation( MicroOperation_t mop );
 
 public:
-    virtual void handleJoypad() = 0;
-    CoreCpu( IBus& bus_ );
-    virtual ~CoreCpu() = default;
+    Cpu( IBus& bus_ );
+    ~Cpu() = default;
     unsigned tick();
 };

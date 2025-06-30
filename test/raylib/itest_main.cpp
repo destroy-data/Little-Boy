@@ -3,18 +3,19 @@
 #include "dummy_types.hpp"
 #include "ppu_helper.hpp"
 #include "raylib.h"
-#include "raylib/raylib_parts.hpp"
+#include "raylib/raylib_ppu.hpp"
 #include <cstdint>
 #include <cstring>
 
 constexpr int targetFps     = 60;
 constexpr int ticksPerFrame = int( ( 1. / targetFps ) * constant::tickrate );
 
-using RaylibEmulator = Emulator<DummyCpu, RaylibPpu>;
+void handleJoypad( [[maybe_unused]] IBus& bus ) {
+}
 
 int main() {
     std::unique_ptr<DummyCartridge> cartridge = std::make_unique<DummyCartridge>();
-    RaylibEmulator emu( std::move( cartridge ) );
+    Emulator<RaylibPpu> emu( std::move( cartridge ), handleJoypad );
 
     const int scaleFactor  = 7;
     const int screenWidth  = CorePpu::displayWidth * scaleFactor;
@@ -83,8 +84,6 @@ int main() {
             DrawText( mousePositionText.c_str(), screenWidth - textWidth - 10, 10, 20, RED );
             DrawFPS( 5, 5 );
         }
-
-        emu.handleJoypad();
         EndDrawing();
     }
 

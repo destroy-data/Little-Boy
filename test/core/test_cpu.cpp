@@ -10,34 +10,33 @@ TEST_CASE( "isConditionMet", "[cpu][helper function]" ) {
     DummyCpu cpu( bus );
 
     //--------------------------------------------------
-    cpu.registers[std::to_underlying( CoreCpu::Operand_t::f )] =
+    cpu.registers[std::to_underlying( Cpu::Operand_t::f )] =
             bitMask::zeroFlag; // all registers except Z to false
-    REQUIRE_FALSE( cpu.isConditionMet( CoreCpu::Operand_t::condNZ ) );
-    REQUIRE( cpu.isConditionMet( CoreCpu::Operand_t::condZ ) );
+    REQUIRE_FALSE( cpu.isConditionMet( Cpu::Operand_t::condNZ ) );
+    REQUIRE( cpu.isConditionMet( Cpu::Operand_t::condZ ) );
 
-    REQUIRE( cpu.isConditionMet( CoreCpu::Operand_t::condNC ) );
-    REQUIRE_FALSE( cpu.isConditionMet( CoreCpu::Operand_t::condC ) );
+    REQUIRE( cpu.isConditionMet( Cpu::Operand_t::condNC ) );
+    REQUIRE_FALSE( cpu.isConditionMet( Cpu::Operand_t::condC ) );
 
     //--------------------------------------------------
-    cpu.registers[std::to_underlying( CoreCpu::Operand_t::f )] =
+    cpu.registers[std::to_underlying( Cpu::Operand_t::f )] =
             bitMask::carryFlag; // all registers except C to false
-    REQUIRE( cpu.isConditionMet( CoreCpu::Operand_t::condNZ ) );
-    REQUIRE_FALSE( cpu.isConditionMet( CoreCpu::Operand_t::condZ ) );
+    REQUIRE( cpu.isConditionMet( Cpu::Operand_t::condNZ ) );
+    REQUIRE_FALSE( cpu.isConditionMet( Cpu::Operand_t::condZ ) );
 
-    REQUIRE_FALSE( cpu.isConditionMet( CoreCpu::Operand_t::condNC ) );
-    REQUIRE( cpu.isConditionMet( CoreCpu::Operand_t::condC ) );
+    REQUIRE_FALSE( cpu.isConditionMet( Cpu::Operand_t::condNC ) );
+    REQUIRE( cpu.isConditionMet( Cpu::Operand_t::condC ) );
 }
 
 TEST_CASE( "Cpu branch handling", "[cpu][branch]" ) {
     DummyBus bus;
-    using MopType = CoreCpu::MicroOperationType_t;
+    using MopType = Cpu::MicroOperationType_t;
     std::unique_ptr<DummyCpu> cpu;
 
-    cpu                                                         = std::make_unique<DummyCpu>( bus );
-    cpu->registers[std::to_underlying( CoreCpu::Operand_t::f )] = 0; // all registers set to false
-    cpu->PC                                                     = 0x100;
-    cpu->mopQueue                                               = {
-            { { MopType::CHECK_COND, CoreCpu::Operand_t::condZ }, MopType::INVALID, MopType::INVALID } };
+    cpu                                                     = std::make_unique<DummyCpu>( bus );
+    cpu->registers[std::to_underlying( Cpu::Operand_t::f )] = 0; // all registers set to false
+    cpu->PC                                                 = 0x100;
+    cpu->mopQueue = { { { MopType::CHECK_COND, Cpu::Operand_t::condZ }, MopType::INVALID, MopType::INVALID } };
     cpu->tick();
     REQUIRE( cpu->mopQueue[1].type == MopType::NOP );
     REQUIRE( cpu->mopQueue[2].type == MopType::END );
@@ -46,19 +45,18 @@ TEST_CASE( "Cpu branch handling", "[cpu][branch]" ) {
     REQUIRE( cpu->PC == 0x101 );
 
 
-    cpu                                                         = std::make_unique<DummyCpu>( bus );
-    cpu->registers[std::to_underlying( CoreCpu::Operand_t::f )] = 0xFF; // all registers set to true
-    cpu->mopQueue                                               = {
-            { { MopType::CHECK_COND, CoreCpu::Operand_t::condZ }, MopType::INVALID, MopType::INVALID } };
+    cpu                                                     = std::make_unique<DummyCpu>( bus );
+    cpu->registers[std::to_underlying( Cpu::Operand_t::f )] = 0xFF; // all registers set to true
+    cpu->mopQueue = { { { MopType::CHECK_COND, Cpu::Operand_t::condZ }, MopType::INVALID, MopType::INVALID } };
     cpu->tick();
     REQUIRE( cpu->mopQueue[1].type == MopType::INVALID );
     REQUIRE( cpu->mopQueue[2].type == MopType::INVALID );
 
     //--------------------------------------------------
-    cpu                                                         = std::make_unique<DummyCpu>( bus );
-    cpu->registers[std::to_underlying( CoreCpu::Operand_t::f )] = 0; // all registers set to false
-    cpu->PC                                                     = 0x100;
-    cpu->mopQueue = { { { MopType::COND_CHECK__LD_IMM_TO_Z, CoreCpu::Operand_t::condZ },
+    cpu                                                     = std::make_unique<DummyCpu>( bus );
+    cpu->registers[std::to_underlying( Cpu::Operand_t::f )] = 0; // all registers set to false
+    cpu->PC                                                 = 0x100;
+    cpu->mopQueue = { { { MopType::COND_CHECK__LD_IMM_TO_Z, Cpu::Operand_t::condZ },
                         MopType::INVALID,
                         MopType::INVALID } };
     cpu->tick();

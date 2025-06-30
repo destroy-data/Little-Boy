@@ -1,9 +1,9 @@
 #include "core/cpu.hpp"
 #include <utility>
 
-using enum CoreCpu::MicroOperationType_t;
+using enum Cpu::MicroOperationType_t;
 // Operand order is target first, source next
-CoreCpu::MicroOperations_t CoreCpu::decode() {
+Cpu::MicroOperations_t Cpu::decode() {
     // first check instructions without different operand variants
     const auto opcode = bus.read( PC++ );
     switch( opcode ) {
@@ -117,7 +117,7 @@ CoreCpu::MicroOperations_t CoreCpu::decode() {
 }
 
 
-CoreCpu::MicroOperations_t CoreCpu::decodeBlock0( const uint8_t opcode ) {
+Cpu::MicroOperations_t Cpu::decodeBlock0( const uint8_t opcode ) {
     //count from 0
     const auto r8  = static_cast<Operand_t>( 0x7 & ( opcode >> 3 ) );
     const auto r16 = static_cast<Operand_t>( 0x3 & ( opcode >> 4 ) );
@@ -162,7 +162,7 @@ CoreCpu::MicroOperations_t CoreCpu::decodeBlock0( const uint8_t opcode ) {
 }
 
 
-CoreCpu::MicroOperations_t CoreCpu::decodeBlock2( const uint8_t opcode ) {
+Cpu::MicroOperations_t Cpu::decodeBlock2( const uint8_t opcode ) {
     const auto r8 = static_cast<Operand_t>( 0x7 & opcode );
     switch( 0x7 & ( opcode >> 3 ) ) {
     case 0x0:
@@ -210,7 +210,7 @@ CoreCpu::MicroOperations_t CoreCpu::decodeBlock2( const uint8_t opcode ) {
 }
 
 
-CoreCpu::MicroOperations_t CoreCpu::decodeBlock3( const uint8_t opcode ) {
+Cpu::MicroOperations_t Cpu::decodeBlock3( const uint8_t opcode ) {
     const auto condition = static_cast<Operand_t>( 0x3 & ( opcode >> 3 ) );
     const auto r16stk    = static_cast<Operand_t>( 0x3 & ( opcode >> 4 ) );
     switch( 0x7 & opcode ) {
@@ -245,7 +245,7 @@ CoreCpu::MicroOperations_t CoreCpu::decodeBlock3( const uint8_t opcode ) {
 }
 
 
-CoreCpu::MicroOperations_t CoreCpu::decodeCB() {
+Cpu::MicroOperations_t Cpu::decodeCB() {
     const auto opcodeSecondByte = bus.read( PC );
     const auto r8               = static_cast<Operand_t>( opcodeSecondByte & 0x7 );
     const auto b3index          = static_cast<Operand_t>( 0x7 & ( opcodeSecondByte >> 3 ) );
