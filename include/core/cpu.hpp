@@ -207,7 +207,7 @@ public:
     uint16_t getWZ() { return static_cast<uint16_t>( ( W << 8 ) | Z ); }
     void setWZ( uint16_t value ) { Z = lsb(value); W = msb( value  ); }
 
-    bool isPHL( Operand_t operand ) { return operand == Operand_t::phl; }
+    bool isPHL( Operand_t operand ) const { return operand == Operand_t::phl; }
     bool getZFlag() const { return registers[7] &( 1 << 7 ); } // Zero flag
     bool getNFlag() const { return registers[7] &( 1 << 6 ); } // BDC substraction flag
     bool getHFlag() const { return registers[7] &( 1 << 5 ); } // BDC half carry flag

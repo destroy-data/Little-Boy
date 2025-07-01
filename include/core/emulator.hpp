@@ -19,7 +19,7 @@ class Emulator final : public IBus {
     bool inObjectAttributeMemory( const uint16_t index ) const {
         return addr::objectAttributeMemory <= index and index < addr::notUsable;
     }
-    bool inTimerRange( const uint16_t index ) {
+    bool inTimerRange( const uint16_t index ) const {
         return addr::timer <= index and index <= addr::timerEnd;
     }
 

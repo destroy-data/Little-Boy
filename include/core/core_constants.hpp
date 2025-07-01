@@ -121,6 +121,6 @@ constexpr uint16_t videoRam = 8192;
 // other
 namespace constant {
 constexpr unsigned tickrate        = 4'194'304;
-constexpr double oscillatoryTime   = 1. / tickrate;
+constexpr double oscillatoryTime   = 1.0 / tickrate;
 constexpr uint8_t invalidReadValue = 0xFF;
 } // namespace constant

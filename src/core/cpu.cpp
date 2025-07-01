@@ -105,7 +105,6 @@ unsigned Cpu::tick() {
                                   currentMopType == MicroOperationType_t::COND_CHECK__LD_IMM_TO_Z ) ) {
         mopQueue[atMicroOperationNr + 1] = { MicroOperationType_t::NOP };
         mopQueue[atMicroOperationNr + 2] = { MicroOperationType_t::END };
-        logDebug( "branch not taken" );
     }
     if( enableIMELater && atMicroOperationNr == 0 ) { // DI takes one cycle, so we are just after next one
         interruptMasterEnabled = true;
