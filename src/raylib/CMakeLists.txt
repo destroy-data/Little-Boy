@@ -1,21 +1,22 @@
-file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-list(FILTER SOURCES EXCLUDE REGEX ".*main\\.cpp$")
-add_library(gb_raylib STATIC ${SOURCES})
-add_strict_warnings(gb_raylib)
-
-# Adding Raylib
 include(FetchContent)
-set(FETCHCONTENT_QUIET FALSE)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
 
-FetchContent_Declare(
-    raylib
-    GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
-    GIT_TAG "master"
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-)
+find_package(raylib 5.0 REQUIRED CONFIG)
+
+if(NOT raylib_FOUND)
+    message(STATUS "Raylib not found, fetching from source.")
+    FetchContent_Declare(
+        raylib
+        GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
+        GIT_TAG "master"
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS FALSE
+    )
+    FetchContent_MakeAvailable(raylib)
+else()
+    message(STATUS "Found raylib ${raylib_VERSION}")
+endif()
 
 FetchContent_Declare(
     tinyfiledialogs
@@ -25,8 +26,8 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(tinyfiledialogs)
-FetchContent_MakeAvailable(raylib)
 
+#--------------------------------------------------
 add_library(
     tinyfiledialogs
     STATIC
@@ -34,6 +35,11 @@ add_library(
     ${tinyfiledialogs_SOURCE_DIR}/tinyfiledialogs.h
 )
 target_include_directories(tinyfiledialogs PUBLIC ${tinyfiledialogs_SOURCE_DIR})
+
+file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+list(FILTER SOURCES EXCLUDE REGEX ".*main\\.cpp$")
+add_library(gb_raylib STATIC ${SOURCES})
+add_strict_warnings(gb_raylib)
 
 target_link_libraries(
     gb_raylib

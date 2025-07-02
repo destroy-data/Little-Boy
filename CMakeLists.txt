@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.25)
 project(gameboy C CXX)
 
+if(DEFINED ENV{IN_DOCKER})
+    set(FETCHCONTENT_QUIET TRUE)
+endif()
+
 function(add_strict_warnings target)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(

@@ -1,15 +1,24 @@
-FROM alpine:latest
+FROM fedora:42
 LABEL description="Image for the Gameboy project pipeline with all dependencies pre-installed."
+ENV IN_DOCKER=true
 
-RUN apk update && apk add --no-cache \
+RUN dnf update -y && dnf install -y \
+    gcc-c++ \
     clang \
-    clang-extra-tools \
-    clang-dev \
+    clang-tools-extra \
     cmake \
-    ninja \
+    ninja-build \
     git \
-    mesa-dev \
-    mesa-gbm \
-    mesa-egl \
-    libstdc++-dev
-
+    diffutils \
+    pkgconfig \
+    raylib-devel \
+    catch-devel \
+    mesa-libGL-devel \
+    mesa-libGLU-devel \
+    libX11-devel \
+    libXrandr-devel \
+    libXinerama-devel \
+    libXcursor-devel \
+    libXi-devel \
+    alsa-lib-devel \
+    && dnf clean all

@@ -1,18 +1,20 @@
 file(GLOB RAYLIB_TESTS test_*.cpp)
 
-add_executable(
-    test_raylib
-    ${CMAKE_SOURCE_DIR}/test/ppu_helper.cpp
-    ${RAYLIB_TESTS}
-    ${HELPER_FILE}
-)
+if(RAYLIB_TESTS)
+    add_executable(
+        test_raylib
+        ${CMAKE_SOURCE_DIR}/test/ppu_helper.cpp
+        ${RAYLIB_TESTS}
+        ${HELPER_FILE}
+    )
 
-target_link_libraries(
-    test_raylib
-    PRIVATE Catch2::Catch2WithMain gb_core gb_raylib raylib
-)
+    target_link_libraries(
+        test_raylib
+        PRIVATE Catch2::Catch2WithMain gb_core gb_raylib raylib
+    )
 
-catch_discover_tests(test_raylib)
+    catch_discover_tests(test_raylib)
+endif()
 
 file(GLOB RAYLIB_INTERACTIVE_TESTS itest_*.cpp)
 
