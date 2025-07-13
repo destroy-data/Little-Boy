@@ -1,3 +1,4 @@
+#pragma once
 #include "core/cartridge.hpp"
 #include "core/core_constants.hpp"
 #include "core/cpu.hpp"
@@ -62,4 +63,5 @@ public:
     }
 };
 
-using DummyEmulator_t = Emulator<DummyPpu>;
+inline void dummyJoypadHandler( [[maybe_unused]] IBus& ) {
+}

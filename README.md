@@ -20,8 +20,11 @@ You can add `-DBUILD_TESTS=OFF` to cmake command to skip building tests. Binarie
 ### Dependencies
 All dependencies are fetched by cmake, those are:
 - [raylib](https://www.raylib.com/)
-- [Catch2](https://github.com/catchorg/Catch2)
 - [tinyfiledialogs](https://sourceforge.net/projects/tinyfiledialogs/)
+Used for testing:
+- [Catch2](https://github.com/catchorg/Catch2)
+- [nlohmann/json](https://github.com/nlohmann/json)
+- [SingleStepTests](https://github.com/SingleStepTests/sm83) - test files for CPU
 
 Thanks to all the authors <3  
 You can find all dependencies' licenses in the external_licenses directory.

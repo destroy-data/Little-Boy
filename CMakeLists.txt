@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(gameboy C CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(DEFINED ENV{IN_DOCKER})
     set(FETCHCONTENT_QUIET TRUE)
 endif()
