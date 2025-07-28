@@ -11,6 +11,18 @@
 using json                     = nlohmann::json;
 using ramAddressValueMapping_t = std::unordered_map<uint16_t, uint8_t>;
 
+class Flat64KMemory {
+    uint8_t memory[64*1024];
+    public:
+    uint8_t read( const uint16_t index ) const {
+        return memory[index];
+    }
+    void write( const uint16_t index, uint8_t value ) {
+        memory[index] = value;
+    }
+    Flat64KMemory( [[maybe_unused]] CoreCartridge* cartridge_ ){}
+};
+
 struct CpuState {
     uint8_t a, b, c, d, e, f, h, l;
     uint16_t pc, sp;
@@ -40,7 +52,7 @@ CpuState parseState( const json& state_json ) {
 
 class TestCpu final : public Cpu {
 public:
-    void setCpuState( const CpuState& state ) {
+    void setCpuState( const CpuState& state) {
         writeR8( Operand_t::a, state.a );
         writeR8( Operand_t::b, state.b );
         writeR8( Operand_t::c, state.c );
@@ -77,7 +89,13 @@ public:
         return state;
     }
 
+    void clearMopQueue() {
+        mopQueue = { MicroOperationType_t::END };
+        atMicroOperationNr = 0;
+    }
+
     TestCpu( IBus& bus_ ) : Cpu( bus_ ) {
+        mopQueue = { MicroOperationType_t::END };
     }
 };
 
@@ -157,7 +175,7 @@ bool checkCpuState( const CpuState& expected, const CpuState& actual ) {
 }
 
 TEST_CASE( "CPU opcodes", "[cpu][opcodes]" ) {
-    Emulator<DummyPpu, TestCpu> emu( std::make_unique<DummyCartridge>(), dummyJoypadHandler );
+    Emulator<DummyPpu, TestCpu, Flat64KMemory> emu( std::make_unique<DummyCartridge>(), dummyJoypadHandler );
 
     for( const auto& entry: std::filesystem::directory_iterator( OPCODE_TESTS_PATH ) ) {
         std::ifstream file( entry.path() );
@@ -180,7 +198,8 @@ TEST_CASE( "CPU opcodes", "[cpu][opcodes]" ) {
 
             INFO( context );
             emu.cpu.setCpuState( parseState( test["initial"] ) );
-            for( unsigned i = 0; i < getCycles( opcode, true ); i++ ) {
+            emu.cpu.clearMopQueue();
+            for( unsigned i = 0; i < getCycles( opcode, true ) / 4; i++ ) {
                 emu.tick();
             }
 

@@ -6,7 +6,7 @@
 #include "core/timer.hpp"
 #include <memory>
 
-template<typename Tppu, typename Tcpu = Cpu>
+template<typename Tppu, typename Tcpu = Cpu, typename Tmemory = Memory>
 class Emulator final : public IBus {
     using JoypadHandler_t = void( IBus& );
 
@@ -26,7 +26,7 @@ class Emulator final : public IBus {
 public:
     std::unique_ptr<CoreCartridge> cartridge;
     Timer timer { *this };
-    Memory memory;
+    Tmemory memory;
     Tcpu cpu;
     Tppu ppu;
     JoypadHandler_t& joypadHandler;
