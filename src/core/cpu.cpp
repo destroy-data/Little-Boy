@@ -44,6 +44,10 @@ uint8_t Cpu::readR8( Operand_t opd ) {
         const int aIndex = 6;
         return registers[aIndex];
     }
+    if( opd == Operand_t::f ) {
+        const int fIndex = 7;
+        return registers[fIndex];
+    }
     return registers[std::to_underlying( opd )];
 }
 
@@ -51,6 +55,9 @@ void Cpu::writeR8( Operand_t opd, uint8_t value ) {
     if( opd == Operand_t::a ) {
         constexpr int aIndex = 6;
         registers[aIndex]    = value;
+    } else if( opd == Operand_t::f ) {
+        constexpr int fIndex = 7;
+        registers[fIndex]    = value;
     } else
         registers[std::to_underlying( opd )] = value;
 }

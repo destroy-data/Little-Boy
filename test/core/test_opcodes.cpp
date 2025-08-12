@@ -9,18 +9,20 @@
 #include <unordered_map>
 
 using json                     = nlohmann::json;
-using ramAddressValueMapping_t = std::unordered_map<uint16_t, uint8_t>;
+using ramAddressValueMapping_t = std::map<uint16_t, uint8_t>;
 
 class Flat64KMemory {
-    uint8_t memory[64*1024];
-    public:
+    uint8_t memory[64 * 1024];
+
+public:
     uint8_t read( const uint16_t index ) const {
         return memory[index];
     }
     void write( const uint16_t index, uint8_t value ) {
         memory[index] = value;
     }
-    Flat64KMemory( [[maybe_unused]] CoreCartridge* cartridge_ ){}
+    Flat64KMemory( [[maybe_unused]] CoreCartridge* cartridge_ ) {
+    }
 };
 
 struct CpuState {
@@ -52,7 +54,7 @@ CpuState parseState( const json& state_json ) {
 
 class TestCpu final : public Cpu {
 public:
-    void setCpuState( const CpuState& state) {
+    void setCpuState( const CpuState& state ) {
         writeR8( Operand_t::a, state.a );
         writeR8( Operand_t::b, state.b );
         writeR8( Operand_t::c, state.c );
@@ -90,7 +92,7 @@ public:
     }
 
     void clearMopQueue() {
-        mopQueue = { MicroOperationType_t::END };
+        mopQueue           = { MicroOperationType_t::END };
         atMicroOperationNr = 0;
     }
 

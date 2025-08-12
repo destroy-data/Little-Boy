@@ -131,7 +131,7 @@ public:
         l,
         phl,
         a = 7, // sixth in registers array but encoded by 7 in opcodes
-        f = a, // f is seventh in registers array and never encoded by opcode
+        f, // f is seventh in registers array and never encoded by opcode
         // r16
         bc = 0,
         de,
