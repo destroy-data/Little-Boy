@@ -15,7 +15,7 @@ public:
 
     using TileAtlas_t = std::span<uint8_t, 256 * 16>;
 
-    enum class PpuMode { H_BLANK = 0, V_BLANK = 1, OAM_SEARCH = 2, PIXEL_TRANSFER = 3, DISABLED };
+    enum class PpuMode { H_BLANK = 0, V_BLANK = 1, OAM_SEARCH = 2, PIXEL_TRANSFER = 3 };
     // DMG color values
     const uint8_t dmgColorMap[4][3] = {
             { 255, 255, 255 }, // White
@@ -46,5 +46,5 @@ public:
 public:
     CorePpu( IBus& bus_ );
     virtual ~CorePpu() = default;
-    PpuMode tick();
+    void tick();
 };

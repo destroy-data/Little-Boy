@@ -92,11 +92,14 @@ int main() {
         BeginDrawing();
         if( ! emulationStopped ) {
             int cycles = 0;
-            while( cycles <= ticksPerFrame )
+            while( cycles <= ticksPerFrame ) {
                 cycles += emu.tick();
+                logSeparator();
+            }
             UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
         } else if( doOneTick ) {
             emu.tick();
+            logSeparator();
             UpdateTexture( screenTexture, emu.ppu.getScreenBuffer() );
         }
         doOneTick = false;

@@ -15,9 +15,6 @@ void BackgroundFetcher::tick() {
         if( ! ticksInCurrentState )
             ticksInCurrentState++;
         else {
-            if( ! bgWinEnabled )
-                return;
-
             const uint8_t winX    = bus.read( addr::winX );
             const uint8_t winY    = bus.read( addr::winY );
             const bool winEnabled = ( lcdc & ( 1 << 5 ) );

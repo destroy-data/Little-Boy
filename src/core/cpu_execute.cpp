@@ -95,7 +95,7 @@ void Cpu::execute( MicroOperation_t mop ) {
         W                  = msb( tmp );
     } break;
     case IDU_LD_WZ_PLUS_1_TO_PC:
-        PC = getWZ() + 1;
+        PC = getWZ();
         break;
     case HALT: {
         //interruptMasterEnabled = false; // GBCTR says so, but does it make sense?

@@ -32,11 +32,11 @@ void CorePpu::oamScan() {
     }
 }
 
-CorePpu::PpuMode CorePpu::tick() {
+void CorePpu::tick() {
     // Check if LCD is enabled
     const uint8_t lcdc = bus.read( addr::lcdControl );
     if( ! ( lcdc & ( 1 << 7 ) ) ) {
-        return PpuMode::DISABLED; // LCD disabled, nothing to do
+        return; // LCD disabled, nothing to do
     }
 
     uint8_t status            = bus.read( addr::lcdStatus );
@@ -46,7 +46,7 @@ CorePpu::PpuMode CorePpu::tick() {
     bool resetScanlineCycleNr = false;
 
     // State machine to handle PPU modes
-    logDebug( std::format( "PPU mode<{}>", int( currentMode ) ) );
+    logDebug( std::format( "PPU mode<{}>, LY<{}>", int( currentMode ), ly ) );
     switch( currentMode ) {
         using enum PpuMode;
     case H_BLANK:
@@ -54,7 +54,7 @@ CorePpu::PpuMode CorePpu::tick() {
             resetScanlineCycleNr = true;
             newLy++;
 
-            if( ly >= 144 ) {
+            if( newLy == 144 ) {
                 status = ( status & ~0x3 ) | static_cast<uint8_t>( V_BLANK );
                 bus.write( addr::lcdStatus, status );
                 bus.setOamLock( false );
@@ -121,15 +121,12 @@ CorePpu::PpuMode CorePpu::tick() {
             spriteFetcher.reset();
         }
         break;
-    case DISABLED:
-        std::unreachable();
     }
     if( resetScanlineCycleNr )
         state.scanlineCycleNr = 0;
     else
         state.scanlineCycleNr++;
     bus.write( addr::lcdY, newLy );
-    return static_cast<PpuMode>( status & 0x3 );
 }
 
 uint8_t CorePpu::mergePixel( Pixel bgPixel, Pixel spritePixel ) {

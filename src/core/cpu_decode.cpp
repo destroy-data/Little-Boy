@@ -31,7 +31,7 @@ Cpu::MicroOperations_t Cpu::decode() {
     case 0x3F:
         return { { CCF } };
     case 0x18:
-        return { { LD_IMM_TO_Z, ALU_CALC_RELATIVE_JUMP, IDU_LD_WZ_PLUS_1_TO_PC } }; // JR IMM8
+        return { { LD_IMM_TO_Z, ALU_CALC_RELATIVE_JUMP, LD_WZ_TO_PC } }; // JR IMM8
     //block 1
     case 0x76:
         return { { HALT } };
@@ -126,7 +126,7 @@ Cpu::MicroOperations_t Cpu::decodeBlock0( const uint8_t opcode ) {
         // Return longer version ( branch taken ), which can be shorten later
         return { { { COND_CHECK__LD_IMM_TO_Z, static_cast<Operand_t>( 0x3 & ( opcode >> 3 ) ) },
                    ALU_CALC_RELATIVE_JUMP,
-                   IDU_LD_WZ_PLUS_1_TO_PC } }; // JR COND, IMM8
+                   LD_WZ_TO_PC } }; // JR COND, IMM8
     case 0x4:
         if( isPHL( r8 ) )
             return { { LD_pHL_TO_Z, ALU_LD_Z_PLUS_1_TO_pHL, NOP } }; // INC pHL
